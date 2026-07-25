@@ -1,0 +1,87 @@
+/*
+  ITMusketeers design tokens for Staffing Management System.
+  Single source of truth for color, radius and shadow values used across the app.
+*/
+:root {
+  --itm-primary: #163a63;
+  --itm-primary-rgb: 22, 58, 99;
+  --itm-secondary: #e53935;
+  --itm-secondary-rgb: 229, 57, 53;
+  --itm-accent: #2f80ed;
+  --itm-success: #28a745;
+
+  --itm-bg: #f5f7fa;
+  --itm-card-bg: #ffffff;
+  --itm-border: #e5e7eb;
+  --itm-text: #374151;
+  --itm-muted: #6b7280;
+
+  --itm-gradient-primary: linear-gradient(135deg, var(--itm-primary) 0%, var(--itm-secondary) 100%);
+  --itm-gradient-panel: linear-gradient(160deg, #0f2647 0%, #163a63 45%, #7a2530 100%);
+
+  --itm-radius-control: 12px;
+  --itm-radius-card: 16px;
+
+  --itm-shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+  --itm-shadow-raised: 0 4px 8px rgba(16, 24, 40, 0.06), 0 16px 40px rgba(16, 24, 40, 0.1);
+
+  --itm-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--itm-bg);
+  color: var(--itm-text);
+  font-family: "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--itm-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+::selection {
+  background: rgba(var(--itm-accent-rgb, 47, 128, 237), 0.25);
+}
+
+@keyframes itm-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes itm-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

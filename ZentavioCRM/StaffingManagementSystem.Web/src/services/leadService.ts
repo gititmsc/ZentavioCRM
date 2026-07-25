@@ -1,0 +1,128 @@
+/**
+ * Leads API — thin wrapper around ZentavioCRM.Api's LeadsController.
+ */
+import { apiClient } from "@/services/apiClient";
+import { callApi } from "@/services/apiHelpers";
+
+/** Standard paged list envelope returned by every list endpoint. */
+export interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export type LeadStatus =
+  | "New"
+  | "Assigned"
+  | "Contacted"
+  | "Qualified"
+  | "Nurturing"
+  | "ProposalSent"
+  | "Converted"
+  | "Lost"
+  | "Junk";
+
+export type LeadSource =
+  | "Website"
+  | "LandingPage"
+  | "Referral"
+  | "Exhibition"
+  | "WhatsApp"
+  | "Facebook"
+  | "LinkedIn"
+  | "EmailCampaign"
+  | "GoogleAds"
+  | "ManualEntry"
+  | "ApiIntegration";
+
+export interface LeadListItem {
+  id: string;
+  leadNumber: string;
+  companyName: string;
+  contactName: string;
+  source: LeadSource;
+  status: LeadStatus;
+  expectedValue: number | null;
+  assignedToUserId: string | null;
+  assignedToUserName: string | null;
+  createdAtUtc: string;
+}
+
+export interface Lead {
+  id: string;
+  leadNumber: string;
+  companyName: string;
+  contactName: string;
+  email: string | null;
+  mobile: string | null;
+  industry: string | null;
+  source: LeadSource;
+  campaign: string | null;
+  budget: number | null;
+  timeline: string | null;
+  expectedValue: number | null;
+  assignedToUserId: string | null;
+  assignedToUserName: string | null;
+  territory: string | null;
+  status: LeadStatus;
+  leadScore: number | null;
+  aiScore: number | null;
+  notes: string | null;
+  lostReason: string | null;
+  convertedCustomerId: string | null;
+  convertedAtUtc: string | null;
+  createdAtUtc: string;
+  updatedAtUtc: string | null;
+}
+
+export interface SaveLeadRequest {
+  companyName: string;
+  contactName: string;
+  email: string | null;
+  mobile: string | null;
+  industry: string | null;
+  source: LeadSource;
+  campaign: string | null;
+  budget: number | null;
+  timeline: string | null;
+  expectedValue: number | null;
+  assignedToUserId: string | null;
+  territory: string | null;
+  notes: string | null;
+}
+
+export interface LeadSearchParams {
+  search?: string;
+  status?: LeadStatus;
+  assignedToUserId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ConvertLeadResult {
+  customerId: string;
+  customerNumber: string;
+}
+
+const search = (params: LeadSearchParams) =>
+  callApi<PagedResult<LeadListItem>>(apiClient.get("/api/leads", { params }));
+
+const getById = (id: string) => callApi<Lead>(apiClient.get(`/api/leads/${id}`));
+
+const create = (request: SaveLeadRequest) => callApi<Lead>(apiClient.post("/api/leads", request));
+
+const update = (id: string, request: SaveLeadRequest) => callApi<Lead>(apiClient.put(`/api/leads/${id}`, request));
+
+const updateStatus = (id: string, status: LeadStatus, reason?: string) =>
+  callApi<Lead>(apiClient.patch(`/api/leads/${id}/status`, { status, reason }));
+
+const assign = (id: string, userId: string) => callApi<Lead>(apiClient.post(`/api/leads/${id}/assign`, { userId }));
+
+const convert = (id: string, displayName?: string, assignToUserId?: string) =>
+  callApi<ConvertLeadResult>(apiClient.post(`/api/leads/${id}/convert`, { displayName, assignToUserId }));
+
+const remove = (id: string) => callApi<boolean>(apiClient.delete(`/api/leads/${id}`));
+
+export const leadService = { search, getById, create, update, updateStatus, assign, convert, remove };
