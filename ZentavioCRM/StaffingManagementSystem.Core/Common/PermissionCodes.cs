@@ -31,6 +31,12 @@ namespace ZentavioCRM.Core.Common
         public const string LeadsAssign = "Leads.Assign";
         public const string LeadsConvert = "Leads.Convert";
 
+        public const string OpportunitiesView = "Opportunities.View";
+        public const string OpportunitiesCreate = "Opportunities.Create";
+        public const string OpportunitiesEdit = "Opportunities.Edit";
+        public const string OpportunitiesDelete = "Opportunities.Delete";
+        public const string OpportunitiesAssign = "Opportunities.Assign";
+
         /// <summary>All codes, keyed by module, used by the seeder and the admin role grant.</summary>
         public static readonly IReadOnlyDictionary<string, string[]> ByModule = new Dictionary<string, string[]>
         {
@@ -39,6 +45,7 @@ namespace ZentavioCRM.Core.Common
             ["Roles"] = [RolesView, RolesManage],
             ["Customers"] = [CustomersView, CustomersCreate, CustomersEdit, CustomersDelete],
             ["Leads"] = [LeadsView, LeadsCreate, LeadsEdit, LeadsDelete, LeadsAssign, LeadsConvert],
+            ["Opportunities"] = [OpportunitiesView, OpportunitiesCreate, OpportunitiesEdit, OpportunitiesDelete, OpportunitiesAssign],
         };
 
         public static IEnumerable<string> All => ByModule.Values.SelectMany(codes => codes);

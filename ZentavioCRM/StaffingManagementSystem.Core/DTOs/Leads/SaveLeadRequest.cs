@@ -66,4 +66,29 @@ namespace ZentavioCRM.Core.DTOs.Leads
 
         public string CustomerNumber { get; set; } = string.Empty;
     }
+
+    public class ConvertLeadToOpportunityRequest
+    {
+        /// <summary>Optional overrides — if omitted, sensible defaults are derived from the Lead's own fields.</summary>
+        public string? OpportunityName { get; set; }
+
+        public string? CustomerDisplayName { get; set; }
+
+        public decimal? Value { get; set; }
+
+        public DateTime? ExpectedCloseDate { get; set; }
+
+        public Guid? AssignToUserId { get; set; }
+    }
+
+    public class ConvertLeadToOpportunityResultDto
+    {
+        public Guid CustomerId { get; set; } = Guid.Empty;
+
+        public string CustomerNumber { get; set; } = string.Empty;
+
+        public Guid OpportunityId { get; set; } = Guid.Empty;
+
+        public string OpportunityNumber { get; set; } = string.Empty;
+    }
 }

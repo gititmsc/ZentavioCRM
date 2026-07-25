@@ -2,7 +2,7 @@
     TenantRbacSeed.sql — embedded resource, executed by TenantProvisioningService right after
     TenantSchema.sql against the same freshly created tenant database.
 
-    Seeds only the reference data that's identical for every tenant: the 16 Permissions and the
+    Seeds only the reference data that's identical for every tenant: the 21 Permissions and the
     4 built-in Roles + their grants (same fixed GUIDs as ZentavioCRM.Core.Common.SeedIds — safe to
     reuse across tenants since each lives in its own physical database). The Company profile and
     the first Admin user are NOT here — those are tenant-specific and inserted by
@@ -13,7 +13,7 @@
 */
 
 -- ============================================================================
--- Permissions (16 total, grouped by module — matches Core.Common.PermissionCodes)
+-- Permissions (21 total, grouped by module — matches Core.Common.PermissionCodes)
 -- ============================================================================
 INSERT INTO dbo.Permissions (Id, Code, Name, Module) VALUES
     ('10000000-0000-0000-0000-000000000001', N'Departments.View',    N'View',    N'Departments'),
@@ -31,7 +31,12 @@ INSERT INTO dbo.Permissions (Id, Code, Name, Module) VALUES
     ('10000000-0000-0000-0000-00000000000d', N'Leads.Edit',          N'Edit',    N'Leads'),
     ('10000000-0000-0000-0000-00000000000e', N'Leads.Delete',        N'Delete',  N'Leads'),
     ('10000000-0000-0000-0000-00000000000f', N'Leads.Assign',        N'Assign',  N'Leads'),
-    ('10000000-0000-0000-0000-000000000010', N'Leads.Convert',       N'Convert', N'Leads');
+    ('10000000-0000-0000-0000-000000000010', N'Leads.Convert',       N'Convert', N'Leads'),
+    ('10000000-0000-0000-0000-000000000011', N'Opportunities.View',    N'View',    N'Opportunities'),
+    ('10000000-0000-0000-0000-000000000012', N'Opportunities.Create',  N'Create',  N'Opportunities'),
+    ('10000000-0000-0000-0000-000000000013', N'Opportunities.Edit',    N'Edit',    N'Opportunities'),
+    ('10000000-0000-0000-0000-000000000014', N'Opportunities.Delete',  N'Delete',  N'Opportunities'),
+    ('10000000-0000-0000-0000-000000000015', N'Opportunities.Assign',  N'Assign',  N'Opportunities');
 GO
 
 -- ============================================================================
@@ -51,13 +56,14 @@ GO
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT '20000000-0000-0000-0000-000000000001', Id FROM dbo.Permissions;
 
--- Sales Manager: full Customers/Leads, plus visibility into Departments/Users.
+-- Sales Manager: full Customers/Leads/Opportunities, plus visibility into Departments/Users.
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT '20000000-0000-0000-0000-000000000002', Id FROM dbo.Permissions
 WHERE Code IN (
     N'Departments.View', N'Users.View',
     N'Customers.View', N'Customers.Create', N'Customers.Edit', N'Customers.Delete',
-    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert'
+    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert',
+    N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Delete', N'Opportunities.Assign'
 );
 
 -- Sales Executive: day-to-day CRUD, no deletes.
@@ -65,11 +71,12 @@ INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT '20000000-0000-0000-0000-000000000003', Id FROM dbo.Permissions
 WHERE Code IN (
     N'Customers.View', N'Customers.Create', N'Customers.Edit',
-    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Assign', N'Leads.Convert'
+    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Assign', N'Leads.Convert',
+    N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Assign'
 );
 
 -- Support Agent: read-only.
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT '20000000-0000-0000-0000-000000000004', Id FROM dbo.Permissions
-WHERE Code IN (N'Customers.View', N'Leads.View');
+WHERE Code IN (N'Customers.View', N'Leads.View', N'Opportunities.View');
 GO

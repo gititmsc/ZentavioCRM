@@ -7,7 +7,7 @@ import { callApi } from "@/services/apiHelpers";
 
 export type ActivityType = "Call" | "Email" | "Meeting" | "Task" | "Note" | "Visit" | "WhatsApp" | "Sms";
 
-export type RelatedEntityType = "Lead" | "Customer";
+export type RelatedEntityType = "Lead" | "Customer" | "Opportunity";
 
 export interface Activity {
   id: string;

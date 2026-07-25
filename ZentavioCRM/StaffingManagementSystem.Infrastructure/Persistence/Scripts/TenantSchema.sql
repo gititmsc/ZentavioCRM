@@ -260,7 +260,43 @@ CREATE INDEX IX_Leads_ConvertedCustomerId ON dbo.Leads (ConvertedCustomerId);
 GO
 
 -- ============================================================================
--- Activities (generic timeline shared by Leads, Customers, and future modules)
+-- Opportunities (deal pipeline — sits between Customers and the future Quotation/Sales
+-- Order modules in the Lead-to-Customer journey; see CRM_SRS Phase 6, section 4)
+-- ============================================================================
+CREATE TABLE dbo.Opportunities
+(
+    Id                UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Opportunities_Id DEFAULT NEWID(),
+    OpportunityNumber NVARCHAR(30)     NOT NULL,
+    Name              NVARCHAR(200)    NOT NULL,
+    CustomerId        UNIQUEIDENTIFIER NOT NULL,
+    Value             DECIMAL(18, 2)   NULL,
+    Probability       INT              NULL,
+    Products          NVARCHAR(1000)   NULL,
+    Competitors       NVARCHAR(500)    NULL,
+    ExpectedCloseDate DATETIME2        NULL,
+    Stage             NVARCHAR(30)     NOT NULL,
+    AssignedToUserId  UNIQUEIDENTIFIER NULL,
+    SourceLeadId      UNIQUEIDENTIFIER NULL,
+    Notes             NVARCHAR(MAX)    NULL,
+    LostReason        NVARCHAR(300)    NULL,
+    ClosedAtUtc       DATETIME2        NULL,
+    CreatedByUserId   UNIQUEIDENTIFIER NULL,
+    CreatedAtUtc      DATETIME2        NOT NULL,
+    UpdatedAtUtc      DATETIME2        NULL,
+    CONSTRAINT PK_Opportunities PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_Opportunities_Customers FOREIGN KEY (CustomerId) REFERENCES dbo.Customers (Id) ON DELETE NO ACTION,
+    CONSTRAINT FK_Opportunities_AssignedToUser FOREIGN KEY (AssignedToUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL,
+    CONSTRAINT FK_Opportunities_SourceLead FOREIGN KEY (SourceLeadId) REFERENCES dbo.Leads (Id) ON DELETE SET NULL
+);
+
+CREATE UNIQUE INDEX IX_Opportunities_OpportunityNumber ON dbo.Opportunities (OpportunityNumber);
+CREATE INDEX IX_Opportunities_CustomerId ON dbo.Opportunities (CustomerId);
+CREATE INDEX IX_Opportunities_Stage ON dbo.Opportunities (Stage);
+CREATE INDEX IX_Opportunities_AssignedToUserId ON dbo.Opportunities (AssignedToUserId);
+GO
+
+-- ============================================================================
+-- Activities (generic timeline shared by Leads, Customers, Opportunities, and future modules)
 -- ============================================================================
 CREATE TABLE dbo.Activities
 (

@@ -12,6 +12,9 @@ import CustomerForm from "@/pages/customers/CustomerForm";
 import LeadsList from "@/pages/leads/LeadsList";
 import LeadForm from "@/pages/leads/LeadForm";
 import LeadDetail from "@/pages/leads/LeadDetail";
+import OpportunitiesList from "@/pages/opportunities/OpportunitiesList";
+import OpportunityForm from "@/pages/opportunities/OpportunityForm";
+import OpportunityDetail from "@/pages/opportunities/OpportunityDetail";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { MainLayout } from "@/layouts/MainLayout";
 
@@ -50,6 +53,11 @@ export function AppRoutes() {
         <Route path="/leads/new" element={<LeadForm />} />
         <Route path="/leads/:id" element={<LeadDetail />} />
         <Route path="/leads/:id/edit" element={<LeadForm />} />
+
+        <Route path="/opportunities" element={<OpportunitiesList />} />
+        <Route path="/opportunities/new" element={<OpportunityForm />} />
+        <Route path="/opportunities/:id" element={<OpportunityDetail />} />
+        <Route path="/opportunities/:id/edit" element={<OpportunityForm />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

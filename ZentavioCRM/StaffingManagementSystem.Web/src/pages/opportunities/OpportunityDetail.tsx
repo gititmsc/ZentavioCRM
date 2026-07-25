@@ -1,31 +1,28 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { leadService, type Lead, type LeadStatus } from "@/services/leadService";
+import { opportunityService, type Opportunity, type OpportunityStage } from "@/services/opportunityService";
 import { userService, type ManagedUser } from "@/services/userService";
 import { activityService, type Activity, type ActivityType } from "@/services/activityService";
 import { PermissionCodes } from "@/services/permissionCodes";
 
-const NEXT_STATUSES: Record<LeadStatus, LeadStatus[]> = {
-  New: ["Contacted", "Lost", "Junk"],
-  Assigned: ["Contacted", "Lost", "Junk"],
-  Contacted: ["Qualified", "Nurturing", "Lost", "Junk"],
-  Qualified: ["ProposalSent", "Nurturing", "Lost"],
-  Nurturing: ["Contacted", "Qualified", "Lost"],
-  ProposalSent: ["Qualified", "Lost"],
-  Converted: [],
-  Lost: [],
-  Junk: [],
+const NEXT_STAGES: Record<OpportunityStage, OpportunityStage[]> = {
+  Qualification: ["Discovery", "ClosedWon", "ClosedLost"],
+  Discovery: ["Proposal", "ClosedWon", "ClosedLost"],
+  Proposal: ["Negotiation", "ClosedWon", "ClosedLost"],
+  Negotiation: ["VerbalCommit", "ClosedWon", "ClosedLost"],
+  VerbalCommit: ["ClosedWon", "ClosedLost"],
+  ClosedWon: [],
+  ClosedLost: [],
 };
 
 const ACTIVITY_TYPES: ActivityType[] = ["Call", "Email", "Meeting", "Task", "Note", "Visit", "WhatsApp", "Sms"];
 
-export default function LeadDetail() {
+export default function OpportunityDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { hasPermission } = useAuth();
 
-  const [lead, setLead] = useState<Lead | null>(null);
+  const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [timeline, setTimeline] = useState<Activity[]>([]);
   const [assignToUserId, setAssignToUserId] = useState("");
@@ -36,26 +33,25 @@ export default function LeadDetail() {
   const [newActivityType, setNewActivityType] = useState<ActivityType>("Note");
   const [newActivitySubject, setNewActivitySubject] = useState("");
 
-  const canEdit = hasPermission(PermissionCodes.LeadsEdit);
-  const canAssign = hasPermission(PermissionCodes.LeadsAssign);
-  const canConvert = hasPermission(PermissionCodes.LeadsConvert);
+  const canEdit = hasPermission(PermissionCodes.OpportunitiesEdit);
+  const canAssign = hasPermission(PermissionCodes.OpportunitiesAssign);
 
   const load = async () => {
     if (!id) return;
     setIsLoading(true);
-    const [leadResult, usersResult, timelineResult] = await Promise.all([
-      leadService.getById(id),
+    const [opportunityResult, usersResult, timelineResult] = await Promise.all([
+      opportunityService.getById(id),
       userService.getAll(),
-      activityService.getTimeline("Lead", id),
+      activityService.getTimeline("Opportunity", id),
     ]);
     setIsLoading(false);
 
-    if (!leadResult.success || !leadResult.data) {
-      setError(leadResult.message || "Unable to load lead.");
+    if (!opportunityResult.success || !opportunityResult.data) {
+      setError(opportunityResult.message || "Unable to load opportunity.");
       return;
     }
-    setLead(leadResult.data);
-    setAssignToUserId(leadResult.data.assignedToUserId ?? "");
+    setOpportunity(opportunityResult.data);
+    setAssignToUserId(opportunityResult.data.assignedToUserId ?? "");
 
     if (usersResult.success && usersResult.data) setUsers(usersResult.data);
     if (timelineResult.success && timelineResult.data) setTimeline(timelineResult.data);
@@ -69,61 +65,35 @@ export default function LeadDetail() {
   const handleAssign = async () => {
     if (!id || !assignToUserId) return;
     setActionError(null);
-    const result = await leadService.assign(id, assignToUserId);
+    const result = await opportunityService.assign(id, assignToUserId);
     if (!result.success) {
-      setActionError(result.message || "Unable to assign lead.");
+      setActionError(result.message || "Unable to assign opportunity.");
       return;
     }
     load();
   };
 
-  const handleStatusChange = async (status: LeadStatus) => {
+  const handleStageChange = async (stage: OpportunityStage) => {
     if (!id) return;
     setActionError(null);
 
     let reason: string | undefined;
-    if (status === "Lost" || status === "Junk") {
-      reason = window.prompt(`Reason for marking this lead as ${status}:`) ?? undefined;
+    if (stage === "ClosedLost") {
+      reason = window.prompt("Reason for marking this opportunity as Closed Lost:") ?? undefined;
       if (!reason) return;
     }
 
-    const result = await leadService.updateStatus(id, status, reason);
+    const result = await opportunityService.updateStage(id, stage, reason);
     if (!result.success) {
-      setActionError(result.message || "Unable to update lead status.");
+      setActionError(result.message || "Unable to update opportunity stage.");
       return;
     }
     load();
   };
 
-  const handleConvert = async () => {
-    if (!id) return;
-    if (!window.confirm("Convert this lead to a customer? This cannot be undone.")) return;
-
-    setActionError(null);
-    const result = await leadService.convert(id);
-    if (!result.success || !result.data) {
-      setActionError(result.message || "Unable to convert lead.");
-      return;
-    }
-    navigate(`/customers/${result.data.customerId}/edit`);
-  };
-
-  const handleConvertToOpportunity = async () => {
-    if (!id) return;
-    if (!window.confirm("Convert this lead to an opportunity? This cannot be undone.")) return;
-
-    setActionError(null);
-    const result = await leadService.convertToOpportunity(id);
-    if (!result.success || !result.data) {
-      setActionError(result.message || "Unable to convert lead to an opportunity.");
-      return;
-    }
-    navigate(`/opportunities/${result.data.opportunityId}`);
-  };
-
   const handleAddActivity = async () => {
     if (!id || !newActivitySubject.trim()) return;
-    const result = await activityService.create("Lead", id, {
+    const result = await activityService.create("Opportunity", id, {
       type: newActivityType,
       subject: newActivitySubject.trim(),
       description: null,
@@ -132,7 +102,7 @@ export default function LeadDetail() {
     });
     if (result.success) {
       setNewActivitySubject("");
-      const timelineResult = await activityService.getTimeline("Lead", id);
+      const timelineResult = await activityService.getTimeline("Opportunity", id);
       if (timelineResult.success && timelineResult.data) setTimeline(timelineResult.data);
     }
   };
@@ -141,106 +111,73 @@ export default function LeadDetail() {
     return <div className="text-muted">Loading...</div>;
   }
 
-  if (error || !lead) {
-    return <div className="alert alert-danger">{error || "Lead not found."}</div>;
+  if (error || !opportunity) {
+    return <div className="alert alert-danger">{error || "Opportunity not found."}</div>;
   }
 
-  const nextStatuses = NEXT_STATUSES[lead.status];
+  const isClosed = opportunity.stage === "ClosedWon" || opportunity.stage === "ClosedLost";
+  const nextStages = NEXT_STAGES[opportunity.stage];
 
   return (
     <div>
       <div className="d-flex justify-content-between align-items-start mb-4">
         <div>
-          <div className="text-muted small">{lead.leadNumber}</div>
-          <h1 className="h4 mb-0">{lead.companyName}</h1>
+          <div className="text-muted small">{opportunity.opportunityNumber}</div>
+          <h1 className="h4 mb-0">{opportunity.name}</h1>
         </div>
         <div className="d-flex gap-2">
-          {canEdit && lead.status !== "Converted" && (
-            <Link to={`/leads/${lead.id}/edit`} className="btn btn-outline-secondary">
+          {canEdit && !isClosed && (
+            <Link to={`/opportunities/${opportunity.id}/edit`} className="btn btn-outline-secondary">
               Edit
             </Link>
-          )}
-          {canConvert && lead.status !== "Converted" && lead.status !== "Lost" && lead.status !== "Junk" && (
-            <>
-              <button type="button" className="btn btn-outline-success" onClick={handleConvert}>
-                <i className="bi bi-arrow-right-circle me-1" aria-hidden="true" />
-                Convert to Customer
-              </button>
-              <button type="button" className="btn btn-success" onClick={handleConvertToOpportunity}>
-                <i className="bi bi-graph-up-arrow me-1" aria-hidden="true" />
-                Convert to Opportunity
-              </button>
-            </>
           )}
         </div>
       </div>
 
       {actionError && <div className="alert alert-danger">{actionError}</div>}
 
-      {lead.status === "Converted" && (
-        <div className="alert alert-success">
-          This lead was converted to a customer.{" "}
-          {lead.convertedCustomerId && (
-            <Link to={`/customers/${lead.convertedCustomerId}/edit`}>View customer</Link>
-          )}
+      {opportunity.stage === "ClosedWon" && <div className="alert alert-success">This opportunity was won.</div>}
+      {opportunity.stage === "ClosedLost" && (
+        <div className="alert alert-danger">
+          This opportunity was lost{opportunity.lostReason ? `: ${opportunity.lostReason}` : "."}
         </div>
       )}
 
       <div className="row g-4">
         <div className="col-lg-8">
           <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold">Lead Details</div>
+            <div className="card-header bg-white fw-semibold">Opportunity Details</div>
             <div className="card-body row g-3">
               <div className="col-md-6">
-                <div className="text-muted small">Contact Name</div>
-                <div>{lead.contactName}</div>
+                <div className="text-muted small">Customer</div>
+                <div>
+                  <Link to={`/customers/${opportunity.customerId}/edit`}>{opportunity.customerName}</Link>
+                </div>
               </div>
               <div className="col-md-6">
-                <div className="text-muted small">Email</div>
-                <div>{lead.email ?? "—"}</div>
+                <div className="text-muted small">Value</div>
+                <div>{opportunity.value != null ? opportunity.value.toLocaleString() : "—"}</div>
               </div>
               <div className="col-md-6">
-                <div className="text-muted small">Mobile</div>
-                <div>{lead.mobile ?? "—"}</div>
+                <div className="text-muted small">Probability</div>
+                <div>{opportunity.probability != null ? `${opportunity.probability}%` : "—"}</div>
               </div>
               <div className="col-md-6">
-                <div className="text-muted small">Industry</div>
-                <div>{lead.industry ?? "—"}</div>
+                <div className="text-muted small">Expected Close Date</div>
+                <div>{opportunity.expectedCloseDate ? new Date(opportunity.expectedCloseDate).toLocaleDateString() : "—"}</div>
               </div>
               <div className="col-md-6">
-                <div className="text-muted small">Source</div>
-                <div>{lead.source}</div>
+                <div className="text-muted small">Products</div>
+                <div>{opportunity.products ?? "—"}</div>
               </div>
               <div className="col-md-6">
-                <div className="text-muted small">Campaign</div>
-                <div>{lead.campaign ?? "—"}</div>
+                <div className="text-muted small">Competitors</div>
+                <div>{opportunity.competitors ?? "—"}</div>
               </div>
-              <div className="col-md-6">
-                <div className="text-muted small">Budget</div>
-                <div>{lead.budget != null ? lead.budget.toLocaleString() : "—"}</div>
-              </div>
-              <div className="col-md-6">
-                <div className="text-muted small">Expected Value</div>
-                <div>{lead.expectedValue != null ? lead.expectedValue.toLocaleString() : "—"}</div>
-              </div>
-              <div className="col-md-6">
-                <div className="text-muted small">Timeline</div>
-                <div>{lead.timeline ?? "—"}</div>
-              </div>
-              <div className="col-md-6">
-                <div className="text-muted small">Territory</div>
-                <div>{lead.territory ?? "—"}</div>
-              </div>
-              {lead.notes && (
+              {opportunity.notes && (
                 <div className="col-12">
                   <div className="text-muted small">Notes</div>
-                  <div>{lead.notes}</div>
-                </div>
-              )}
-              {lead.lostReason && (
-                <div className="col-12">
-                  <div className="text-muted small">Reason</div>
-                  <div>{lead.lostReason}</div>
+                  <div>{opportunity.notes}</div>
                 </div>
               )}
             </div>
@@ -301,31 +238,31 @@ export default function LeadDetail() {
 
         <div className="col-lg-4">
           <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold">Status</div>
+            <div className="card-header bg-white fw-semibold">Stage</div>
             <div className="card-body">
               <div className="mb-3">
-                <span className="badge text-bg-primary fs-6">{lead.status}</span>
+                <span className="badge text-bg-primary fs-6">{opportunity.stage}</span>
               </div>
-              {nextStatuses.length > 0 ? (
+              {nextStages.length > 0 ? (
                 <div className="d-flex flex-wrap gap-2">
-                  {nextStatuses.map((status) => (
+                  {nextStages.map((stage) => (
                     <button
-                      key={status}
+                      key={stage}
                       type="button"
                       className="btn btn-sm btn-outline-secondary"
-                      onClick={() => handleStatusChange(status)}
+                      onClick={() => handleStageChange(stage)}
                     >
-                      Move to {status}
+                      Move to {stage}
                     </button>
                   ))}
                 </div>
               ) : (
-                <div className="text-muted small">No further status changes available.</div>
+                <div className="text-muted small">No further stage changes available.</div>
               )}
             </div>
           </div>
 
-          {canAssign && lead.status !== "Converted" && (
+          {canAssign && !isClosed && (
             <div className="card shadow-sm border-0 mb-4">
               <div className="card-header bg-white fw-semibold">Assignment</div>
               <div className="card-body">
@@ -356,8 +293,9 @@ export default function LeadDetail() {
           <div className="card shadow-sm border-0">
             <div className="card-header bg-white fw-semibold">Meta</div>
             <div className="card-body small text-muted">
-              <div>Created: {new Date(lead.createdAtUtc).toLocaleString()}</div>
-              {lead.updatedAtUtc && <div>Updated: {new Date(lead.updatedAtUtc).toLocaleString()}</div>}
+              <div>Created: {new Date(opportunity.createdAtUtc).toLocaleString()}</div>
+              {opportunity.updatedAtUtc && <div>Updated: {new Date(opportunity.updatedAtUtc).toLocaleString()}</div>}
+              {opportunity.closedAtUtc && <div>Closed: {new Date(opportunity.closedAtUtc).toLocaleString()}</div>}
             </div>
           </div>
         </div>

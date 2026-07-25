@@ -6,6 +6,7 @@ namespace ZentavioCRM.Core.Enums
     public enum RelatedEntityType
     {
         Lead = 1,
-        Customer = 2
+        Customer = 2,
+        Opportunity = 3
     }
 }

@@ -14,11 +14,16 @@ namespace ZentavioCRM.Services
 
         private readonly ILeadRepository _leadRepository;
         private readonly ICustomerRepository _customerRepository;
+        private readonly IOpportunityRepository _opportunityRepository;
 
-        public LeadService(ILeadRepository leadRepository, ICustomerRepository customerRepository)
+        public LeadService(
+            ILeadRepository leadRepository,
+            ICustomerRepository customerRepository,
+            IOpportunityRepository opportunityRepository)
         {
             _leadRepository = leadRepository;
             _customerRepository = customerRepository;
+            _opportunityRepository = opportunityRepository;
         }
 
         public async Task<PagedResult<LeadListItemDto>> SearchAsync(
@@ -206,8 +211,92 @@ namespace ZentavioCRM.Services
                 return ApiResponse<ConvertLeadResultDto>.FailureResponse($"A {lead.Status} lead cannot be converted.");
             }
 
-            var displayName = string.IsNullOrWhiteSpace(request.DisplayName) ? lead.CompanyName : request.DisplayName.Trim();
-            var assignedToUserId = request.AssignToUserId ?? lead.AssignedToUserId;
+            var customer = await CreateCustomerFromLeadAsync(lead, request.DisplayName, request.AssignToUserId);
+
+            lead.Status = LeadStatus.Converted;
+            lead.ConvertedCustomerId = customer.Id;
+            lead.ConvertedAtUtc = DateTime.UtcNow;
+            lead.UpdatedAtUtc = DateTime.UtcNow;
+
+            await _leadRepository.UpdateAsync(lead);
+
+            return ApiResponse<ConvertLeadResultDto>.SuccessResponse(
+                new ConvertLeadResultDto { CustomerId = customer.Id, CustomerNumber = customer.CustomerNumber },
+                "Lead converted to customer.");
+        }
+
+        public async Task<ApiResponse<ConvertLeadToOpportunityResultDto>> ConvertToOpportunityAsync(
+            Guid id, ConvertLeadToOpportunityRequest request, Guid? currentUserId)
+        {
+            var lead = await _leadRepository.GetByIdAsync(id);
+            if (lead is null)
+            {
+                return ApiResponse<ConvertLeadToOpportunityResultDto>.FailureResponse("Lead not found.");
+            }
+
+            if (lead.Status is LeadStatus.Lost or LeadStatus.Junk)
+            {
+                return ApiResponse<ConvertLeadToOpportunityResultDto>.FailureResponse($"A {lead.Status} lead cannot be converted.");
+            }
+
+            Customer customer;
+            if (lead.Status == LeadStatus.Converted && lead.ConvertedCustomerId is not null)
+            {
+                // Already converted via the plain "Convert to Customer" action — reuse that
+                // customer instead of creating a duplicate.
+                var existingCustomer = await _customerRepository.GetByIdAsync(lead.ConvertedCustomerId.Value);
+                if (existingCustomer is null)
+                {
+                    return ApiResponse<ConvertLeadToOpportunityResultDto>.FailureResponse(
+                        "This lead's linked customer could not be found.");
+                }
+                customer = existingCustomer;
+            }
+            else
+            {
+                customer = await CreateCustomerFromLeadAsync(lead, request.CustomerDisplayName, request.AssignToUserId);
+
+                lead.Status = LeadStatus.Converted;
+                lead.ConvertedCustomerId = customer.Id;
+                lead.ConvertedAtUtc = DateTime.UtcNow;
+                lead.UpdatedAtUtc = DateTime.UtcNow;
+
+                await _leadRepository.UpdateAsync(lead);
+            }
+
+            var opportunity = new Opportunity
+            {
+                OpportunityNumber = await _opportunityRepository.GetNextOpportunityNumberAsync(),
+                Name = string.IsNullOrWhiteSpace(request.OpportunityName) ? lead.CompanyName : request.OpportunityName.Trim(),
+                CustomerId = customer.Id,
+                Value = request.Value ?? lead.ExpectedValue,
+                ExpectedCloseDate = request.ExpectedCloseDate,
+                AssignedToUserId = request.AssignToUserId ?? lead.AssignedToUserId,
+                SourceLeadId = lead.Id,
+                Stage = OpportunityStage.Qualification,
+                Notes = lead.Notes,
+                CreatedByUserId = currentUserId,
+                CreatedAtUtc = DateTime.UtcNow,
+            };
+
+            await _opportunityRepository.AddAsync(opportunity);
+
+            return ApiResponse<ConvertLeadToOpportunityResultDto>.SuccessResponse(
+                new ConvertLeadToOpportunityResultDto
+                {
+                    CustomerId = customer.Id,
+                    CustomerNumber = customer.CustomerNumber,
+                    OpportunityId = opportunity.Id,
+                    OpportunityNumber = opportunity.OpportunityNumber,
+                },
+                "Lead converted to opportunity.");
+        }
+
+        /// <summary>Builds and persists a Customer from a Lead's own fields — shared by both the plain "convert to customer" and "convert to opportunity" flows.</summary>
+        private async Task<Customer> CreateCustomerFromLeadAsync(Lead lead, string? displayNameOverride, Guid? assignToUserIdOverride)
+        {
+            var displayName = string.IsNullOrWhiteSpace(displayNameOverride) ? lead.CompanyName : displayNameOverride.Trim();
+            var assignedToUserId = assignToUserIdOverride ?? lead.AssignedToUserId;
 
             var customer = new Customer
             {
@@ -236,17 +325,7 @@ namespace ZentavioCRM.Services
             };
 
             await _customerRepository.AddAsync(customer);
-
-            lead.Status = LeadStatus.Converted;
-            lead.ConvertedCustomerId = customer.Id;
-            lead.ConvertedAtUtc = DateTime.UtcNow;
-            lead.UpdatedAtUtc = DateTime.UtcNow;
-
-            await _leadRepository.UpdateAsync(lead);
-
-            return ApiResponse<ConvertLeadResultDto>.SuccessResponse(
-                new ConvertLeadResultDto { CustomerId = customer.Id, CustomerNumber = customer.CustomerNumber },
-                "Lead converted to customer.");
+            return customer;
         }
 
         private static LeadListItemDto MapListItem(Lead lead) => new()

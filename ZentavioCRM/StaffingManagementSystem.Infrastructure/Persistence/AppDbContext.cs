@@ -34,6 +34,8 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<Lead> Leads => Set<Lead>();
 
+        public DbSet<Opportunity> Opportunities => Set<Opportunity>();
+
         public DbSet<Activity> Activities => Set<Activity>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

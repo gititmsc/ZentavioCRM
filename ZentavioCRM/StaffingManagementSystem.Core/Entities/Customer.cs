@@ -57,5 +57,7 @@ namespace ZentavioCRM.Core.Entities
         public ICollection<CustomerAddress> Addresses { get; set; } = new List<CustomerAddress>();
 
         public ICollection<Lead> ConvertedFromLeads { get; set; } = new List<Lead>();
+
+        public ICollection<Opportunity> Opportunities { get; set; } = new List<Opportunity>();
     }
 }

@@ -4,8 +4,9 @@
 
     Seeds the same rows the EF Core model produces via
     StaffingManagementSystem.Infrastructure/Persistence/Seed/PlatformSeedData.cs:
-    the default Company + Department, all 16 Permissions, the 4 built-in Roles,
-    their RolePermission grants, and one Admin user.
+    the default Company + Department, all 21 Permissions (including the Opportunities module
+    added after the initial Foundation + Leads milestone), the 4 built-in Roles, their
+    RolePermission grants, and one Admin user.
 
     All IDs match ZentavioCRM.Core.Common.SeedIds exactly, so if you ever do switch
     to EF migrations later, this data and the C# seeder agree and won't collide.
@@ -55,7 +56,7 @@ END
 GO
 
 -- ============================================================================
--- Permissions (16 total, grouped by module — matches Core.Common.PermissionCodes)
+-- Permissions (21 total, grouped by module — matches Core.Common.PermissionCodes)
 -- ============================================================================
 IF NOT EXISTS (SELECT 1 FROM dbo.Permissions WHERE Id = '10000000-0000-0000-0000-000000000001')
 BEGIN
@@ -75,7 +76,26 @@ BEGIN
         ('10000000-0000-0000-0000-00000000000d', N'Leads.Edit',          N'Edit',    N'Leads'),
         ('10000000-0000-0000-0000-00000000000e', N'Leads.Delete',        N'Delete',  N'Leads'),
         ('10000000-0000-0000-0000-00000000000f', N'Leads.Assign',        N'Assign',  N'Leads'),
-        ('10000000-0000-0000-0000-000000000010', N'Leads.Convert',       N'Convert', N'Leads');
+        ('10000000-0000-0000-0000-000000000010', N'Leads.Convert',       N'Convert', N'Leads'),
+        ('10000000-0000-0000-0000-000000000011', N'Opportunities.View',    N'View',    N'Opportunities'),
+        ('10000000-0000-0000-0000-000000000012', N'Opportunities.Create',  N'Create',  N'Opportunities'),
+        ('10000000-0000-0000-0000-000000000013', N'Opportunities.Edit',    N'Edit',    N'Opportunities'),
+        ('10000000-0000-0000-0000-000000000014', N'Opportunities.Delete',  N'Delete',  N'Opportunities'),
+        ('10000000-0000-0000-0000-000000000015', N'Opportunities.Assign',  N'Assign',  N'Opportunities');
+END
+ELSE
+BEGIN
+    -- Existing database from before the Opportunities module was added — top up just the new rows.
+    INSERT INTO dbo.Permissions (Id, Code, Name, Module)
+    SELECT v.Id, v.Code, v.Name, v.Module
+    FROM (VALUES
+        ('10000000-0000-0000-0000-000000000011', N'Opportunities.View',    N'View',    N'Opportunities'),
+        ('10000000-0000-0000-0000-000000000012', N'Opportunities.Create',  N'Create',  N'Opportunities'),
+        ('10000000-0000-0000-0000-000000000013', N'Opportunities.Edit',    N'Edit',    N'Opportunities'),
+        ('10000000-0000-0000-0000-000000000014', N'Opportunities.Delete',  N'Delete',  N'Opportunities'),
+        ('10000000-0000-0000-0000-000000000015', N'Opportunities.Assign',  N'Assign',  N'Opportunities')
+    ) AS v(Id, Code, Name, Module)
+    WHERE NOT EXISTS (SELECT 1 FROM dbo.Permissions p WHERE p.Id = v.Id);
 END
 GO
 
@@ -103,34 +123,42 @@ DECLARE @SalesManagerRoleId3 UNIQUEIDENTIFIER = '20000000-0000-0000-0000-0000000
 DECLARE @SalesExecutiveRoleId3 UNIQUEIDENTIFIER = '20000000-0000-0000-0000-000000000003';
 DECLARE @SupportAgentRoleId3 UNIQUEIDENTIFIER = '20000000-0000-0000-0000-000000000004';
 
-IF NOT EXISTS (SELECT 1 FROM dbo.RolePermissions WHERE RoleId = @AdminRoleId3)
-BEGIN
-    -- Administrator: every permission in the system.
-    INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
-    SELECT @AdminRoleId3, Id FROM dbo.Permissions;
+-- Each INSERT below is guarded per-row (NOT EXISTS against RolePermissions itself) rather than
+-- with one outer "has this role got anything yet" check, so re-running this script after adding
+-- a new module's permissions (e.g. Opportunities) correctly tops up just the missing grants
+-- instead of silently no-op'ing because the role already had *some* rows from before.
 
-    -- Sales Manager: full Customers/Leads, plus visibility into Departments/Users.
-    INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
-    SELECT @SalesManagerRoleId3, Id FROM dbo.Permissions
-    WHERE Code IN (
-        N'Departments.View', N'Users.View',
-        N'Customers.View', N'Customers.Create', N'Customers.Edit', N'Customers.Delete',
-        N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert'
-    );
+-- Administrator: every permission in the system.
+INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
+SELECT @AdminRoleId3, p.Id FROM dbo.Permissions p
+WHERE NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @AdminRoleId3 AND rp.PermissionId = p.Id);
 
-    -- Sales Executive: day-to-day CRUD, no deletes.
-    INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
-    SELECT @SalesExecutiveRoleId3, Id FROM dbo.Permissions
-    WHERE Code IN (
-        N'Customers.View', N'Customers.Create', N'Customers.Edit',
-        N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Assign', N'Leads.Convert'
-    );
+-- Sales Manager: full Customers/Leads/Opportunities, plus visibility into Departments/Users.
+INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
+SELECT @SalesManagerRoleId3, p.Id FROM dbo.Permissions p
+WHERE p.Code IN (
+    N'Departments.View', N'Users.View',
+    N'Customers.View', N'Customers.Create', N'Customers.Edit', N'Customers.Delete',
+    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert',
+    N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Delete', N'Opportunities.Assign'
+)
+AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SalesManagerRoleId3 AND rp.PermissionId = p.Id);
 
-    -- Support Agent: read-only.
-    INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
-    SELECT @SupportAgentRoleId3, Id FROM dbo.Permissions
-    WHERE Code IN (N'Customers.View', N'Leads.View');
-END
+-- Sales Executive: day-to-day CRUD, no deletes.
+INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
+SELECT @SalesExecutiveRoleId3, p.Id FROM dbo.Permissions p
+WHERE p.Code IN (
+    N'Customers.View', N'Customers.Create', N'Customers.Edit',
+    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Assign', N'Leads.Convert',
+    N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Assign'
+)
+AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SalesExecutiveRoleId3 AND rp.PermissionId = p.Id);
+
+-- Support Agent: read-only.
+INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
+SELECT @SupportAgentRoleId3, p.Id FROM dbo.Permissions p
+WHERE p.Code IN (N'Customers.View', N'Leads.View', N'Opportunities.View')
+AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SupportAgentRoleId3 AND rp.PermissionId = p.Id);
 GO
 
 -- ============================================================================

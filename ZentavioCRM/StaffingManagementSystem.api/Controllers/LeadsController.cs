@@ -102,6 +102,14 @@ namespace ZentavioCRM.Api.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        [HttpPost("{id:guid}/convert-to-opportunity")]
+        [Authorize(Policy = PermissionCodes.LeadsConvert)]
+        public async Task<IActionResult> ConvertToOpportunity(Guid id, [FromBody] ConvertLeadToOpportunityRequest request)
+        {
+            var result = await _leadService.ConvertToOpportunityAsync(id, request, User.GetUserId());
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
         [HttpDelete("{id:guid}")]
         [Authorize(Policy = PermissionCodes.LeadsDelete)]
         public async Task<IActionResult> Delete(Guid id)

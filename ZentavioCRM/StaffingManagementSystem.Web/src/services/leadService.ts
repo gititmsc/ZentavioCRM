@@ -106,6 +106,21 @@ export interface ConvertLeadResult {
   customerNumber: string;
 }
 
+export interface ConvertLeadToOpportunityRequest {
+  opportunityName?: string | null;
+  customerDisplayName?: string | null;
+  value?: number | null;
+  expectedCloseDate?: string | null;
+  assignToUserId?: string | null;
+}
+
+export interface ConvertLeadToOpportunityResult {
+  customerId: string;
+  customerNumber: string;
+  opportunityId: string;
+  opportunityNumber: string;
+}
+
 const search = (params: LeadSearchParams) =>
   callApi<PagedResult<LeadListItem>>(apiClient.get("/api/leads", { params }));
 
@@ -123,6 +138,9 @@ const assign = (id: string, userId: string) => callApi<Lead>(apiClient.post(`/ap
 const convert = (id: string, displayName?: string, assignToUserId?: string) =>
   callApi<ConvertLeadResult>(apiClient.post(`/api/leads/${id}/convert`, { displayName, assignToUserId }));
 
+const convertToOpportunity = (id: string, request: ConvertLeadToOpportunityRequest = {}) =>
+  callApi<ConvertLeadToOpportunityResult>(apiClient.post(`/api/leads/${id}/convert-to-opportunity`, request));
+
 const remove = (id: string) => callApi<boolean>(apiClient.delete(`/api/leads/${id}`));
 
-export const leadService = { search, getById, create, update, updateStatus, assign, convert, remove };
+export const leadService = { search, getById, create, update, updateStatus, assign, convert, convertToOpportunity, remove };

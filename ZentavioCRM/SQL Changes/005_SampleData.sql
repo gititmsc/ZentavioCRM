@@ -22,8 +22,12 @@
       - 2 ContactPersons (on the two company customers — an Individual customer has no separate contact)
       - 2 CustomerAddresses
       - 3 Leads (New / Assigned / Qualified)
-      - 2 Activities (one on a Lead, one on a Customer)
+      - 2 Opportunities (Proposal / Qualification), against the two company customers
+      - 3 Activities (one on a Lead, one on a Customer, one on an Opportunity)
     All assigned to the default Admin user (EMP-0001) seeded by 002_SeedData.sql.
+
+    Requires the Opportunities table — run 001_CreateSchema.sql (updated for the Opportunities
+    module) before this script if your database predates that addition.
 */
 
 USE [StaffingManagementSystemDb];
@@ -140,7 +144,32 @@ END
 GO
 
 -- ============================================================================
--- Activities (generic timeline — one on a Lead, one on a Customer)
+-- Opportunities
+-- ============================================================================
+DECLARE @AdminUserId7 UNIQUEIDENTIFIER = '50000000-0000-0000-0000-000000000001';
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Opportunities WHERE Id = 'a0000000-0000-0000-0000-000000000001')
+BEGIN
+    INSERT INTO dbo.Opportunities
+        (Id, OpportunityNumber, Name, CustomerId, Value, Probability, Products, ExpectedCloseDate, Stage, AssignedToUserId, CreatedAtUtc)
+    VALUES
+        ('a0000000-0000-0000-0000-000000000001', N'OPP-000001', N'Acme Manufacturing — ERP Rollout', '70000000-0000-0000-0000-000000000001', 85000.00, 60, N'ERP Implementation, Training', DATEADD(DAY, 30, SYSUTCDATETIME()), N'Proposal', @AdminUserId7, SYSUTCDATETIME());
+END
+GO
+
+DECLARE @AdminUserId8 UNIQUEIDENTIFIER = '50000000-0000-0000-0000-000000000001';
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Opportunities WHERE Id = 'a0000000-0000-0000-0000-000000000002')
+BEGIN
+    INSERT INTO dbo.Opportunities
+        (Id, OpportunityNumber, Name, CustomerId, Value, Probability, Products, ExpectedCloseDate, Stage, AssignedToUserId, CreatedAtUtc)
+    VALUES
+        ('a0000000-0000-0000-0000-000000000002', N'OPP-000002', N'Blue Horizon — POS Upgrade', '70000000-0000-0000-0000-000000000002', 32000.00, 25, N'POS Terminals, Inventory Sync', DATEADD(DAY, 60, SYSUTCDATETIME()), N'Qualification', @AdminUserId8, SYSUTCDATETIME());
+END
+GO
+
+-- ============================================================================
+-- Activities (generic timeline — one on a Lead, one on a Customer, one on an Opportunity)
 -- ============================================================================
 DECLARE @AdminUserId5 UNIQUEIDENTIFIER = '50000000-0000-0000-0000-000000000001';
 
@@ -161,5 +190,16 @@ BEGIN
         (Id, Type, Subject, Description, RelatedToType, RelatedToId, AssignedToUserId, CreatedByUserId, CreatedAtUtc)
     VALUES
         ('90000000-0000-0000-0000-000000000002', N'Note', N'Renewal reminder set', N'Contract renews in Q3 — flagged for follow-up.', N'Customer', '70000000-0000-0000-0000-000000000001', @AdminUserId6, @AdminUserId6, SYSUTCDATETIME());
+END
+GO
+
+DECLARE @AdminUserId9 UNIQUEIDENTIFIER = '50000000-0000-0000-0000-000000000001';
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Activities WHERE Id = '90000000-0000-0000-0000-000000000003')
+BEGIN
+    INSERT INTO dbo.Activities
+        (Id, Type, Subject, Description, RelatedToType, RelatedToId, AssignedToUserId, CreatedByUserId, CreatedAtUtc)
+    VALUES
+        ('90000000-0000-0000-0000-000000000003', N'Meeting', N'Proposal walkthrough', N'Presented the ERP rollout proposal to the buying committee.', N'Opportunity', 'a0000000-0000-0000-0000-000000000001', @AdminUserId9, @AdminUserId9, SYSUTCDATETIME());
 END
 GO

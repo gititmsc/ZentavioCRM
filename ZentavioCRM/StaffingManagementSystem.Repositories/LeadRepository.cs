@@ -78,5 +78,17 @@ namespace ZentavioCRM.Repositories
             _dbContext.Leads.Remove(lead);
             await _dbContext.SaveChangesAsync();
         }
+
+        private static readonly LeadStatus[] TerminalStatuses = [LeadStatus.Converted, LeadStatus.Lost, LeadStatus.Junk];
+
+        public Task<int> CountOpenAsync()
+            => _dbContext.Leads.CountAsync(l => !TerminalStatuses.Contains(l.Status));
+
+        public Task<int> CountConvertedBetweenAsync(DateTime fromUtc, DateTime toUtcExclusive)
+            => _dbContext.Leads.CountAsync(l =>
+                l.Status == LeadStatus.Converted &&
+                l.ConvertedAtUtc != null &&
+                l.ConvertedAtUtc >= fromUtc &&
+                l.ConvertedAtUtc < toUtcExclusive);
     }
 }
