@@ -20,5 +20,8 @@ namespace ZentavioCRM.Repositories.Interfaces
 
         /// <summary>Every opportunity (open and closed), for dashboard aggregation (pipeline value, win rate, stage breakdown). No paging — SMB-scale data volumes.</summary>
         Task<IReadOnlyList<Opportunity>> GetAllForDashboardAsync();
+
+        /// <summary>Replaces every line item on the opportunity with the given set (simple full-replace, matching ICustomerRepository's contacts/addresses pattern).</summary>
+        Task ReplaceLineItemsAsync(Guid opportunityId, IEnumerable<OpportunityLineItem> lineItems);
     }
 }

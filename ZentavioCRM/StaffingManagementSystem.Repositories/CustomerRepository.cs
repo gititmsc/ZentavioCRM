@@ -113,5 +113,34 @@ namespace ZentavioCRM.Repositories
 
             await _dbContext.SaveChangesAsync();
         }
+
+        public async Task<IReadOnlyList<Customer>> FindByEmailOrPhoneAsync(string? email, string? phone)
+        {
+            if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(phone))
+            {
+                return [];
+            }
+
+            var normalizedEmail = email?.Trim().ToLower();
+            var normalizedPhone = phone?.Trim();
+
+            var matches = await _dbContext.Customers
+                .Where(c =>
+                    (normalizedEmail != null && c.Email != null && c.Email.ToLower() == normalizedEmail) ||
+                    (normalizedPhone != null && c.Phone != null && c.Phone == normalizedPhone))
+                .ToListAsync();
+
+            return matches;
+        }
+
+        public async Task<IReadOnlyList<Customer>> GetAllAsync()
+        {
+            var customers = await _dbContext.Customers
+                .Include(c => c.AssignedToUser)
+                .OrderByDescending(c => c.CreatedAtUtc)
+                .ToListAsync();
+
+            return customers;
+        }
     }
 }

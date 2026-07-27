@@ -29,6 +29,15 @@ export interface OpportunityListItem {
   createdAtUtc: string;
 }
 
+export interface OpportunityLineItem {
+  id: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  discountPercent: number | null;
+  lineTotal: number;
+}
+
 export interface Opportunity {
   id: string;
   opportunityNumber: string;
@@ -45,10 +54,20 @@ export interface Opportunity {
   assignedToUserName: string | null;
   sourceLeadId: string | null;
   notes: string | null;
+  nextStep: string | null;
+  nextStepDate: string | null;
   lostReason: string | null;
   closedAtUtc: string | null;
   createdAtUtc: string;
   updatedAtUtc: string | null;
+  lineItems: OpportunityLineItem[];
+}
+
+export interface SaveOpportunityLineItemRequest {
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  discountPercent: number | null;
 }
 
 export interface SaveOpportunityRequest {
@@ -61,6 +80,9 @@ export interface SaveOpportunityRequest {
   expectedCloseDate: string | null;
   assignedToUserId: string | null;
   notes: string | null;
+  nextStep: string | null;
+  nextStepDate: string | null;
+  lineItems: SaveOpportunityLineItemRequest[];
 }
 
 export interface OpportunitySearchParams {

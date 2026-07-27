@@ -65,7 +65,7 @@ namespace ZentavioCRM.Api.Controllers
                 return BadRequest(ApiResponse<OpportunityDto>.FailureResponse("Validation failed.", CollectErrors()));
             }
 
-            var result = await _opportunityService.UpdateAsync(id, request);
+            var result = await _opportunityService.UpdateAsync(id, request, User.GetUserId());
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
@@ -78,7 +78,7 @@ namespace ZentavioCRM.Api.Controllers
                 return BadRequest(ApiResponse<OpportunityDto>.FailureResponse("Validation failed.", CollectErrors()));
             }
 
-            var result = await _opportunityService.UpdateStageAsync(id, request);
+            var result = await _opportunityService.UpdateStageAsync(id, request, User.GetUserId());
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
@@ -91,7 +91,7 @@ namespace ZentavioCRM.Api.Controllers
                 return BadRequest(ApiResponse<OpportunityDto>.FailureResponse("Validation failed.", CollectErrors()));
             }
 
-            var result = await _opportunityService.AssignAsync(id, request);
+            var result = await _opportunityService.AssignAsync(id, request, User.GetUserId());
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
@@ -99,7 +99,7 @@ namespace ZentavioCRM.Api.Controllers
         [Authorize(Policy = PermissionCodes.OpportunitiesDelete)]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var result = await _opportunityService.DeleteAsync(id);
+            var result = await _opportunityService.DeleteAsync(id, User.GetUserId());
             return result.Success ? Ok(result) : BadRequest(result);
         }
 

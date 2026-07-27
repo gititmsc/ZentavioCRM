@@ -63,6 +63,10 @@ namespace ZentavioCRM.Core.DTOs.Opportunities
 
         public string? Notes { get; set; }
 
+        public string? NextStep { get; set; }
+
+        public DateTime? NextStepDate { get; set; }
+
         public string? LostReason { get; set; }
 
         public DateTime? ClosedAtUtc { get; set; }
@@ -70,5 +74,22 @@ namespace ZentavioCRM.Core.DTOs.Opportunities
         public DateTime CreatedAtUtc { get; set; }
 
         public DateTime? UpdatedAtUtc { get; set; }
+
+        public List<OpportunityLineItemDto> LineItems { get; set; } = [];
+    }
+
+    public class OpportunityLineItemDto
+    {
+        public Guid Id { get; set; }
+
+        public string ProductName { get; set; } = string.Empty;
+
+        public decimal Quantity { get; set; }
+
+        public decimal UnitPrice { get; set; }
+
+        public decimal? DiscountPercent { get; set; }
+
+        public decimal LineTotal { get; set; }
     }
 }

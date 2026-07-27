@@ -25,6 +25,15 @@ builder.Services.AddControllers()
         // the frontend (e.g. NEXT_STATUSES[lead.status] in LeadDetail.tsx would receive a number
         // instead of "Qualified" and resolve to undefined).
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+
+        // react-hook-form's register() returns raw string values from <input type="number">
+        // unless every single call site opts in with { valueAsNumber: true } — several forms in
+        // this codebase don't (LeadForm's Budget/ExpectedValue, CustomerForm's AnnualRevenue/
+        // CreditLimit, etc.), so numeric fields routinely arrive as JSON strings (e.g. "50000")
+        // rather than JSON numbers. System.Text.Json rejects that for decimal/int targets by
+        // default. Allowing string-to-number coercion here fixes every current and future form
+        // at once instead of chasing down each input individually.
+        options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowReadingFromString;
     });
 builder.Services.AddEndpointsApiExplorer();
 

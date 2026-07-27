@@ -3,6 +3,7 @@
  */
 import { apiClient } from "@/services/apiClient";
 import { callApi } from "@/services/apiHelpers";
+import type { ImportResult } from "@/services/importTypes";
 
 /** Standard paged list envelope returned by every list endpoint. */
 export interface PagedResult<T> {
@@ -121,6 +122,18 @@ export interface ConvertLeadToOpportunityResult {
   opportunityNumber: string;
 }
 
+export interface DuplicateMatch {
+  type: "Lead" | "Customer";
+  id: string;
+  name: string;
+  email: string | null;
+  mobile: string | null;
+}
+
+export interface DuplicateCheckResult {
+  matches: DuplicateMatch[];
+}
+
 const search = (params: LeadSearchParams) =>
   callApi<PagedResult<LeadListItem>>(apiClient.get("/api/leads", { params }));
 
@@ -143,4 +156,33 @@ const convertToOpportunity = (id: string, request: ConvertLeadToOpportunityReque
 
 const remove = (id: string) => callApi<boolean>(apiClient.delete(`/api/leads/${id}`));
 
-export const leadService = { search, getById, create, update, updateStatus, assign, convert, convertToOpportunity, remove };
+const checkDuplicates = (email?: string | null, mobile?: string | null, excludeLeadId?: string) =>
+  callApi<DuplicateCheckResult>(apiClient.get("/api/leads/check-duplicates", { params: { email, mobile, excludeLeadId } }));
+
+const exportCsv = async (): Promise<Blob> => {
+  const response = await apiClient.get("/api/leads/export", { responseType: "blob" });
+  return response.data;
+};
+
+const importCsv = (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return callApi<ImportResult>(
+    apiClient.post("/api/leads/import", formData, { headers: { "Content-Type": "multipart/form-data" } })
+  );
+};
+
+export const leadService = {
+  search,
+  getById,
+  create,
+  update,
+  updateStatus,
+  assign,
+  convert,
+  convertToOpportunity,
+  remove,
+  checkDuplicates,
+  exportCsv,
+  importCsv,
+};

@@ -2,6 +2,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { ITMLogo } from "@/components/brand/ITMLogo";
 import { useAuth } from "@/context/AuthContext";
 import { PermissionCodes } from "@/services/permissionCodes";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import "./MainLayout.css";
 
 interface NavItem {
@@ -69,10 +70,13 @@ export function MainLayout() {
               </div>
             </div>
           </div>
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={logout}>
-            <i className="bi bi-box-arrow-right me-1" aria-hidden="true" />
-            Sign Out
-          </button>
+          <div className="d-flex align-items-center gap-2">
+            <NotificationBell />
+            <button type="button" className="btn btn-sm btn-outline-secondary" onClick={logout}>
+              <i className="bi bi-box-arrow-right me-1" aria-hidden="true" />
+              Sign Out
+            </button>
+          </div>
         </header>
 
         <main className="app-content">

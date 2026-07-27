@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate, useParams } from "react-router-dom";
-import { leadService, type LeadSource, type SaveLeadRequest } from "@/services/leadService";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { leadService, type DuplicateMatch, type LeadSource, type SaveLeadRequest } from "@/services/leadService";
 import { userService, type ManagedUser } from "@/services/userService";
 
 const SOURCES: LeadSource[] = [
@@ -26,11 +26,14 @@ export default function LeadForm() {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(isEditMode);
+  const [duplicateMatches, setDuplicateMatches] = useState<DuplicateMatch[]>([]);
+  const [duplicatesDismissed, setDuplicatesDismissed] = useState(false);
 
   const {
     register,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<SaveLeadRequest>({
     defaultValues: {
@@ -81,6 +84,17 @@ export default function LeadForm() {
     })();
   }, [id, isEditMode, reset]);
 
+  const checkForDuplicates = async () => {
+    const { email, mobile } = getValues();
+    if (!email && !mobile) return;
+
+    const result = await leadService.checkDuplicates(email, mobile, isEditMode ? id : undefined);
+    if (result.success && result.data) {
+      setDuplicateMatches(result.data.matches);
+      setDuplicatesDismissed(false);
+    }
+  };
+
   const onSubmit = async (values: SaveLeadRequest) => {
     setServerError(null);
 
@@ -106,6 +120,29 @@ export default function LeadForm() {
         <div className="card-body">
           {serverError && <div className="alert alert-danger">{serverError}</div>}
 
+          {!duplicatesDismissed && duplicateMatches.length > 0 && (
+            <div className="alert alert-warning d-flex justify-content-between align-items-start">
+              <div>
+                <strong>Possible duplicate{duplicateMatches.length > 1 ? "s" : ""} found:</strong>{" "}
+                {duplicateMatches.map((match, i) => (
+                  <span key={match.id}>
+                    {i > 0 && ", "}
+                    <Link to={match.type === "Lead" ? `/leads/${match.id}` : `/customers/${match.id}/edit`}>
+                      {match.name} ({match.type})
+                    </Link>
+                  </span>
+                ))}
+                . You can still save — this is just a heads-up.
+              </div>
+              <button
+                type="button"
+                className="btn-close"
+                aria-label="Dismiss"
+                onClick={() => setDuplicatesDismissed(true)}
+              />
+            </div>
+          )}
+
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <div className="row g-3">
               <div className="col-md-6">
@@ -128,12 +165,12 @@ export default function LeadForm() {
 
               <div className="col-md-6">
                 <label className="form-label">Email</label>
-                <input type="email" className="form-control" {...register("email")} />
+                <input type="email" className="form-control" {...register("email", { onBlur: checkForDuplicates })} />
               </div>
 
               <div className="col-md-6">
                 <label className="form-label">Mobile</label>
-                <input className="form-control" {...register("mobile")} />
+                <input className="form-control" {...register("mobile", { onBlur: checkForDuplicates })} />
               </div>
 
               <div className="col-md-4">

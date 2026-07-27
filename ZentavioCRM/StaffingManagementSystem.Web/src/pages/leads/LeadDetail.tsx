@@ -5,6 +5,7 @@ import { leadService, type Lead, type LeadStatus } from "@/services/leadService"
 import { userService, type ManagedUser } from "@/services/userService";
 import { activityService, type Activity, type ActivityType } from "@/services/activityService";
 import { PermissionCodes } from "@/services/permissionCodes";
+import { HistoryPanel } from "@/components/history/HistoryPanel";
 
 const NEXT_STATUSES: Record<LeadStatus, LeadStatus[]> = {
   New: ["Contacted", "Lost", "Junk"],
@@ -231,6 +232,18 @@ export default function LeadDetail() {
                 <div className="text-muted small">Territory</div>
                 <div>{lead.territory ?? "—"}</div>
               </div>
+              <div className="col-md-6">
+                <div className="text-muted small">Lead Score</div>
+                <div>
+                  {lead.leadScore != null ? (
+                    <span className={`badge ${lead.leadScore >= 60 ? "text-bg-success" : lead.leadScore >= 30 ? "text-bg-warning" : "text-bg-secondary"}`}>
+                      {lead.leadScore}/100
+                    </span>
+                  ) : (
+                    "—"
+                  )}
+                </div>
+              </div>
               {lead.notes && (
                 <div className="col-12">
                   <div className="text-muted small">Notes</div>
@@ -297,6 +310,8 @@ export default function LeadDetail() {
               </ul>
             </div>
           </div>
+
+          <HistoryPanel entityType="Lead" entityId={lead.id} />
         </div>
 
         <div className="col-lg-4">

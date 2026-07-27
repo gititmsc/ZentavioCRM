@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { leadService, type LeadListItem, type LeadStatus } from "@/services/leadService";
 import { PermissionCodes } from "@/services/permissionCodes";
+import { ImportExportBar } from "@/components/import-export/ImportExportBar";
 
 const STATUSES: LeadStatus[] = [
   "New",
@@ -83,6 +84,13 @@ export default function LeadsList() {
           </button>
         )}
       </div>
+
+      <ImportExportBar
+        entityLabel="Leads"
+        onExport={leadService.exportCsv}
+        onImport={leadService.importCsv}
+        onImportComplete={() => load(search, status, page)}
+      />
 
       <div className="d-flex gap-2 mb-3">
         <form className="d-flex" style={{ maxWidth: 320 }} onSubmit={handleSearchSubmit}>

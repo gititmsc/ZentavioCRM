@@ -1,7 +1,9 @@
+using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ZentavioCRM.Api.Extensions;
 using ZentavioCRM.Core.Common;
+using ZentavioCRM.Core.DTOs.Common;
 using ZentavioCRM.Core.DTOs.Leads;
 using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Services.Interfaces;
@@ -64,8 +66,16 @@ namespace ZentavioCRM.Api.Controllers
                 return BadRequest(ApiResponse<LeadDto>.FailureResponse("Validation failed.", CollectErrors()));
             }
 
-            var result = await _leadService.UpdateAsync(id, request);
+            var result = await _leadService.UpdateAsync(id, request, User.GetUserId());
             return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpGet("check-duplicates")]
+        [Authorize(Policy = PermissionCodes.LeadsView)]
+        public async Task<IActionResult> CheckDuplicates([FromQuery] string? email, [FromQuery] string? mobile, [FromQuery] Guid? excludeLeadId)
+        {
+            var result = await _leadService.CheckDuplicatesAsync(email, mobile, excludeLeadId);
+            return Ok(ApiResponse<DuplicateCheckResultDto>.SuccessResponse(result));
         }
 
         [HttpPatch("{id:guid}/status")]
@@ -77,7 +87,7 @@ namespace ZentavioCRM.Api.Controllers
                 return BadRequest(ApiResponse<LeadDto>.FailureResponse("Validation failed.", CollectErrors()));
             }
 
-            var result = await _leadService.UpdateStatusAsync(id, request);
+            var result = await _leadService.UpdateStatusAsync(id, request, User.GetUserId());
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
@@ -90,7 +100,7 @@ namespace ZentavioCRM.Api.Controllers
                 return BadRequest(ApiResponse<LeadDto>.FailureResponse("Validation failed.", CollectErrors()));
             }
 
-            var result = await _leadService.AssignAsync(id, request);
+            var result = await _leadService.AssignAsync(id, request, User.GetUserId());
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
@@ -98,7 +108,7 @@ namespace ZentavioCRM.Api.Controllers
         [Authorize(Policy = PermissionCodes.LeadsConvert)]
         public async Task<IActionResult> Convert(Guid id, [FromBody] ConvertLeadRequest request)
         {
-            var result = await _leadService.ConvertAsync(id, request);
+            var result = await _leadService.ConvertAsync(id, request, User.GetUserId());
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
@@ -114,8 +124,33 @@ namespace ZentavioCRM.Api.Controllers
         [Authorize(Policy = PermissionCodes.LeadsDelete)]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var result = await _leadService.DeleteAsync(id);
+            var result = await _leadService.DeleteAsync(id, User.GetUserId());
             return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpGet("export")]
+        [Authorize(Policy = PermissionCodes.LeadsView)]
+        public async Task<IActionResult> Export()
+        {
+            var csv = await _leadService.ExportCsvAsync();
+            return File(Encoding.UTF8.GetBytes(csv), "text/csv", "leads.csv");
+        }
+
+        [HttpPost("import")]
+        [Authorize(Policy = PermissionCodes.LeadsCreate)]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        public async Task<IActionResult> Import(IFormFile file)
+        {
+            if (file.Length == 0)
+            {
+                return BadRequest(ApiResponse<ImportResultDto>.FailureResponse("No file was uploaded."));
+            }
+
+            using var reader = new StreamReader(file.OpenReadStream(), Encoding.UTF8);
+            var content = await reader.ReadToEndAsync();
+
+            var result = await _leadService.ImportCsvAsync(content, User.GetUserId());
+            return Ok(ApiResponse<ImportResultDto>.SuccessResponse(result, $"Imported {result.SuccessCount} of {result.TotalRows} rows."));
         }
 
         private List<string> CollectErrors() => ModelState.Values

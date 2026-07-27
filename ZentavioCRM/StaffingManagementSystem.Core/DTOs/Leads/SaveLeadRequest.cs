@@ -91,4 +91,23 @@ namespace ZentavioCRM.Core.DTOs.Leads
 
         public string OpportunityNumber { get; set; } = string.Empty;
     }
+
+    public class DuplicateMatchDto
+    {
+        /// <summary>"Lead" or "Customer".</summary>
+        public string Type { get; set; } = string.Empty;
+
+        public Guid Id { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+
+        public string? Email { get; set; }
+
+        public string? Mobile { get; set; }
+    }
+
+    public class DuplicateCheckResultDto
+    {
+        public List<DuplicateMatchDto> Matches { get; set; } = [];
+    }
 }

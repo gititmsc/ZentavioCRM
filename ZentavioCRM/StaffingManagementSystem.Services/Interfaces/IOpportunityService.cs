@@ -13,12 +13,12 @@ namespace ZentavioCRM.Services.Interfaces
 
         Task<ApiResponse<OpportunityDto>> CreateAsync(SaveOpportunityRequest request, Guid? currentUserId);
 
-        Task<ApiResponse<OpportunityDto>> UpdateAsync(Guid id, SaveOpportunityRequest request);
+        Task<ApiResponse<OpportunityDto>> UpdateAsync(Guid id, SaveOpportunityRequest request, Guid? currentUserId);
 
-        Task<ApiResponse<OpportunityDto>> UpdateStageAsync(Guid id, UpdateOpportunityStageRequest request);
+        Task<ApiResponse<OpportunityDto>> UpdateStageAsync(Guid id, UpdateOpportunityStageRequest request, Guid? currentUserId);
 
-        Task<ApiResponse<OpportunityDto>> AssignAsync(Guid id, AssignOpportunityRequest request);
+        Task<ApiResponse<OpportunityDto>> AssignAsync(Guid id, AssignOpportunityRequest request, Guid? currentUserId);
 
-        Task<ApiResponse<bool>> DeleteAsync(Guid id);
+        Task<ApiResponse<bool>> DeleteAsync(Guid id, Guid? currentUserId);
     }
 }

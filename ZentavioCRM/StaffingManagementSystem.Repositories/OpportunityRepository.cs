@@ -20,6 +20,7 @@ namespace ZentavioCRM.Repositories
             => _dbContext.Opportunities
                 .Include(o => o.Customer)
                 .Include(o => o.AssignedToUser)
+                .Include(o => o.LineItems)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
         public async Task<(IReadOnlyList<Opportunity> Items, int TotalCount)> SearchAsync(
@@ -97,6 +98,21 @@ namespace ZentavioCRM.Repositories
                 .ToListAsync();
 
             return opportunities;
+        }
+
+        public async Task ReplaceLineItemsAsync(Guid opportunityId, IEnumerable<OpportunityLineItem> lineItems)
+        {
+            var existing = await _dbContext.OpportunityLineItems.Where(li => li.OpportunityId == opportunityId).ToListAsync();
+            _dbContext.OpportunityLineItems.RemoveRange(existing);
+
+            foreach (var lineItem in lineItems)
+            {
+                lineItem.Id = Guid.Empty;
+                lineItem.OpportunityId = opportunityId;
+                _dbContext.OpportunityLineItems.Add(lineItem);
+            }
+
+            await _dbContext.SaveChangesAsync();
         }
     }
 }

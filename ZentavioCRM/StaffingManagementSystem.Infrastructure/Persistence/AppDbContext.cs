@@ -36,7 +36,13 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<Opportunity> Opportunities => Set<Opportunity>();
 
+        public DbSet<OpportunityLineItem> OpportunityLineItems => Set<OpportunityLineItem>();
+
         public DbSet<Activity> Activities => Set<Activity>();
+
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
+        public DbSet<Notification> Notifications => Set<Notification>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

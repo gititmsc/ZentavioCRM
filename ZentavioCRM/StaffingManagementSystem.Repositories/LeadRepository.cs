@@ -90,5 +90,35 @@ namespace ZentavioCRM.Repositories
                 l.ConvertedAtUtc != null &&
                 l.ConvertedAtUtc >= fromUtc &&
                 l.ConvertedAtUtc < toUtcExclusive);
+
+        public async Task<IReadOnlyList<Lead>> FindPotentialDuplicatesAsync(string? email, string? mobile, Guid? excludeLeadId)
+        {
+            if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(mobile))
+            {
+                return [];
+            }
+
+            var normalizedEmail = email?.Trim().ToLower();
+            var normalizedMobile = mobile?.Trim();
+
+            var matches = await _dbContext.Leads
+                .Where(l => excludeLeadId == null || l.Id != excludeLeadId)
+                .Where(l =>
+                    (normalizedEmail != null && l.Email != null && l.Email.ToLower() == normalizedEmail) ||
+                    (normalizedMobile != null && l.Mobile != null && l.Mobile == normalizedMobile))
+                .ToListAsync();
+
+            return matches;
+        }
+
+        public async Task<IReadOnlyList<Lead>> GetAllAsync()
+        {
+            var leads = await _dbContext.Leads
+                .Include(l => l.AssignedToUser)
+                .OrderByDescending(l => l.CreatedAtUtc)
+                .ToListAsync();
+
+            return leads;
+        }
     }
 }

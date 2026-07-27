@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { customerService, type CustomerListItem } from "@/services/customerService";
 import { PermissionCodes } from "@/services/permissionCodes";
+import { ImportExportBar } from "@/components/import-export/ImportExportBar";
 
 export default function CustomersList() {
   const navigate = useNavigate();
@@ -53,6 +54,13 @@ export default function CustomersList() {
           </button>
         )}
       </div>
+
+      <ImportExportBar
+        entityLabel="Customers"
+        onExport={customerService.exportCsv}
+        onImport={customerService.importCsv}
+        onImportComplete={() => load(search, page)}
+      />
 
       <form className="d-flex mb-3" style={{ maxWidth: 360 }} onSubmit={handleSearchSubmit}>
         <input

@@ -277,6 +277,8 @@ CREATE TABLE dbo.Opportunities
     Stage             NVARCHAR(30)     NOT NULL,
     AssignedToUserId  UNIQUEIDENTIFIER NULL,
     SourceLeadId      UNIQUEIDENTIFIER NULL,
+    NextStep          NVARCHAR(300)    NULL,
+    NextStepDate      DATETIME2        NULL,
     Notes             NVARCHAR(MAX)    NULL,
     LostReason        NVARCHAR(300)    NULL,
     ClosedAtUtc       DATETIME2        NULL,
@@ -293,6 +295,25 @@ CREATE UNIQUE INDEX IX_Opportunities_OpportunityNumber ON dbo.Opportunities (Opp
 CREATE INDEX IX_Opportunities_CustomerId ON dbo.Opportunities (CustomerId);
 CREATE INDEX IX_Opportunities_Stage ON dbo.Opportunities (Stage);
 CREATE INDEX IX_Opportunities_AssignedToUserId ON dbo.Opportunities (AssignedToUserId);
+GO
+
+-- ============================================================================
+-- OpportunityLineItems (optional priced line items on an Opportunity; when present,
+-- Opportunities.Value is server-computed as the sum of line totals)
+-- ============================================================================
+CREATE TABLE dbo.OpportunityLineItems
+(
+    Id              UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_OpportunityLineItems_Id DEFAULT NEWID(),
+    OpportunityId   UNIQUEIDENTIFIER NOT NULL,
+    ProductName     NVARCHAR(200)    NOT NULL,
+    Quantity        DECIMAL(18, 2)   NOT NULL,
+    UnitPrice       DECIMAL(18, 2)   NOT NULL,
+    DiscountPercent DECIMAL(5, 2)    NULL,
+    CONSTRAINT PK_OpportunityLineItems PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_OpportunityLineItems_Opportunities FOREIGN KEY (OpportunityId) REFERENCES dbo.Opportunities (Id) ON DELETE CASCADE
+);
+
+CREATE INDEX IX_OpportunityLineItems_OpportunityId ON dbo.OpportunityLineItems (OpportunityId);
 GO
 
 -- ============================================================================
@@ -317,4 +338,43 @@ CREATE TABLE dbo.Activities
 );
 
 CREATE INDEX IX_Activities_RelatedToType_RelatedToId ON dbo.Activities (RelatedToType, RelatedToId);
+GO
+
+-- ============================================================================
+-- AuditLogs (plain-English history entries for Lead/Opportunity/Customer mutations —
+-- intentionally not a full field-by-field diff, see AuditLog.cs for rationale)
+-- ============================================================================
+CREATE TABLE dbo.AuditLogs
+(
+    Id                UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_AuditLogs_Id DEFAULT NEWID(),
+    EntityType        NVARCHAR(50)     NOT NULL,
+    EntityId          UNIQUEIDENTIFIER NOT NULL,
+    Action            NVARCHAR(30)     NOT NULL,
+    Summary           NVARCHAR(1000)   NOT NULL,
+    PerformedByUserId UNIQUEIDENTIFIER NULL,
+    CreatedAtUtc      DATETIME2        NOT NULL,
+    CONSTRAINT PK_AuditLogs PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_AuditLogs_PerformedByUser FOREIGN KEY (PerformedByUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL
+);
+
+CREATE INDEX IX_AuditLogs_EntityType_EntityId ON dbo.AuditLogs (EntityType, EntityId);
+GO
+
+-- ============================================================================
+-- Notifications (polling-based in-app notifications — no push/SignalR in this milestone)
+-- ============================================================================
+CREATE TABLE dbo.Notifications
+(
+    Id                UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Notifications_Id DEFAULT NEWID(),
+    RecipientUserId   UNIQUEIDENTIFIER NOT NULL,
+    Message           NVARCHAR(500)    NOT NULL,
+    RelatedEntityType NVARCHAR(30)     NULL,
+    RelatedEntityId   UNIQUEIDENTIFIER NULL,
+    IsRead            BIT              NOT NULL CONSTRAINT DF_Notifications_IsRead DEFAULT (0),
+    CreatedAtUtc      DATETIME2        NOT NULL,
+    CONSTRAINT PK_Notifications PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_Notifications_RecipientUser FOREIGN KEY (RecipientUserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+
+CREATE INDEX IX_Notifications_RecipientUserId_IsRead ON dbo.Notifications (RecipientUserId, IsRead);
 GO

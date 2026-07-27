@@ -20,6 +20,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
             builder.Property(o => o.Name).IsRequired().HasMaxLength(200);
             builder.Property(o => o.Products).HasMaxLength(1000);
             builder.Property(o => o.Competitors).HasMaxLength(500);
+            builder.Property(o => o.NextStep).HasMaxLength(300);
             builder.Property(o => o.LostReason).HasMaxLength(300);
 
             builder.Property(o => o.Stage).IsRequired().HasConversion<string>().HasMaxLength(30);
@@ -42,6 +43,11 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
                 .WithMany()
                 .HasForeignKey(o => o.SourceLeadId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasMany(o => o.LineItems)
+                .WithOne()
+                .HasForeignKey(li => li.OpportunityId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasIndex(o => o.CustomerId);
             builder.HasIndex(o => o.Stage);

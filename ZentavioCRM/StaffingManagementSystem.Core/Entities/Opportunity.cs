@@ -45,6 +45,11 @@ namespace ZentavioCRM.Core.Entities
 
         public string? Notes { get; set; }
 
+        /// <summary>The single next action to move this deal forward — one of the most-used fields in any real sales CRM.</summary>
+        public string? NextStep { get; set; }
+
+        public DateTime? NextStepDate { get; set; }
+
         /// <summary>Set when <see cref="Stage"/> is <see cref="OpportunityStage.ClosedLost"/>.</summary>
         public string? LostReason { get; set; }
 
@@ -55,5 +60,8 @@ namespace ZentavioCRM.Core.Entities
         public DateTime CreatedAtUtc { get; set; }
 
         public DateTime? UpdatedAtUtc { get; set; }
+
+        /// <summary>Real, priceable product/service rows — see <see cref="OpportunityLineItem"/>. Empty when the deal only uses the free-text <see cref="Products"/> summary.</summary>
+        public ICollection<OpportunityLineItem> LineItems { get; set; } = new List<OpportunityLineItem>();
     }
 }

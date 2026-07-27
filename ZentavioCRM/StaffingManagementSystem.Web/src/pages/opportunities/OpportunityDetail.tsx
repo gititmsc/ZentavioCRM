@@ -5,6 +5,7 @@ import { opportunityService, type Opportunity, type OpportunityStage } from "@/s
 import { userService, type ManagedUser } from "@/services/userService";
 import { activityService, type Activity, type ActivityType } from "@/services/activityService";
 import { PermissionCodes } from "@/services/permissionCodes";
+import { HistoryPanel } from "@/components/history/HistoryPanel";
 
 const NEXT_STAGES: Record<OpportunityStage, OpportunityStage[]> = {
   Qualification: ["Discovery", "ClosedWon", "ClosedLost"],
@@ -143,6 +144,17 @@ export default function OpportunityDetail() {
         </div>
       )}
 
+      {opportunity.nextStep && !isClosed && (
+        <div className="alert alert-info d-flex justify-content-between align-items-center">
+          <div>
+            <strong>Next Step:</strong> {opportunity.nextStep}
+          </div>
+          {opportunity.nextStepDate && (
+            <span className="text-nowrap ms-3">Due {new Date(opportunity.nextStepDate).toLocaleDateString()}</span>
+          )}
+        </div>
+      )}
+
       <div className="row g-4">
         <div className="col-lg-8">
           <div className="card shadow-sm border-0 mb-4">
@@ -182,6 +194,36 @@ export default function OpportunityDetail() {
               )}
             </div>
           </div>
+
+          {opportunity.lineItems.length > 0 && (
+            <div className="card shadow-sm border-0 mb-4">
+              <div className="card-header bg-white fw-semibold">Line Items</div>
+              <div className="table-responsive">
+                <table className="table mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Product</th>
+                      <th className="text-end">Qty</th>
+                      <th className="text-end">Unit Price</th>
+                      <th className="text-end">Discount</th>
+                      <th className="text-end">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {opportunity.lineItems.map((li) => (
+                      <tr key={li.id}>
+                        <td>{li.productName}</td>
+                        <td className="text-end">{li.quantity}</td>
+                        <td className="text-end">{li.unitPrice.toLocaleString()}</td>
+                        <td className="text-end">{li.discountPercent ? `${li.discountPercent}%` : "—"}</td>
+                        <td className="text-end fw-semibold">{li.lineTotal.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           <div className="card shadow-sm border-0">
             <div className="card-header bg-white fw-semibold">Timeline</div>
@@ -234,6 +276,8 @@ export default function OpportunityDetail() {
               </ul>
             </div>
           </div>
+
+          <HistoryPanel entityType="Opportunity" entityId={opportunity.id} />
         </div>
 
         <div className="col-lg-4">

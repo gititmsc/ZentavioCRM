@@ -22,5 +22,11 @@ namespace ZentavioCRM.Repositories.Interfaces
 
         /// <summary>Replaces every address on the customer with the given set.</summary>
         Task ReplaceAddressesAsync(Guid customerId, IEnumerable<CustomerAddress> addresses);
+
+        /// <summary>Customers whose Email or Phone matches either given value — used for the lead duplicate-check.</summary>
+        Task<IReadOnlyList<Customer>> FindByEmailOrPhoneAsync(string? email, string? phone);
+
+        /// <summary>Every customer, no paging — used for CSV export. SMB-scale data volumes.</summary>
+        Task<IReadOnlyList<Customer>> GetAllAsync();
     }
 }

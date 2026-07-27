@@ -4,6 +4,7 @@
 import { apiClient } from "@/services/apiClient";
 import { callApi } from "@/services/apiHelpers";
 import type { PagedResult } from "@/services/leadService";
+import type { ImportResult } from "@/services/importTypes";
 
 export type CustomerType =
   | "Prospect"
@@ -125,4 +126,17 @@ const update = (id: string, request: SaveCustomerRequest) =>
 
 const remove = (id: string) => callApi<boolean>(apiClient.delete(`/api/customers/${id}`));
 
-export const customerService = { search, getById, create, update, remove };
+const exportCsv = async (): Promise<Blob> => {
+  const response = await apiClient.get("/api/customers/export", { responseType: "blob" });
+  return response.data;
+};
+
+const importCsv = (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return callApi<ImportResult>(
+    apiClient.post("/api/customers/import", formData, { headers: { "Content-Type": "multipart/form-data" } })
+  );
+};
+
+export const customerService = { search, getById, create, update, remove, exportCsv, importCsv };
