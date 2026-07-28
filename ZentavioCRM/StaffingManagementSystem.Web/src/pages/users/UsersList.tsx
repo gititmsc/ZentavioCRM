@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { userService, type ManagedUser } from "@/services/userService";
 import { PermissionCodes } from "@/services/permissionCodes";
+import { UserAvatar } from "@/components/users/UserAvatar";
 
 export default function UsersList() {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ export default function UsersList() {
           <table className="table table-hover align-middle mb-0">
             <thead className="table-light">
               <tr>
+                <th></th>
                 <th>Employee Code</th>
                 <th>Name</th>
                 <th>Email</th>
@@ -57,20 +59,23 @@ export default function UsersList() {
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">
+                  <td colSpan={8} className="text-center text-muted py-4">
                     Loading...
                   </td>
                 </tr>
               )}
               {!isLoading && users.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">
+                  <td colSpan={8} className="text-center text-muted py-4">
                     No users yet.
                   </td>
                 </tr>
               )}
               {users.map((user) => (
                 <tr key={user.id}>
+                  <td>
+                    <UserAvatar userId={user.id} fullName={user.fullName} hasProfilePhoto={user.hasProfilePhoto} size={32} />
+                  </td>
                   <td>{user.employeeCode}</td>
                   <td>{user.fullName}</td>
                   <td>{user.email}</td>

@@ -2,6 +2,7 @@ using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.DTOs.Opportunities;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Security;
 using ZentavioCRM.Repositories.Interfaces;
 using ZentavioCRM.Services.Interfaces;
 
@@ -18,26 +19,42 @@ namespace ZentavioCRM.Services
         private readonly ICustomerRepository _customerRepository;
         private readonly IAuditLogService _auditLogService;
         private readonly INotificationService _notificationService;
+        private readonly IAccessScopeService _accessScopeService;
 
         public OpportunityService(
             IOpportunityRepository opportunityRepository,
             ICustomerRepository customerRepository,
             IAuditLogService auditLogService,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IAccessScopeService accessScopeService)
         {
             _opportunityRepository = opportunityRepository;
             _customerRepository = customerRepository;
             _auditLogService = auditLogService;
             _notificationService = notificationService;
+            _accessScopeService = accessScopeService;
+        }
+
+        /// <summary>In-memory record-visibility check for a single already-fetched Opportunity. Returns true (no restriction) when currentUserId is null, since that only happens for internal/system callers, never an authenticated HTTP request.</summary>
+        private async Task<bool> CanAccessAsync(Guid? currentUserId, Opportunity opportunity)
+        {
+            if (currentUserId is null)
+            {
+                return true;
+            }
+
+            var scope = await _accessScopeService.GetForUserAsync(currentUserId.Value);
+            return scope.CanSee(opportunity.AssignedToUserId, opportunity.CreatedByUserId);
         }
 
         public async Task<PagedResult<OpportunityListItemDto>> SearchAsync(
-            string? search, OpportunityStage? stage, Guid? customerId, Guid? assignedToUserId, int page, int pageSize)
+            string? search, OpportunityStage? stage, Guid? customerId, Guid? assignedToUserId, int page, int pageSize, Guid? currentUserId = null)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize is < 1 or > 200 ? 20 : pageSize;
 
-            var (items, totalCount) = await _opportunityRepository.SearchAsync(search, stage, customerId, assignedToUserId, page, pageSize);
+            AccessScope? accessScope = currentUserId is null ? null : await _accessScopeService.GetForUserAsync(currentUserId.Value);
+            var (items, totalCount) = await _opportunityRepository.SearchAsync(search, stage, customerId, assignedToUserId, page, pageSize, accessScope);
 
             return new PagedResult<OpportunityListItemDto>
             {
@@ -48,12 +65,20 @@ namespace ZentavioCRM.Services
             };
         }
 
-        public async Task<ApiResponse<OpportunityDto>> GetByIdAsync(Guid id)
+        public async Task<ApiResponse<OpportunityDto>> GetByIdAsync(Guid id, Guid? currentUserId = null)
         {
             var opportunity = await _opportunityRepository.GetByIdAsync(id);
-            return opportunity is null
-                ? ApiResponse<OpportunityDto>.FailureResponse("Opportunity not found.")
-                : ApiResponse<OpportunityDto>.SuccessResponse(Map(opportunity));
+            if (opportunity is null)
+            {
+                return ApiResponse<OpportunityDto>.FailureResponse("Opportunity not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, opportunity))
+            {
+                return ApiResponse<OpportunityDto>.FailureResponse("Opportunity not found.");
+            }
+
+            return ApiResponse<OpportunityDto>.SuccessResponse(Map(opportunity));
         }
 
         public async Task<ApiResponse<OpportunityDto>> CreateAsync(SaveOpportunityRequest request, Guid? currentUserId)
@@ -103,6 +128,11 @@ namespace ZentavioCRM.Services
         {
             var opportunity = await _opportunityRepository.GetByIdAsync(id);
             if (opportunity is null)
+            {
+                return ApiResponse<OpportunityDto>.FailureResponse("Opportunity not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, opportunity))
             {
                 return ApiResponse<OpportunityDto>.FailureResponse("Opportunity not found.");
             }
@@ -158,6 +188,11 @@ namespace ZentavioCRM.Services
                 return ApiResponse<OpportunityDto>.FailureResponse("Opportunity not found.");
             }
 
+            if (!await CanAccessAsync(currentUserId, opportunity))
+            {
+                return ApiResponse<OpportunityDto>.FailureResponse("Opportunity not found.");
+            }
+
             if (TerminalStages.Contains(opportunity.Stage))
             {
                 return ApiResponse<OpportunityDto>.FailureResponse(
@@ -208,6 +243,11 @@ namespace ZentavioCRM.Services
                 return ApiResponse<OpportunityDto>.FailureResponse("Opportunity not found.");
             }
 
+            if (!await CanAccessAsync(currentUserId, opportunity))
+            {
+                return ApiResponse<OpportunityDto>.FailureResponse("Opportunity not found.");
+            }
+
             if (TerminalStages.Contains(opportunity.Stage))
             {
                 return ApiResponse<OpportunityDto>.FailureResponse($"This opportunity is {opportunity.Stage} and can no longer be reassigned.");
@@ -233,6 +273,11 @@ namespace ZentavioCRM.Services
         {
             var opportunity = await _opportunityRepository.GetByIdAsync(id);
             if (opportunity is null)
+            {
+                return ApiResponse<bool>.FailureResponse("Opportunity not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, opportunity))
             {
                 return ApiResponse<bool>.FailureResponse("Opportunity not found.");
             }

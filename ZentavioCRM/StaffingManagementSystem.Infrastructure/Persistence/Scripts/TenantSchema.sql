@@ -62,6 +62,7 @@ CREATE TABLE dbo.Roles
     Name         NVARCHAR(100)    NOT NULL,
     Description  NVARCHAR(500)    NULL,
     IsSystemRole BIT              NOT NULL,
+    VisibilityScope NVARCHAR(20)  NOT NULL CONSTRAINT DF_Roles_VisibilityScope DEFAULT ('All'),
     CreatedAtUtc DATETIME2        NOT NULL,
     CONSTRAINT PK_Roles PRIMARY KEY CLUSTERED (Id)
 );
@@ -91,6 +92,26 @@ CREATE INDEX IX_Departments_ParentDepartmentId ON dbo.Departments (ParentDepartm
 GO
 
 -- ============================================================================
+-- Territories (self-referencing hierarchy — structured sales/service territory,
+-- superseding the free-text label on Leads.Territory going forward; same pattern as Departments above)
+-- ============================================================================
+CREATE TABLE dbo.Territories
+(
+    Id                UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Territories_Id DEFAULT NEWID(),
+    Name              NVARCHAR(150)    NOT NULL,
+    ParentTerritoryId UNIQUEIDENTIFIER NULL,
+    IsActive          BIT              NOT NULL CONSTRAINT DF_Territories_IsActive DEFAULT (1),
+    CreatedAtUtc      DATETIME2        NOT NULL,
+    UpdatedAtUtc      DATETIME2        NULL,
+    CONSTRAINT PK_Territories PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_Territories_ParentTerritory FOREIGN KEY (ParentTerritoryId) REFERENCES dbo.Territories (Id) ON DELETE NO ACTION
+);
+
+CREATE INDEX IX_Territories_Name ON dbo.Territories (Name);
+CREATE INDEX IX_Territories_ParentTerritoryId ON dbo.Territories (ParentTerritoryId);
+GO
+
+-- ============================================================================
 -- Users
 -- ============================================================================
 CREATE TABLE dbo.Users
@@ -105,6 +126,9 @@ CREATE TABLE dbo.Users
     RoleId              UNIQUEIDENTIFIER NOT NULL,
     DepartmentId        UNIQUEIDENTIFIER NULL,
     ReportingManagerId  UNIQUEIDENTIFIER NULL,
+    TerritoryId         UNIQUEIDENTIFIER NULL,
+    ProfilePhotoContent VARBINARY(MAX)   NULL,
+    ProfilePhotoContentType NVARCHAR(100) NULL,
     IsActive            BIT              NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT (1),
     CreatedAtUtc        DATETIME2        NOT NULL,
     UpdatedAtUtc        DATETIME2        NULL,
@@ -112,7 +136,8 @@ CREATE TABLE dbo.Users
     CONSTRAINT PK_Users PRIMARY KEY CLUSTERED (Id),
     CONSTRAINT FK_Users_Roles FOREIGN KEY (RoleId) REFERENCES dbo.Roles (Id) ON DELETE NO ACTION,
     CONSTRAINT FK_Users_Departments FOREIGN KEY (DepartmentId) REFERENCES dbo.Departments (Id) ON DELETE NO ACTION,
-    CONSTRAINT FK_Users_ReportingManager FOREIGN KEY (ReportingManagerId) REFERENCES dbo.Users (Id) ON DELETE NO ACTION
+    CONSTRAINT FK_Users_ReportingManager FOREIGN KEY (ReportingManagerId) REFERENCES dbo.Users (Id) ON DELETE NO ACTION,
+    CONSTRAINT FK_Users_Territories FOREIGN KEY (TerritoryId) REFERENCES dbo.Territories (Id) ON DELETE NO ACTION
 );
 
 CREATE UNIQUE INDEX IX_Users_EmployeeCode ON dbo.Users (EmployeeCode);
@@ -120,6 +145,7 @@ CREATE UNIQUE INDEX IX_Users_Email ON dbo.Users (Email);
 CREATE INDEX IX_Users_RoleId ON dbo.Users (RoleId);
 CREATE INDEX IX_Users_DepartmentId ON dbo.Users (DepartmentId);
 CREATE INDEX IX_Users_ReportingManagerId ON dbo.Users (ReportingManagerId);
+CREATE INDEX IX_Users_TerritoryId ON dbo.Users (TerritoryId);
 GO
 
 -- ============================================================================
@@ -162,6 +188,7 @@ CREATE TABLE dbo.Customers
     AcquisitionSource NVARCHAR(30)    NULL,
     HealthStatus     NVARCHAR(20)     NULL,
     AssignedToUserId UNIQUEIDENTIFIER NULL,
+    CreatedByUserId  UNIQUEIDENTIFIER NULL,
     IsActive         BIT              NOT NULL CONSTRAINT DF_Customers_IsActive DEFAULT (1),
     CreatedAtUtc     DATETIME2        NOT NULL,
     UpdatedAtUtc     DATETIME2        NULL,
@@ -251,6 +278,7 @@ CREATE TABLE dbo.Leads
     ExpectedValue       DECIMAL(18, 2)   NULL,
     AssignedToUserId    UNIQUEIDENTIFIER NULL,
     Territory           NVARCHAR(100)    NULL,
+    TerritoryId         UNIQUEIDENTIFIER NULL,
     Status              NVARCHAR(30)     NOT NULL,
     LeadScore           INT              NULL,
     AiScore             INT              NULL,
@@ -265,13 +293,15 @@ CREATE TABLE dbo.Leads
     UpdatedAtUtc        DATETIME2        NULL,
     CONSTRAINT PK_Leads PRIMARY KEY CLUSTERED (Id),
     CONSTRAINT FK_Leads_AssignedToUser FOREIGN KEY (AssignedToUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL,
-    CONSTRAINT FK_Leads_ConvertedCustomer FOREIGN KEY (ConvertedCustomerId) REFERENCES dbo.Customers (Id) ON DELETE SET NULL
+    CONSTRAINT FK_Leads_ConvertedCustomer FOREIGN KEY (ConvertedCustomerId) REFERENCES dbo.Customers (Id) ON DELETE SET NULL,
+    CONSTRAINT FK_Leads_Territories FOREIGN KEY (TerritoryId) REFERENCES dbo.Territories (Id) ON DELETE SET NULL
 );
 
 CREATE UNIQUE INDEX IX_Leads_LeadNumber ON dbo.Leads (LeadNumber);
 CREATE INDEX IX_Leads_Status ON dbo.Leads (Status);
 CREATE INDEX IX_Leads_AssignedToUserId ON dbo.Leads (AssignedToUserId);
 CREATE INDEX IX_Leads_ConvertedCustomerId ON dbo.Leads (ConvertedCustomerId);
+CREATE INDEX IX_Leads_TerritoryId ON dbo.Leads (TerritoryId);
 GO
 
 -- ============================================================================
@@ -523,6 +553,29 @@ CREATE TABLE dbo.Notifications
 );
 
 CREATE INDEX IX_Notifications_RecipientUserId_IsRead ON dbo.Notifications (RecipientUserId, IsRead);
+GO
+
+-- ============================================================================
+-- UserDelegations (out-of-office: DelegateUser temporarily covers the records and due reminders
+-- assigned to DelegatorUser during [StartDateUtc, EndDateUtc])
+-- ============================================================================
+CREATE TABLE dbo.UserDelegations
+(
+    Id              UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_UserDelegations_Id DEFAULT NEWID(),
+    DelegatorUserId UNIQUEIDENTIFIER NOT NULL,
+    DelegateUserId  UNIQUEIDENTIFIER NOT NULL,
+    StartDateUtc    DATETIME2        NOT NULL,
+    EndDateUtc      DATETIME2        NOT NULL,
+    Notes           NVARCHAR(500)    NULL,
+    CreatedAtUtc    DATETIME2        NOT NULL,
+    CONSTRAINT PK_UserDelegations PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_UserDelegations_DelegatorUser FOREIGN KEY (DelegatorUserId) REFERENCES dbo.Users (Id) ON DELETE NO ACTION,
+    CONSTRAINT FK_UserDelegations_DelegateUser FOREIGN KEY (DelegateUserId) REFERENCES dbo.Users (Id) ON DELETE NO ACTION
+);
+
+CREATE INDEX IX_UserDelegations_DelegatorUserId ON dbo.UserDelegations (DelegatorUserId);
+CREATE INDEX IX_UserDelegations_DelegateUserId ON dbo.UserDelegations (DelegateUserId);
+CREATE INDEX IX_UserDelegations_StartDateUtc_EndDateUtc ON dbo.UserDelegations (StartDateUtc, EndDateUtc);
 GO
 
 -- ============================================================================

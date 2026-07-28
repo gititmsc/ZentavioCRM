@@ -97,6 +97,14 @@ BEGIN
 END
 GO
 
+-- Roles.VisibilityScope — Own/Team/All record-level visibility for Leads/Customers/Opportunities.
+-- Defaults to 'All' so every pre-existing role keeps today's unrestricted behavior until an admin narrows it.
+IF OBJECT_ID(N'dbo.Roles', N'U') IS NOT NULL AND COL_LENGTH('dbo.Roles', 'VisibilityScope') IS NULL
+BEGIN
+    ALTER TABLE dbo.Roles ADD VisibilityScope NVARCHAR(20) NOT NULL CONSTRAINT DF_Roles_VisibilityScope DEFAULT ('All');
+END
+GO
+
 -- ============================================================================
 -- Departments (self-referencing hierarchy under Companies)
 -- ============================================================================
@@ -122,6 +130,29 @@ END
 GO
 
 -- ============================================================================
+-- Territories (self-referencing hierarchy — structured sales/service territory,
+-- superseding the free-text label on Leads.Territory going forward; same pattern as Departments above)
+-- ============================================================================
+IF OBJECT_ID(N'dbo.Territories', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Territories
+    (
+        Id                UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Territories_Id DEFAULT NEWID(),
+        Name              NVARCHAR(150)    NOT NULL,
+        ParentTerritoryId UNIQUEIDENTIFIER NULL,
+        IsActive          BIT              NOT NULL CONSTRAINT DF_Territories_IsActive DEFAULT (1),
+        CreatedAtUtc      DATETIME2        NOT NULL,
+        UpdatedAtUtc      DATETIME2        NULL,
+        CONSTRAINT PK_Territories PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT FK_Territories_ParentTerritory FOREIGN KEY (ParentTerritoryId) REFERENCES dbo.Territories (Id) ON DELETE NO ACTION
+    );
+
+    CREATE INDEX IX_Territories_Name ON dbo.Territories (Name);
+    CREATE INDEX IX_Territories_ParentTerritoryId ON dbo.Territories (ParentTerritoryId);
+END
+GO
+
+-- ============================================================================
 -- Users
 -- ============================================================================
 IF OBJECT_ID(N'dbo.Users', N'U') IS NULL
@@ -138,6 +169,9 @@ BEGIN
         RoleId              UNIQUEIDENTIFIER NOT NULL,
         DepartmentId        UNIQUEIDENTIFIER NULL,
         ReportingManagerId  UNIQUEIDENTIFIER NULL,
+        TerritoryId         UNIQUEIDENTIFIER NULL,
+        ProfilePhotoContent VARBINARY(MAX)   NULL,
+        ProfilePhotoContentType NVARCHAR(100) NULL,
         IsActive            BIT              NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT (1),
         CreatedAtUtc        DATETIME2        NOT NULL,
         UpdatedAtUtc        DATETIME2        NULL,
@@ -145,7 +179,8 @@ BEGIN
         CONSTRAINT PK_Users PRIMARY KEY CLUSTERED (Id),
         CONSTRAINT FK_Users_Roles FOREIGN KEY (RoleId) REFERENCES dbo.Roles (Id) ON DELETE NO ACTION,
         CONSTRAINT FK_Users_Departments FOREIGN KEY (DepartmentId) REFERENCES dbo.Departments (Id) ON DELETE NO ACTION,
-        CONSTRAINT FK_Users_ReportingManager FOREIGN KEY (ReportingManagerId) REFERENCES dbo.Users (Id) ON DELETE NO ACTION
+        CONSTRAINT FK_Users_ReportingManager FOREIGN KEY (ReportingManagerId) REFERENCES dbo.Users (Id) ON DELETE NO ACTION,
+        CONSTRAINT FK_Users_Territories FOREIGN KEY (TerritoryId) REFERENCES dbo.Territories (Id) ON DELETE NO ACTION
     );
 
     CREATE UNIQUE INDEX IX_Users_EmployeeCode ON dbo.Users (EmployeeCode);
@@ -153,6 +188,44 @@ BEGIN
     CREATE INDEX IX_Users_RoleId ON dbo.Users (RoleId);
     CREATE INDEX IX_Users_DepartmentId ON dbo.Users (DepartmentId);
     CREATE INDEX IX_Users_ReportingManagerId ON dbo.Users (ReportingManagerId);
+    CREATE INDEX IX_Users_TerritoryId ON dbo.Users (TerritoryId);
+END
+GO
+
+-- Users.TerritoryId — added post-launch; guarded ALTER for a Users table that already existed
+-- from an earlier run of this script (fresh installs get the column via the CREATE TABLE above).
+IF OBJECT_ID(N'dbo.Users', N'U') IS NOT NULL AND COL_LENGTH('dbo.Users', 'TerritoryId') IS NULL
+BEGIN
+    ALTER TABLE dbo.Users ADD TerritoryId UNIQUEIDENTIFIER NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Users', N'U') IS NOT NULL
+   AND COL_LENGTH('dbo.Users', 'TerritoryId') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Users_Territories')
+BEGIN
+    ALTER TABLE dbo.Users ADD CONSTRAINT FK_Users_Territories FOREIGN KEY (TerritoryId) REFERENCES dbo.Territories (Id) ON DELETE NO ACTION;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Users', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Users_TerritoryId' AND object_id = OBJECT_ID(N'dbo.Users'))
+BEGIN
+    CREATE INDEX IX_Users_TerritoryId ON dbo.Users (TerritoryId);
+END
+GO
+
+-- Users.ProfilePhotoContent / ProfilePhotoContentType — avatar image, stored directly on Users
+-- (not via the generic Documents table) to avoid an extra lookup per avatar when rendering lists.
+IF OBJECT_ID(N'dbo.Users', N'U') IS NOT NULL AND COL_LENGTH('dbo.Users', 'ProfilePhotoContent') IS NULL
+BEGIN
+    ALTER TABLE dbo.Users ADD ProfilePhotoContent VARBINARY(MAX) NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Users', N'U') IS NOT NULL AND COL_LENGTH('dbo.Users', 'ProfilePhotoContentType') IS NULL
+BEGIN
+    ALTER TABLE dbo.Users ADD ProfilePhotoContentType NVARCHAR(100) NULL;
 END
 GO
 
@@ -232,6 +305,14 @@ GO
 IF OBJECT_ID(N'dbo.Customers', N'U') IS NOT NULL AND COL_LENGTH('dbo.Customers', 'HealthStatus') IS NULL
 BEGIN
     ALTER TABLE dbo.Customers ADD HealthStatus NVARCHAR(20) NULL;
+END
+GO
+
+-- Customers.CreatedByUserId — audit-trail scalar only (no FK), same convention as Lead/Opportunity's CreatedByUserId.
+-- Used by the record-visibility (Own/Team/All) feature so newly-created, not-yet-assigned customers remain visible to their creator.
+IF OBJECT_ID(N'dbo.Customers', N'U') IS NOT NULL AND COL_LENGTH('dbo.Customers', 'CreatedByUserId') IS NULL
+BEGIN
+    ALTER TABLE dbo.Customers ADD CreatedByUserId UNIQUEIDENTIFIER NULL;
 END
 GO
 
@@ -421,6 +502,29 @@ GO
 IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL AND COL_LENGTH('dbo.Leads', 'UtmContent') IS NULL
 BEGIN
     ALTER TABLE dbo.Leads ADD UtmContent NVARCHAR(150) NULL;
+END
+GO
+
+-- Leads.TerritoryId — structured territory reference (see Territories table above), superseding
+-- the legacy free-text Leads.Territory column going forward. That column stays as-is (no removal).
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL AND COL_LENGTH('dbo.Leads', 'TerritoryId') IS NULL
+BEGIN
+    ALTER TABLE dbo.Leads ADD TerritoryId UNIQUEIDENTIFIER NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL
+   AND COL_LENGTH('dbo.Leads', 'TerritoryId') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Leads_Territories')
+BEGIN
+    ALTER TABLE dbo.Leads ADD CONSTRAINT FK_Leads_Territories FOREIGN KEY (TerritoryId) REFERENCES dbo.Territories (Id) ON DELETE SET NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Leads_TerritoryId' AND object_id = OBJECT_ID(N'dbo.Leads'))
+BEGIN
+    CREATE INDEX IX_Leads_TerritoryId ON dbo.Leads (TerritoryId);
 END
 GO
 
@@ -757,6 +861,32 @@ BEGIN
     );
 
     CREATE INDEX IX_Notifications_RecipientUserId_IsRead ON dbo.Notifications (RecipientUserId, IsRead);
+END
+GO
+
+-- ============================================================================
+-- UserDelegations (out-of-office: DelegateUser temporarily covers the records and due reminders
+-- assigned to DelegatorUser during [StartDateUtc, EndDateUtc])
+-- ============================================================================
+IF OBJECT_ID(N'dbo.UserDelegations', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.UserDelegations
+    (
+        Id              UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_UserDelegations_Id DEFAULT NEWID(),
+        DelegatorUserId UNIQUEIDENTIFIER NOT NULL,
+        DelegateUserId  UNIQUEIDENTIFIER NOT NULL,
+        StartDateUtc    DATETIME2        NOT NULL,
+        EndDateUtc      DATETIME2        NOT NULL,
+        Notes           NVARCHAR(500)    NULL,
+        CreatedAtUtc    DATETIME2        NOT NULL,
+        CONSTRAINT PK_UserDelegations PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT FK_UserDelegations_DelegatorUser FOREIGN KEY (DelegatorUserId) REFERENCES dbo.Users (Id) ON DELETE NO ACTION,
+        CONSTRAINT FK_UserDelegations_DelegateUser FOREIGN KEY (DelegateUserId) REFERENCES dbo.Users (Id) ON DELETE NO ACTION
+    );
+
+    CREATE INDEX IX_UserDelegations_DelegatorUserId ON dbo.UserDelegations (DelegatorUserId);
+    CREATE INDEX IX_UserDelegations_DelegateUserId ON dbo.UserDelegations (DelegateUserId);
+    CREATE INDEX IX_UserDelegations_StartDateUtc_EndDateUtc ON dbo.UserDelegations (StartDateUtc, EndDateUtc);
 END
 GO
 

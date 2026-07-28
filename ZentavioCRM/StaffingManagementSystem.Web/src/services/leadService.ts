@@ -72,6 +72,8 @@ export interface Lead {
   assignedToUserId: string | null;
   assignedToUserName: string | null;
   territory: string | null;
+  territoryId: string | null;
+  territoryName: string | null;
   status: LeadStatus;
   leadScore: number | null;
   aiScore: number | null;
@@ -102,6 +104,7 @@ export interface SaveLeadRequest {
   expectedValue: number | null;
   assignedToUserId: string | null;
   territory: string | null;
+  territoryId: string | null;
   notes: string | null;
   nextFollowUpDate: string | null;
 }

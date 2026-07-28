@@ -29,6 +29,13 @@ namespace ZentavioCRM.Core.DTOs.Users
 
         public string? ReportingManagerName { get; set; }
 
+        public Guid? TerritoryId { get; set; }
+
+        public string? TerritoryName { get; set; }
+
+        /// <summary>Whether this user has an uploaded avatar — tells the frontend whether to render &lt;img src="/api/users/{id}/photo"&gt; or fall back to initials.</summary>
+        public bool HasProfilePhoto { get; set; }
+
         public bool IsActive { get; set; }
 
         public DateTime? LastLoginAtUtc { get; set; }

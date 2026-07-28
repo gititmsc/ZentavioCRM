@@ -20,6 +20,10 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<Department> Departments => Set<Department>();
 
+        public DbSet<Territory> Territories => Set<Territory>();
+
+        public DbSet<UserDelegation> UserDelegations => Set<UserDelegation>();
+
         public DbSet<Role> Roles => Set<Role>();
 
         public DbSet<Permission> Permissions => Set<Permission>();

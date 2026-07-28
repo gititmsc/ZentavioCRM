@@ -1,5 +1,6 @@
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Security;
 
 namespace ZentavioCRM.Repositories.Interfaces
 {
@@ -7,8 +8,9 @@ namespace ZentavioCRM.Repositories.Interfaces
     {
         Task<Lead?> GetByIdAsync(Guid id);
 
+        /// <param name="accessScope">When non-null and Scope != All, restricts results to records the scope's user is allowed to see (Own/Team, plus any active delegations). Null means no restriction (used by contexts, like dashboards, that intentionally bypass record-level visibility).</param>
         Task<(IReadOnlyList<Lead> Items, int TotalCount)> SearchAsync(
-            string? search, LeadStatus? status, Guid? assignedToUserId, int page, int pageSize);
+            string? search, LeadStatus? status, Guid? assignedToUserId, int page, int pageSize, AccessScope? accessScope = null);
 
         Task<string> GetNextLeadNumberAsync();
 

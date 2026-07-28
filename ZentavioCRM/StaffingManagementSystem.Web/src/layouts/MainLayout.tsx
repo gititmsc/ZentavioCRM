@@ -3,6 +3,7 @@ import { ITMLogo } from "@/components/brand/ITMLogo";
 import { useAuth } from "@/context/AuthContext";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { UserAvatar } from "@/components/users/UserAvatar";
 import "./MainLayout.css";
 
 interface NavItem {
@@ -21,17 +22,10 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/sales-orders", icon: "bi-cart-check", label: "Sales Orders", requiresAnyOf: [PermissionCodes.SalesOrdersView] },
   { to: "/customers", icon: "bi-building", label: "Customers", requiresAnyOf: [PermissionCodes.CustomersView] },
   { to: "/departments", icon: "bi-diagram-3", label: "Departments", requiresAnyOf: [PermissionCodes.DepartmentsView] },
+  { to: "/territories", icon: "bi-map", label: "Territories", requiresAnyOf: [PermissionCodes.TerritoriesView] },
   { to: "/users", icon: "bi-people-fill", label: "Users", requiresAnyOf: [PermissionCodes.UsersView] },
   { to: "/roles", icon: "bi-shield-lock-fill", label: "Roles", requiresAnyOf: [PermissionCodes.RolesView] },
 ];
-
-function initialsOf(fullName: string): string {
-  const parts = fullName.trim().split(/\s+/);
-  return parts
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
 
 export function MainLayout() {
   const { user, logout, hasPermission } = useAuth();
@@ -63,15 +57,15 @@ export function MainLayout() {
 
       <div className="app-main">
         <header className="app-topbar">
-          <div className="app-topbar__user">
-            <div className="app-topbar__avatar">{user ? initialsOf(user.fullName) : "?"}</div>
+          <NavLink to="/profile" className="app-topbar__user text-decoration-none">
+            {user && <UserAvatar userId={user.id} fullName={user.fullName} size={34} />}
             <div>
               <div className="fw-semibold">{user?.fullName}</div>
               <div className="text-muted" style={{ fontSize: "0.78rem" }}>
                 {user?.role}
               </div>
             </div>
-          </div>
+          </NavLink>
           <div className="d-flex align-items-center gap-2">
             <NotificationBell />
             <button type="button" className="btn btn-sm btn-outline-secondary" onClick={logout}>

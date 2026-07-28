@@ -1,8 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { roleService, type Role } from "@/services/roleService";
+import { roleService, type Role, type VisibilityScope } from "@/services/roleService";
 import { PermissionCodes } from "@/services/permissionCodes";
+
+const VISIBILITY_SCOPE_LABEL: Record<VisibilityScope, string> = {
+  Own: "Own only",
+  Team: "Team",
+  All: "All",
+};
+
+const VISIBILITY_SCOPE_BADGE_CLASS: Record<VisibilityScope, string> = {
+  Own: "text-bg-warning",
+  Team: "text-bg-primary",
+  All: "text-bg-secondary",
+};
 
 export default function RolesList() {
   const navigate = useNavigate();
@@ -59,6 +71,7 @@ export default function RolesList() {
               <tr>
                 <th>Name</th>
                 <th>Description</th>
+                <th>Visibility</th>
                 <th>Permissions</th>
                 <th>Type</th>
                 {canManage && <th className="text-end">Actions</th>}
@@ -67,7 +80,7 @@ export default function RolesList() {
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={5} className="text-center text-muted py-4">
+                  <td colSpan={6} className="text-center text-muted py-4">
                     Loading...
                   </td>
                 </tr>
@@ -76,6 +89,11 @@ export default function RolesList() {
                 <tr key={role.id}>
                   <td>{role.name}</td>
                   <td>{role.description ?? <span className="text-muted">&mdash;</span>}</td>
+                  <td>
+                    <span className={`badge ${VISIBILITY_SCOPE_BADGE_CLASS[role.visibilityScope]}`}>
+                      {VISIBILITY_SCOPE_LABEL[role.visibilityScope]}
+                    </span>
+                  </td>
                   <td>{role.permissionCodes.length}</td>
                   <td>
                     <span className={`badge ${role.isSystemRole ? "text-bg-secondary" : "text-bg-info"}`}>

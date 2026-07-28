@@ -52,7 +52,13 @@ namespace ZentavioCRM.Core.Entities
 
         public User? AssignedToUser { get; set; }
 
+        /// <summary>Legacy free-text territory label — superseded by <see cref="TerritoryId"/> going forward. Kept as-is (no data migration, no removal) so existing CSV import/export never breaks.</summary>
         public string? Territory { get; set; }
+
+        /// <summary>Structured territory reference (see <see cref="Entities.Territory"/>). Optional — a lead can still only carry the legacy free-text <see cref="Territory"/> label if this isn't set.</summary>
+        public Guid? TerritoryId { get; set; }
+
+        public Territory? TerritoryRef { get; set; }
 
         public LeadStatus Status { get; set; } = LeadStatus.New;
 

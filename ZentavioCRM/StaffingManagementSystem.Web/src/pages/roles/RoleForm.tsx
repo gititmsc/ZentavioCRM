@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
-import { roleService, type PermissionCatalog, type SaveRoleRequest } from "@/services/roleService";
+import { roleService, type PermissionCatalog, type SaveRoleRequest, type VisibilityScope } from "@/services/roleService";
+
+const VISIBILITY_SCOPE_OPTIONS: { value: VisibilityScope; label: string; description: string }[] = [
+  { value: "Own", label: "Own records only", description: "Users with this role only see Leads/Customers/Opportunities assigned to (or created by) them." },
+  { value: "Team", label: "Team (same department)", description: "Users with this role see records belonging to anyone in their department, in addition to their own." },
+  { value: "All", label: "All records", description: "Users with this role see every Lead/Customer/Opportunity, regardless of owner — today's default behavior." },
+];
 
 export default function RoleForm() {
   const { id } = useParams<{ id: string }>();
@@ -18,7 +24,9 @@ export default function RoleForm() {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<{ name: string; description: string }>({ defaultValues: { name: "", description: "" } });
+  } = useForm<{ name: string; description: string; visibilityScope: VisibilityScope }>({
+    defaultValues: { name: "", description: "", visibilityScope: "All" },
+  });
 
   useEffect(() => {
     (async () => {
@@ -30,7 +38,11 @@ export default function RoleForm() {
       if (isEditMode && id) {
         const existing = await roleService.getById(id);
         if (existing.success && existing.data) {
-          reset({ name: existing.data.name, description: existing.data.description ?? "" });
+          reset({
+            name: existing.data.name,
+            description: existing.data.description ?? "",
+            visibilityScope: existing.data.visibilityScope,
+          });
           setSelectedCodes(new Set(existing.data.permissionCodes));
         }
       }
@@ -48,12 +60,13 @@ export default function RoleForm() {
     });
   };
 
-  const onSubmit = async (values: { name: string; description: string }) => {
+  const onSubmit = async (values: { name: string; description: string; visibilityScope: VisibilityScope }) => {
     setServerError(null);
 
     const request: SaveRoleRequest = {
       name: values.name,
       description: values.description || null,
+      visibilityScope: values.visibilityScope,
       permissionCodes: Array.from(selectedCodes),
     };
 
@@ -92,6 +105,20 @@ export default function RoleForm() {
             <div className="mb-4">
               <label className="form-label">Description</label>
               <textarea className="form-control" rows={2} {...register("description")} />
+            </div>
+
+            <div className="mb-4">
+              <label className="form-label">Record Visibility</label>
+              <select className="form-select" {...register("visibilityScope")}>
+                {VISIBILITY_SCOPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <div className="form-text">
+                How much of the Leads/Customers/Opportunities record-set a user with this role can see, independent of module permissions.
+              </div>
             </div>
 
             <label className="form-label">Permissions</label>

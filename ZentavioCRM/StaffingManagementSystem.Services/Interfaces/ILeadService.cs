@@ -8,9 +8,9 @@ namespace ZentavioCRM.Services.Interfaces
     public interface ILeadService
     {
         Task<PagedResult<LeadListItemDto>> SearchAsync(
-            string? search, LeadStatus? status, Guid? assignedToUserId, int page, int pageSize);
+            string? search, LeadStatus? status, Guid? assignedToUserId, int page, int pageSize, Guid? currentUserId = null);
 
-        Task<ApiResponse<LeadDto>> GetByIdAsync(Guid id);
+        Task<ApiResponse<LeadDto>> GetByIdAsync(Guid id, Guid? currentUserId = null);
 
         Task<ApiResponse<LeadDto>> CreateAsync(SaveLeadRequest request, Guid? currentUserId);
 

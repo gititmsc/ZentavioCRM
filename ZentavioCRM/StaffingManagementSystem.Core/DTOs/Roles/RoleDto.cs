@@ -1,3 +1,5 @@
+using ZentavioCRM.Core.Enums;
+
 namespace ZentavioCRM.Core.DTOs.Roles
 {
     public class RoleDto
@@ -9,6 +11,8 @@ namespace ZentavioCRM.Core.DTOs.Roles
         public string? Description { get; set; }
 
         public bool IsSystemRole { get; set; }
+
+        public VisibilityScope VisibilityScope { get; set; } = VisibilityScope.All;
 
         public List<string> PermissionCodes { get; set; } = [];
     }

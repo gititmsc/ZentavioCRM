@@ -14,5 +14,13 @@ namespace ZentavioCRM.Services.Interfaces
         /// year, since birthdays/anniversaries recur annually) for Contacts.
         /// </summary>
         Task CheckDueRemindersAsync(Guid userId);
+
+        /// <summary>
+        /// For every active out-of-office delegation where the given user is the delegate, runs the
+        /// same due-item checks against the delegator's assigned records, but notifies the delegate
+        /// instead — and still stamps the delegator's own reminder-sent markers, so the delegator
+        /// doesn't get a duplicate notification once they return and their own poll runs.
+        /// </summary>
+        Task CheckDelegatedRemindersAsync(Guid delegateUserId);
     }
 }

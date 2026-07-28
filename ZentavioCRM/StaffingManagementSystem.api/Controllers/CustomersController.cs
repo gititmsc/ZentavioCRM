@@ -31,7 +31,7 @@ namespace ZentavioCRM.Api.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _customerService.SearchAsync(search, assignedToUserId, isActive, page, pageSize);
+            var result = await _customerService.SearchAsync(search, assignedToUserId, isActive, page, pageSize, User.GetUserId());
             return Ok(ApiResponse<PagedResult<CustomerListItemDto>>.SuccessResponse(result));
         }
 
@@ -39,7 +39,7 @@ namespace ZentavioCRM.Api.Controllers
         [Authorize(Policy = PermissionCodes.CustomersView)]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var result = await _customerService.GetByIdAsync(id);
+            var result = await _customerService.GetByIdAsync(id, User.GetUserId());
             return result.Success ? Ok(result) : NotFound(result);
         }
 

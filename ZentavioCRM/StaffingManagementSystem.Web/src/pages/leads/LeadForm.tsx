@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { leadService, type DuplicateMatch, type LeadSource, type SaveLeadRequest } from "@/services/leadService";
 import { userService, type ManagedUser } from "@/services/userService";
+import { territoryService, type Territory } from "@/services/territoryService";
 
 /** yyyy-MM-dd for a native <input type="date">, or "" if null. */
 function toDateInputValue(value: string | null): string {
@@ -30,6 +31,7 @@ export default function LeadForm() {
   const navigate = useNavigate();
 
   const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [territories, setTerritories] = useState<Territory[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(isEditMode);
   const [duplicateMatches, setDuplicateMatches] = useState<DuplicateMatch[]>([]);
@@ -60,6 +62,7 @@ export default function LeadForm() {
       expectedValue: null,
       assignedToUserId: null,
       territory: null,
+      territoryId: null,
       notes: null,
       nextFollowUpDate: null,
     },
@@ -69,6 +72,9 @@ export default function LeadForm() {
     (async () => {
       const usersResult = await userService.getAll();
       if (usersResult.success && usersResult.data) setUsers(usersResult.data);
+
+      const territoriesResult = await territoryService.getAll();
+      if (territoriesResult.success && territoriesResult.data) setTerritories(territoriesResult.data);
 
       if (isEditMode && id) {
         const existing = await leadService.getById(id);
@@ -92,6 +98,7 @@ export default function LeadForm() {
             expectedValue: l.expectedValue,
             assignedToUserId: l.assignedToUserId,
             territory: l.territory,
+            territoryId: l.territoryId,
             notes: l.notes,
             nextFollowUpDate: toDateInputValue(l.nextFollowUpDate) || null,
           });
@@ -249,8 +256,20 @@ export default function LeadForm() {
               </div>
 
               <div className="col-md-4">
-                <label className="form-label">Territory</label>
+                <label className="form-label">Territory (legacy free text)</label>
                 <input className="form-control" {...register("territory")} />
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label">Territory (structured)</label>
+                <select className="form-select" {...register("territoryId")}>
+                  <option value="">None</option>
+                  {territories.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="col-md-2">

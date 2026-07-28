@@ -12,6 +12,8 @@ namespace ZentavioCRM.Repositories.Extensions
         {
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+            services.AddScoped<ITerritoryRepository, TerritoryRepository>();
+            services.AddScoped<IUserDelegationRepository, UserDelegationRepository>();
             services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<ICustomerRepository, CustomerRepository>();
             services.AddScoped<ILeadRepository, LeadRepository>();

@@ -31,7 +31,7 @@ namespace ZentavioCRM.Api.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var result = await _opportunityService.SearchAsync(search, stage, customerId, assignedToUserId, page, pageSize);
+            var result = await _opportunityService.SearchAsync(search, stage, customerId, assignedToUserId, page, pageSize, User.GetUserId());
             return Ok(ApiResponse<PagedResult<OpportunityListItemDto>>.SuccessResponse(result));
         }
 
@@ -39,7 +39,7 @@ namespace ZentavioCRM.Api.Controllers
         [Authorize(Policy = PermissionCodes.OpportunitiesView)]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var result = await _opportunityService.GetByIdAsync(id);
+            var result = await _opportunityService.GetByIdAsync(id, User.GetUserId());
             return result.Success ? Ok(result) : NotFound(result);
         }
 

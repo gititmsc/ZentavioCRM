@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ZentavioCRM.Core.Entities;
+using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Security;
 using ZentavioCRM.Infrastructure.Persistence;
 using ZentavioCRM.Repositories.Interfaces;
 
@@ -24,7 +26,7 @@ namespace ZentavioCRM.Repositories
             => WithDetails().FirstOrDefaultAsync(c => c.Id == id);
 
         public async Task<(IReadOnlyList<Customer> Items, int TotalCount)> SearchAsync(
-            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize)
+            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize, AccessScope? accessScope = null)
         {
             var query = _dbContext.Customers.Include(c => c.AssignedToUser).AsQueryable();
 
@@ -46,6 +48,26 @@ namespace ZentavioCRM.Repositories
             if (isActive is not null)
             {
                 query = query.Where(c => c.IsActive == isActive);
+            }
+
+            if (accessScope is not null && accessScope.Scope != VisibilityScope.All)
+            {
+                var currentUserId = accessScope.UserId;
+                // .ToHashSet() materializes to a concrete HashSet<Guid> (ICollection<Guid>) — EF Core's
+                // Contains -> SQL IN translation is resolved from the compile-time type, and the source
+                // properties are declared as IReadOnlySet<Guid>, which isn't covered by that translation.
+                var teamIds = accessScope.TeamUserIds.ToHashSet();
+                var delegatedIds = accessScope.DelegatedFromUserIds.ToHashSet();
+
+                query = accessScope.Scope == VisibilityScope.Team
+                    ? query.Where(c =>
+                        (c.AssignedToUserId != null && teamIds.Contains(c.AssignedToUserId.Value)) ||
+                        (c.AssignedToUserId == null && c.CreatedByUserId != null && teamIds.Contains(c.CreatedByUserId.Value)) ||
+                        (c.AssignedToUserId != null && delegatedIds.Contains(c.AssignedToUserId.Value)))
+                    : query.Where(c =>
+                        c.AssignedToUserId == currentUserId ||
+                        (c.AssignedToUserId == null && c.CreatedByUserId == currentUserId) ||
+                        (c.AssignedToUserId != null && delegatedIds.Contains(c.AssignedToUserId.Value)));
             }
 
             var totalCount = await query.CountAsync();

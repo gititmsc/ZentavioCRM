@@ -69,6 +69,10 @@ namespace ZentavioCRM.Core.DTOs.Leads
 
         public string? Territory { get; set; }
 
+        public Guid? TerritoryId { get; set; }
+
+        public string? TerritoryName { get; set; }
+
         public LeadStatus Status { get; set; }
 
         public int? LeadScore { get; set; }

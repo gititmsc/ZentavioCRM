@@ -3,6 +3,7 @@ using ZentavioCRM.Core.DTOs.Common;
 using ZentavioCRM.Core.DTOs.Leads;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Security;
 using ZentavioCRM.Repositories.Interfaces;
 using ZentavioCRM.Services.Interfaces;
 
@@ -20,28 +21,44 @@ namespace ZentavioCRM.Services
         private readonly IOpportunityRepository _opportunityRepository;
         private readonly IAuditLogService _auditLogService;
         private readonly INotificationService _notificationService;
+        private readonly IAccessScopeService _accessScopeService;
 
         public LeadService(
             ILeadRepository leadRepository,
             ICustomerRepository customerRepository,
             IOpportunityRepository opportunityRepository,
             IAuditLogService auditLogService,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IAccessScopeService accessScopeService)
         {
             _leadRepository = leadRepository;
             _customerRepository = customerRepository;
             _opportunityRepository = opportunityRepository;
             _auditLogService = auditLogService;
             _notificationService = notificationService;
+            _accessScopeService = accessScopeService;
+        }
+
+        /// <summary>In-memory record-visibility check for a single already-fetched Lead. Returns true (no restriction) when currentUserId is null, since that only happens for internal/system callers, never an authenticated HTTP request.</summary>
+        private async Task<bool> CanAccessAsync(Guid? currentUserId, Lead lead)
+        {
+            if (currentUserId is null)
+            {
+                return true;
+            }
+
+            var scope = await _accessScopeService.GetForUserAsync(currentUserId.Value);
+            return scope.CanSee(lead.AssignedToUserId, lead.CreatedByUserId);
         }
 
         public async Task<PagedResult<LeadListItemDto>> SearchAsync(
-            string? search, LeadStatus? status, Guid? assignedToUserId, int page, int pageSize)
+            string? search, LeadStatus? status, Guid? assignedToUserId, int page, int pageSize, Guid? currentUserId = null)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize is < 1 or > 200 ? 20 : pageSize;
 
-            var (items, totalCount) = await _leadRepository.SearchAsync(search, status, assignedToUserId, page, pageSize);
+            AccessScope? accessScope = currentUserId is null ? null : await _accessScopeService.GetForUserAsync(currentUserId.Value);
+            var (items, totalCount) = await _leadRepository.SearchAsync(search, status, assignedToUserId, page, pageSize, accessScope);
 
             return new PagedResult<LeadListItemDto>
             {
@@ -52,12 +69,20 @@ namespace ZentavioCRM.Services
             };
         }
 
-        public async Task<ApiResponse<LeadDto>> GetByIdAsync(Guid id)
+        public async Task<ApiResponse<LeadDto>> GetByIdAsync(Guid id, Guid? currentUserId = null)
         {
             var lead = await _leadRepository.GetByIdAsync(id);
-            return lead is null
-                ? ApiResponse<LeadDto>.FailureResponse("Lead not found.")
-                : ApiResponse<LeadDto>.SuccessResponse(Map(lead));
+            if (lead is null)
+            {
+                return ApiResponse<LeadDto>.FailureResponse("Lead not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, lead))
+            {
+                return ApiResponse<LeadDto>.FailureResponse("Lead not found.");
+            }
+
+            return ApiResponse<LeadDto>.SuccessResponse(Map(lead));
         }
 
         public async Task<ApiResponse<LeadDto>> CreateAsync(SaveLeadRequest request, Guid? currentUserId)
@@ -82,6 +107,7 @@ namespace ZentavioCRM.Services
                 ExpectedValue = request.ExpectedValue,
                 AssignedToUserId = request.AssignedToUserId,
                 Territory = request.Territory,
+                TerritoryId = request.TerritoryId,
                 Status = request.AssignedToUserId is null ? LeadStatus.New : LeadStatus.Assigned,
                 Notes = request.Notes,
                 NextFollowUpDate = request.NextFollowUpDate,
@@ -146,6 +172,11 @@ namespace ZentavioCRM.Services
                 return ApiResponse<LeadDto>.FailureResponse("Lead not found.");
             }
 
+            if (!await CanAccessAsync(currentUserId, lead))
+            {
+                return ApiResponse<LeadDto>.FailureResponse("Lead not found.");
+            }
+
             if (TerminalStatuses.Contains(lead.Status))
             {
                 return ApiResponse<LeadDto>.FailureResponse(
@@ -169,6 +200,7 @@ namespace ZentavioCRM.Services
             lead.Timeline = request.Timeline;
             lead.ExpectedValue = request.ExpectedValue;
             lead.Territory = request.Territory;
+            lead.TerritoryId = request.TerritoryId;
             lead.Notes = request.Notes;
 
             if (lead.NextFollowUpDate != request.NextFollowUpDate)
@@ -194,6 +226,11 @@ namespace ZentavioCRM.Services
         {
             var lead = await _leadRepository.GetByIdAsync(id);
             if (lead is null)
+            {
+                return ApiResponse<LeadDto>.FailureResponse("Lead not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, lead))
             {
                 return ApiResponse<LeadDto>.FailureResponse("Lead not found.");
             }
@@ -239,6 +276,11 @@ namespace ZentavioCRM.Services
                 return ApiResponse<LeadDto>.FailureResponse("Lead not found.");
             }
 
+            if (!await CanAccessAsync(currentUserId, lead))
+            {
+                return ApiResponse<LeadDto>.FailureResponse("Lead not found.");
+            }
+
             if (TerminalStatuses.Contains(lead.Status))
             {
                 return ApiResponse<LeadDto>.FailureResponse($"This lead is {lead.Status} and can no longer be reassigned.");
@@ -268,6 +310,11 @@ namespace ZentavioCRM.Services
         {
             var lead = await _leadRepository.GetByIdAsync(id);
             if (lead is null)
+            {
+                return ApiResponse<bool>.FailureResponse("Lead not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, lead))
             {
                 return ApiResponse<bool>.FailureResponse("Lead not found.");
             }
@@ -471,6 +518,11 @@ namespace ZentavioCRM.Services
                 return ApiResponse<ConvertLeadResultDto>.FailureResponse("Lead not found.");
             }
 
+            if (!await CanAccessAsync(currentUserId, lead))
+            {
+                return ApiResponse<ConvertLeadResultDto>.FailureResponse("Lead not found.");
+            }
+
             if (lead.Status == LeadStatus.Converted)
             {
                 return ApiResponse<ConvertLeadResultDto>.FailureResponse("This lead has already been converted.");
@@ -501,6 +553,11 @@ namespace ZentavioCRM.Services
         {
             var lead = await _leadRepository.GetByIdAsync(id);
             if (lead is null)
+            {
+                return ApiResponse<ConvertLeadToOpportunityResultDto>.FailureResponse("Lead not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, lead))
             {
                 return ApiResponse<ConvertLeadToOpportunityResultDto>.FailureResponse("Lead not found.");
             }
@@ -637,6 +694,8 @@ namespace ZentavioCRM.Services
             AssignedToUserId = lead.AssignedToUserId,
             AssignedToUserName = lead.AssignedToUser?.FullName,
             Territory = lead.Territory,
+            TerritoryId = lead.TerritoryId,
+            TerritoryName = lead.TerritoryRef?.Name,
             Status = lead.Status,
             LeadScore = lead.LeadScore,
             AiScore = lead.AiScore,

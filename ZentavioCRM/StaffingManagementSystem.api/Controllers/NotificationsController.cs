@@ -32,6 +32,7 @@ namespace ZentavioCRM.Api.Controllers
             }
 
             await _reminderService.CheckDueRemindersAsync(userId.Value);
+            await _reminderService.CheckDelegatedRemindersAsync(userId.Value);
 
             var notifications = await _notificationService.GetRecentAsync(userId.Value);
             return Ok(ApiResponse<IReadOnlyList<NotificationDto>>.SuccessResponse(notifications));
@@ -50,6 +51,7 @@ namespace ZentavioCRM.Api.Controllers
             // background job scheduler exists in this milestone, so this is how overdue
             // Activities/Leads turn into Notification rows without adding new infrastructure.
             await _reminderService.CheckDueRemindersAsync(userId.Value);
+            await _reminderService.CheckDelegatedRemindersAsync(userId.Value);
 
             var count = await _notificationService.GetUnreadCountAsync(userId.Value);
             return Ok(ApiResponse<int>.SuccessResponse(count));

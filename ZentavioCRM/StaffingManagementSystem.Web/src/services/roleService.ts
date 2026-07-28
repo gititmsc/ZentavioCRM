@@ -4,17 +4,22 @@
 import { apiClient } from "@/services/apiClient";
 import { callApi } from "@/services/apiHelpers";
 
+/** How much of the Leads/Customers/Opportunities record-set a user with this role can see: only their own records, their department's, or everyone's. */
+export type VisibilityScope = "Own" | "Team" | "All";
+
 export interface Role {
   id: string;
   name: string;
   description: string | null;
   isSystemRole: boolean;
+  visibilityScope: VisibilityScope;
   permissionCodes: string[];
 }
 
 export interface SaveRoleRequest {
   name: string;
   description: string | null;
+  visibilityScope: VisibilityScope;
   permissionCodes: string[];
 }
 

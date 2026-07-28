@@ -1,8 +1,11 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "@/pages/login/Login";
 import Dashboard from "@/pages/dashboard/Dashboard";
+import MyProfile from "@/pages/profile/MyProfile";
 import DepartmentsList from "@/pages/departments/DepartmentsList";
 import DepartmentForm from "@/pages/departments/DepartmentForm";
+import TerritoriesList from "@/pages/territories/TerritoriesList";
+import TerritoryForm from "@/pages/territories/TerritoryForm";
 import UsersList from "@/pages/users/UsersList";
 import UserForm from "@/pages/users/UserForm";
 import RolesList from "@/pages/roles/RolesList";
@@ -37,10 +40,15 @@ export function AppRoutes() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<MyProfile />} />
 
         <Route path="/departments" element={<DepartmentsList />} />
         <Route path="/departments/new" element={<DepartmentForm />} />
         <Route path="/departments/:id/edit" element={<DepartmentForm />} />
+
+        <Route path="/territories" element={<TerritoriesList />} />
+        <Route path="/territories/new" element={<TerritoryForm />} />
+        <Route path="/territories/:id/edit" element={<TerritoryForm />} />
 
         <Route path="/users" element={<UsersList />} />
         <Route path="/users/new" element={<UserForm />} />

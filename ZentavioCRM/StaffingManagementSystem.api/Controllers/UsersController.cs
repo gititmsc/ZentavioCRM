@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ZentavioCRM.Api.Extensions;
 using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.DTOs.Users;
 using ZentavioCRM.Services.Interfaces;
@@ -62,6 +63,71 @@ namespace ZentavioCRM.Api.Controllers
             var result = await _userService.UpdateAsync(id, request);
             return result.Success ? Ok(result) : BadRequest(result);
         }
+
+        // Profile photo — self-service (a user can manage their own avatar) OR Users.Manage
+        // (an admin managing someone else's). Download is open to any authenticated user,
+        // same as GetAll/GetById above, since avatars need to render in shared lists.
+
+        [HttpGet("{id:guid}/photo")]
+        public async Task<IActionResult> DownloadPhoto(Guid id)
+        {
+            var photo = await _userService.DownloadPhotoAsync(id);
+            if (photo is null)
+            {
+                return NotFound(ApiResponse<bool>.FailureResponse("No profile photo uploaded."));
+            }
+
+            return File(photo.Value.Content, photo.Value.ContentType);
+        }
+
+        [HttpPost("{id:guid}/photo")]
+        [RequestSizeLimit(5 * 1024 * 1024)]
+        public async Task<IActionResult> UploadPhoto(Guid id, IFormFile file)
+        {
+            if (!CanManagePhoto(id))
+            {
+                return Forbid();
+            }
+
+            if (file is null || file.Length == 0)
+            {
+                return BadRequest(ApiResponse<UserDto>.FailureResponse("No file was uploaded."));
+            }
+
+            if (!AllowedPhotoContentTypes.Contains(file.ContentType))
+            {
+                return BadRequest(ApiResponse<UserDto>.FailureResponse(
+                    "Unsupported file type.",
+                    ["Profile photos must be PNG, JPEG, GIF, or WebP images."]));
+            }
+
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+
+            var result = await _userService.UploadPhotoAsync(id, file.ContentType, stream.ToArray());
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        // Server-side whitelist — an uploaded photo's Content-Type is client-supplied and otherwise
+        // stored/served back verbatim, so without this check a crafted upload (e.g. "text/html")
+        // could be served inline by a browser hitting the download endpoint directly.
+        private static readonly HashSet<string> AllowedPhotoContentTypes =
+            new(StringComparer.OrdinalIgnoreCase) { "image/png", "image/jpeg", "image/gif", "image/webp" };
+
+        [HttpDelete("{id:guid}/photo")]
+        public async Task<IActionResult> DeletePhoto(Guid id)
+        {
+            if (!CanManagePhoto(id))
+            {
+                return Forbid();
+            }
+
+            var result = await _userService.DeletePhotoAsync(id);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        private bool CanManagePhoto(Guid targetUserId)
+            => targetUserId == User.GetUserId() || User.HasClaim(PermissionCodes.ClaimType, PermissionCodes.UsersManage);
 
         private List<string> CollectErrors() => ModelState.Values
             .SelectMany(v => v.Errors)

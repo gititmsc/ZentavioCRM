@@ -7,9 +7,9 @@ namespace ZentavioCRM.Services.Interfaces
     public interface ICustomerService
     {
         Task<PagedResult<CustomerListItemDto>> SearchAsync(
-            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize);
+            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize, Guid? currentUserId = null);
 
-        Task<ApiResponse<CustomerDto>> GetByIdAsync(Guid id);
+        Task<ApiResponse<CustomerDto>> GetByIdAsync(Guid id, Guid? currentUserId = null);
 
         Task<ApiResponse<CustomerDto>> CreateAsync(SaveCustomerRequest request, Guid? currentUserId);
 

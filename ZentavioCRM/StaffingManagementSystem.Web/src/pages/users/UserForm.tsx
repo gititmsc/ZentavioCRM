@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { userService, type CreateUserRequest, type ManagedUser } from "@/services/userService";
 import { roleService, type Role } from "@/services/roleService";
 import { departmentService, type Department } from "@/services/departmentService";
+import { territoryService, type Territory } from "@/services/territoryService";
+import { UserAvatar } from "@/components/users/UserAvatar";
 
 // isActive only applies in edit mode (new users are always created active); kept on one
 // form type so the same fields/inputs work for both create and edit.
@@ -16,9 +18,17 @@ export default function UserForm() {
 
   const [roles, setRoles] = useState<Role[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [territories, setTerritories] = useState<Territory[]>([]);
   const [managers, setManagers] = useState<ManagedUser[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [loadedFullName, setLoadedFullName] = useState("");
+  const [hasProfilePhoto, setHasProfilePhoto] = useState(false);
+  const [photoVersion, setPhotoVersion] = useState(0);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -36,20 +46,23 @@ export default function UserForm() {
       roleId: "",
       departmentId: null,
       reportingManagerId: null,
+      territoryId: null,
       isActive: true,
     },
   });
 
   useEffect(() => {
     (async () => {
-      const [roleResult, departmentResult, userResult] = await Promise.all([
+      const [roleResult, departmentResult, territoryResult, userResult] = await Promise.all([
         roleService.getAll(),
         departmentService.getAll(),
+        territoryService.getAll(),
         userService.getAll(),
       ]);
 
       if (roleResult.success && roleResult.data) setRoles(roleResult.data);
       if (departmentResult.success && departmentResult.data) setDepartments(departmentResult.data);
+      if (territoryResult.success && territoryResult.data) setTerritories(territoryResult.data);
       if (userResult.success && userResult.data) setManagers(userResult.data.filter((u) => u.id !== id));
 
       if (isEditMode && id) {
@@ -65,8 +78,11 @@ export default function UserForm() {
             roleId: existing.data.roleId,
             departmentId: existing.data.departmentId,
             reportingManagerId: existing.data.reportingManagerId,
+            territoryId: existing.data.territoryId,
             isActive: existing.data.isActive,
           });
+          setHasProfilePhoto(existing.data.hasProfilePhoto);
+          setLoadedFullName(existing.data.fullName);
         }
       }
 
@@ -74,12 +90,44 @@ export default function UserForm() {
     })();
   }, [id, isEditMode, reset]);
 
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !id) return;
+
+    setPhotoError(null);
+    setIsUploadingPhoto(true);
+    const result = await userService.uploadPhoto(id, file);
+    setIsUploadingPhoto(false);
+
+    if (!result.success) {
+      setPhotoError(result.message || "Unable to upload photo.");
+      return;
+    }
+    setHasProfilePhoto(true);
+    setPhotoVersion((v) => v + 1);
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!id || !window.confirm("Remove this profile photo?")) return;
+
+    setPhotoError(null);
+    const result = await userService.deletePhoto(id);
+    if (!result.success) {
+      setPhotoError(result.message || "Unable to remove photo.");
+      return;
+    }
+    setHasProfilePhoto(false);
+    setPhotoVersion((v) => v + 1);
+  };
+
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
 
     const mobile = values.mobile || null;
     const departmentId = values.departmentId || null;
     const reportingManagerId = values.reportingManagerId || null;
+    const territoryId = values.territoryId || null;
 
     const result =
       isEditMode && id
@@ -90,6 +138,7 @@ export default function UserForm() {
             roleId: values.roleId,
             departmentId,
             reportingManagerId,
+            territoryId,
             isActive: values.isActive,
           })
         : await userService.create({
@@ -102,6 +151,7 @@ export default function UserForm() {
             roleId: values.roleId,
             departmentId,
             reportingManagerId,
+            territoryId,
           });
 
     if (!result.success) {
@@ -123,6 +173,42 @@ export default function UserForm() {
       <div className="card shadow-sm border-0" style={{ maxWidth: 720 }}>
         <div className="card-body">
           {serverError && <div className="alert alert-danger">{serverError}</div>}
+
+          {isEditMode && id && (
+            <div className="d-flex align-items-center gap-3 mb-4">
+              <UserAvatar
+                key={`${id}-${photoVersion}`}
+                userId={id}
+                fullName={loadedFullName || "?"}
+                hasProfilePhoto={hasProfilePhoto}
+                size={64}
+              />
+              <div>
+                {photoError && <div className="text-danger small mb-1">{photoError}</div>}
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary me-2"
+                  disabled={isUploadingPhoto}
+                  onClick={() => photoInputRef.current?.click()}
+                >
+                  <i className="bi bi-upload me-1" aria-hidden="true" />
+                  {isUploadingPhoto ? "Uploading..." : hasProfilePhoto ? "Change Photo" : "Upload Photo"}
+                </button>
+                {hasProfilePhoto && (
+                  <button type="button" className="btn btn-sm btn-outline-danger" onClick={handleRemovePhoto}>
+                    Remove
+                  </button>
+                )}
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/gif,image/webp"
+                  className="d-none"
+                  onChange={handlePhotoChange}
+                />
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <div className="row g-3">
@@ -216,6 +302,18 @@ export default function UserForm() {
                   {managers.map((manager) => (
                     <option key={manager.id} value={manager.id}>
                       {manager.fullName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-md-6">
+                <label className="form-label">Territory</label>
+                <select className="form-select" {...register("territoryId")}>
+                  <option value="">None</option>
+                  {territories.map((territory) => (
+                    <option key={territory.id} value={territory.id}>
+                      {territory.name}
                     </option>
                   ))}
                 </select>

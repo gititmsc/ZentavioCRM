@@ -1,5 +1,6 @@
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Security;
 
 namespace ZentavioCRM.Repositories.Interfaces
 {
@@ -7,8 +8,9 @@ namespace ZentavioCRM.Repositories.Interfaces
     {
         Task<Opportunity?> GetByIdAsync(Guid id);
 
+        /// <param name="accessScope">When non-null and Scope != All, restricts results to records the scope's user is allowed to see (Own/Team, plus any active delegations).</param>
         Task<(IReadOnlyList<Opportunity> Items, int TotalCount)> SearchAsync(
-            string? search, OpportunityStage? stage, Guid? customerId, Guid? assignedToUserId, int page, int pageSize);
+            string? search, OpportunityStage? stage, Guid? customerId, Guid? assignedToUserId, int page, int pageSize, AccessScope? accessScope = null);
 
         Task<string> GetNextOpportunityNumberAsync();
 

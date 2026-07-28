@@ -23,5 +23,8 @@ namespace ZentavioCRM.Repositories.Interfaces
         Task UpdateAsync(User user);
 
         Task UpdateLastLoginAsync(Guid userId, DateTime loginAtUtc);
+
+        /// <summary>Every user ID sharing the given Department (including any user with that DepartmentId). Used to resolve "Team" visibility scope, where Team is defined as same-department.</summary>
+        Task<IReadOnlySet<Guid>> GetUserIdsInDepartmentAsync(Guid departmentId);
     }
 }

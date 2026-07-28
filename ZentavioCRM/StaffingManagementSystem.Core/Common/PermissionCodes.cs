@@ -13,6 +13,9 @@ namespace ZentavioCRM.Core.Common
         public const string DepartmentsView = "Departments.View";
         public const string DepartmentsManage = "Departments.Manage";
 
+        public const string TerritoriesView = "Territories.View";
+        public const string TerritoriesManage = "Territories.Manage";
+
         public const string UsersView = "Users.View";
         public const string UsersManage = "Users.Manage";
 
@@ -53,6 +56,7 @@ namespace ZentavioCRM.Core.Common
         public static readonly IReadOnlyDictionary<string, string[]> ByModule = new Dictionary<string, string[]>
         {
             ["Departments"] = [DepartmentsView, DepartmentsManage],
+            ["Territories"] = [TerritoriesView, TerritoriesManage],
             ["Users"] = [UsersView, UsersManage],
             ["Roles"] = [RolesView, RolesManage],
             ["Customers"] = [CustomersView, CustomersCreate, CustomersEdit, CustomersDelete],

@@ -20,7 +20,8 @@ namespace ZentavioCRM.Repositories
                 .ThenInclude(r => r!.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
             .Include(u => u.Department)
-            .Include(u => u.ReportingManager);
+            .Include(u => u.ReportingManager)
+            .Include(u => u.Territory);
 
         public Task<User?> GetByEmailAsync(string email)
             => WithAuthData().FirstOrDefaultAsync(u => u.Email == email);
@@ -54,6 +55,16 @@ namespace ZentavioCRM.Repositories
             await _dbContext.Users
                 .Where(u => u.Id == userId)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(u => u.LastLoginAtUtc, loginAtUtc));
+        }
+
+        public async Task<IReadOnlySet<Guid>> GetUserIdsInDepartmentAsync(Guid departmentId)
+        {
+            var ids = await _dbContext.Users
+                .Where(u => u.DepartmentId == departmentId)
+                .Select(u => u.Id)
+                .ToListAsync();
+
+            return ids.ToHashSet();
         }
     }
 }

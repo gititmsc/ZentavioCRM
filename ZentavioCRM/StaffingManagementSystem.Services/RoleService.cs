@@ -50,6 +50,7 @@ namespace ZentavioCRM.Services
                 Name = request.Name.Trim(),
                 Description = request.Description,
                 IsSystemRole = false,
+                VisibilityScope = request.VisibilityScope,
                 CreatedAtUtc = DateTime.UtcNow,
             };
 
@@ -84,6 +85,7 @@ namespace ZentavioCRM.Services
 
             role.Name = request.Name.Trim();
             role.Description = request.Description;
+            role.VisibilityScope = request.VisibilityScope;
             await _roleRepository.UpdateAsync(role);
 
             var permissionIds = await ResolvePermissionIdsAsync(request.PermissionCodes);
@@ -130,6 +132,7 @@ namespace ZentavioCRM.Services
             Name = role.Name,
             Description = role.Description,
             IsSystemRole = role.IsSystemRole,
+            VisibilityScope = role.VisibilityScope,
             PermissionCodes = role.RolePermissions
                 .Where(rp => rp.Permission is not null)
                 .Select(rp => rp.Permission!.Code)

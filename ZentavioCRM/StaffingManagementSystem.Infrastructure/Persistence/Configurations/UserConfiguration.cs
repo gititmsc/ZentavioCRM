@@ -69,6 +69,14 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
                 .HasForeignKey(u => u.ReportingManagerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasOne(u => u.Territory)
+                .WithMany()
+                .HasForeignKey(u => u.TerritoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Property(u => u.ProfilePhotoContent).HasColumnType("varbinary(max)");
+            builder.Property(u => u.ProfilePhotoContentType).HasMaxLength(100);
+
             builder.Ignore(u => u.FullName);
         }
     }

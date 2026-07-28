@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ZentavioCRM.Core.Enums;
 
 namespace ZentavioCRM.Core.DTOs.Roles
 {
@@ -10,6 +11,8 @@ namespace ZentavioCRM.Core.DTOs.Roles
 
         [MaxLength(500)]
         public string? Description { get; set; }
+
+        public VisibilityScope VisibilityScope { get; set; } = VisibilityScope.All;
 
         public List<string> PermissionCodes { get; set; } = [];
     }

@@ -66,6 +66,7 @@ namespace ZentavioCRM.Services
                 RoleId = request.RoleId,
                 DepartmentId = request.DepartmentId,
                 ReportingManagerId = request.ReportingManagerId,
+                TerritoryId = request.TerritoryId,
                 IsActive = true,
                 CreatedAtUtc = DateTime.UtcNow,
             };
@@ -101,6 +102,7 @@ namespace ZentavioCRM.Services
             user.RoleId = request.RoleId;
             user.DepartmentId = request.DepartmentId;
             user.ReportingManagerId = request.ReportingManagerId;
+            user.TerritoryId = request.TerritoryId;
             user.IsActive = request.IsActive;
             user.UpdatedAtUtc = DateTime.UtcNow;
 
@@ -108,6 +110,51 @@ namespace ZentavioCRM.Services
 
             var updated = await _userRepository.GetByIdAsync(id);
             return ApiResponse<UserDto>.SuccessResponse(Map(updated!), "User updated.");
+        }
+
+        public async Task<ApiResponse<UserDto>> UploadPhotoAsync(Guid id, string contentType, byte[] content)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user is null)
+            {
+                return ApiResponse<UserDto>.FailureResponse("User not found.");
+            }
+
+            user.ProfilePhotoContent = content;
+            user.ProfilePhotoContentType = contentType;
+            user.UpdatedAtUtc = DateTime.UtcNow;
+
+            await _userRepository.UpdateAsync(user);
+
+            return ApiResponse<UserDto>.SuccessResponse(Map(user), "Profile photo updated.");
+        }
+
+        public async Task<(byte[] Content, string ContentType)?> DownloadPhotoAsync(Guid id)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user?.ProfilePhotoContent is null || user.ProfilePhotoContent.Length == 0)
+            {
+                return null;
+            }
+
+            return (user.ProfilePhotoContent, user.ProfilePhotoContentType ?? "application/octet-stream");
+        }
+
+        public async Task<ApiResponse<bool>> DeletePhotoAsync(Guid id)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user is null)
+            {
+                return ApiResponse<bool>.FailureResponse("User not found.");
+            }
+
+            user.ProfilePhotoContent = null;
+            user.ProfilePhotoContentType = null;
+            user.UpdatedAtUtc = DateTime.UtcNow;
+
+            await _userRepository.UpdateAsync(user);
+
+            return ApiResponse<bool>.SuccessResponse(true, "Profile photo removed.");
         }
 
         private static UserDto Map(User user) => new()
@@ -125,6 +172,9 @@ namespace ZentavioCRM.Services
             DepartmentName = user.Department?.Name,
             ReportingManagerId = user.ReportingManagerId,
             ReportingManagerName = user.ReportingManager?.FullName,
+            TerritoryId = user.TerritoryId,
+            TerritoryName = user.Territory?.Name,
+            HasProfilePhoto = user.ProfilePhotoContent is not null && user.ProfilePhotoContent.Length > 0,
             IsActive = user.IsActive,
             LastLoginAtUtc = user.LastLoginAtUtc,
         };

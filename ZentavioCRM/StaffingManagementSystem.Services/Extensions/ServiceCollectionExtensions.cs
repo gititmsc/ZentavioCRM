@@ -12,6 +12,8 @@ namespace ZentavioCRM.Services.Extensions
         {
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IDepartmentService, DepartmentService>();
+            services.AddScoped<ITerritoryService, TerritoryService>();
+            services.AddScoped<IUserDelegationService, UserDelegationService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IRoleService, RoleService>();
             services.AddScoped<ICustomerService, CustomerService>();
@@ -25,6 +27,7 @@ namespace ZentavioCRM.Services.Extensions
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IDocumentService, DocumentService>();
             services.AddScoped<IReminderService, ReminderService>();
+            services.AddScoped<IAccessScopeService, AccessScopeService>();
 
             return services;
         }

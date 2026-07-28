@@ -20,6 +20,8 @@ namespace ZentavioCRM.Core.DTOs.Users
 
         public Guid? ReportingManagerId { get; set; }
 
+        public Guid? TerritoryId { get; set; }
+
         public bool IsActive { get; set; } = true;
     }
 }

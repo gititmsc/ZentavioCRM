@@ -3,6 +3,7 @@ using ZentavioCRM.Core.DTOs.Common;
 using ZentavioCRM.Core.DTOs.Customers;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Security;
 using ZentavioCRM.Repositories.Interfaces;
 using ZentavioCRM.Services.Interfaces;
 
@@ -15,20 +16,35 @@ namespace ZentavioCRM.Services
 
         private readonly ICustomerRepository _customerRepository;
         private readonly IAuditLogService _auditLogService;
+        private readonly IAccessScopeService _accessScopeService;
 
-        public CustomerService(ICustomerRepository customerRepository, IAuditLogService auditLogService)
+        public CustomerService(ICustomerRepository customerRepository, IAuditLogService auditLogService, IAccessScopeService accessScopeService)
         {
             _customerRepository = customerRepository;
             _auditLogService = auditLogService;
+            _accessScopeService = accessScopeService;
+        }
+
+        /// <summary>In-memory record-visibility check for a single already-fetched Customer. Returns true (no restriction) when currentUserId is null, since that only happens for internal/system callers, never an authenticated HTTP request.</summary>
+        private async Task<bool> CanAccessAsync(Guid? currentUserId, Customer customer)
+        {
+            if (currentUserId is null)
+            {
+                return true;
+            }
+
+            var scope = await _accessScopeService.GetForUserAsync(currentUserId.Value);
+            return scope.CanSee(customer.AssignedToUserId, customer.CreatedByUserId);
         }
 
         public async Task<PagedResult<CustomerListItemDto>> SearchAsync(
-            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize)
+            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize, Guid? currentUserId = null)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize is < 1 or > 200 ? 20 : pageSize;
 
-            var (items, totalCount) = await _customerRepository.SearchAsync(search, assignedToUserId, isActive, page, pageSize);
+            AccessScope? accessScope = currentUserId is null ? null : await _accessScopeService.GetForUserAsync(currentUserId.Value);
+            var (items, totalCount) = await _customerRepository.SearchAsync(search, assignedToUserId, isActive, page, pageSize, accessScope);
 
             return new PagedResult<CustomerListItemDto>
             {
@@ -39,12 +55,20 @@ namespace ZentavioCRM.Services
             };
         }
 
-        public async Task<ApiResponse<CustomerDto>> GetByIdAsync(Guid id)
+        public async Task<ApiResponse<CustomerDto>> GetByIdAsync(Guid id, Guid? currentUserId = null)
         {
             var customer = await _customerRepository.GetByIdAsync(id);
-            return customer is null
-                ? ApiResponse<CustomerDto>.FailureResponse("Customer not found.")
-                : ApiResponse<CustomerDto>.SuccessResponse(Map(customer));
+            if (customer is null)
+            {
+                return ApiResponse<CustomerDto>.FailureResponse("Customer not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, customer))
+            {
+                return ApiResponse<CustomerDto>.FailureResponse("Customer not found.");
+            }
+
+            return ApiResponse<CustomerDto>.SuccessResponse(Map(customer));
         }
 
         public async Task<ApiResponse<CustomerDto>> CreateAsync(SaveCustomerRequest request, Guid? currentUserId)
@@ -70,6 +94,7 @@ namespace ZentavioCRM.Services
                 AcquisitionSource = request.AcquisitionSource,
                 HealthStatus = request.HealthStatus,
                 AssignedToUserId = request.AssignedToUserId,
+                CreatedByUserId = currentUserId,
                 IsActive = request.IsActive,
                 CreatedAtUtc = DateTime.UtcNow,
             };
@@ -86,6 +111,11 @@ namespace ZentavioCRM.Services
         {
             var customer = await _customerRepository.GetByIdAsync(id);
             if (customer is null)
+            {
+                return ApiResponse<CustomerDto>.FailureResponse("Customer not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, customer))
             {
                 return ApiResponse<CustomerDto>.FailureResponse("Customer not found.");
             }
@@ -123,6 +153,11 @@ namespace ZentavioCRM.Services
         {
             var customer = await _customerRepository.GetByIdAsync(id);
             if (customer is null)
+            {
+                return ApiResponse<bool>.FailureResponse("Customer not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, customer))
             {
                 return ApiResponse<bool>.FailureResponse("Customer not found.");
             }

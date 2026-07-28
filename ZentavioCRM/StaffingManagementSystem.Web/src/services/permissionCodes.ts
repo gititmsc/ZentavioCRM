@@ -6,6 +6,9 @@ export const PermissionCodes = {
   DepartmentsView: "Departments.View",
   DepartmentsManage: "Departments.Manage",
 
+  TerritoriesView: "Territories.View",
+  TerritoriesManage: "Territories.Manage",
+
   UsersView: "Users.View",
   UsersManage: "Users.Manage",
 

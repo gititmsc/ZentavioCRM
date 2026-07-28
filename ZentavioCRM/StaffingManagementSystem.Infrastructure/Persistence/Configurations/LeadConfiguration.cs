@@ -50,8 +50,14 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
                 .HasForeignKey(l => l.ConvertedCustomerId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            builder.HasOne(l => l.TerritoryRef)
+                .WithMany()
+                .HasForeignKey(l => l.TerritoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             builder.HasIndex(l => l.Status);
             builder.HasIndex(l => l.AssignedToUserId);
+            builder.HasIndex(l => l.TerritoryId);
         }
     }
 }

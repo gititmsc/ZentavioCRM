@@ -29,5 +29,7 @@ namespace ZentavioCRM.Core.DTOs.Users
         public Guid? DepartmentId { get; set; }
 
         public Guid? ReportingManagerId { get; set; }
+
+        public Guid? TerritoryId { get; set; }
     }
 }

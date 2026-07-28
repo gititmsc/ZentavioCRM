@@ -1,4 +1,5 @@
 using ZentavioCRM.Core.Entities;
+using ZentavioCRM.Core.Security;
 
 namespace ZentavioCRM.Repositories.Interfaces
 {
@@ -6,8 +7,9 @@ namespace ZentavioCRM.Repositories.Interfaces
     {
         Task<Customer?> GetByIdAsync(Guid id);
 
+        /// <param name="accessScope">When non-null and Scope != All, restricts results to records the scope's user is allowed to see (Own/Team, plus any active delegations).</param>
         Task<(IReadOnlyList<Customer> Items, int TotalCount)> SearchAsync(
-            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize);
+            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize, AccessScope? accessScope = null);
 
         Task<string> GetNextCustomerNumberAsync();
 

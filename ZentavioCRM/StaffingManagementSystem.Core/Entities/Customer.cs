@@ -55,6 +55,9 @@ namespace ZentavioCRM.Core.Entities
 
         public User? AssignedToUser { get; set; }
 
+        /// <summary>Audit-trail scalar only (no navigation property), same convention as Lead/Opportunity's CreatedByUserId. Used for Own/Team visibility-scope checks on not-yet-assigned customers.</summary>
+        public Guid? CreatedByUserId { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAtUtc { get; set; }

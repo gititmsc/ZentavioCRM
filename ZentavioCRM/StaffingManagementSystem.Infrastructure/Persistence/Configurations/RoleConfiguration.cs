@@ -19,6 +19,8 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
 
             builder.Property(r => r.Description).HasMaxLength(500);
 
+            builder.Property(r => r.VisibilityScope).IsRequired().HasConversion<string>().HasMaxLength(20).HasDefaultValue(Core.Enums.VisibilityScope.All);
+
             builder.Property(r => r.CreatedAtUtc).IsRequired();
         }
     }

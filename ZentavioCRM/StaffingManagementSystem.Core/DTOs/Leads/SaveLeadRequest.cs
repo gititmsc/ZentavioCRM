@@ -44,6 +44,8 @@ namespace ZentavioCRM.Core.DTOs.Leads
 
         public string? Territory { get; set; }
 
+        public Guid? TerritoryId { get; set; }
+
         public string? Notes { get; set; }
 
         public DateTime? NextFollowUpDate { get; set; }

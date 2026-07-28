@@ -32,6 +32,15 @@ namespace ZentavioCRM.Core.Entities
 
         public User? ReportingManager { get; set; }
 
+        public Guid? TerritoryId { get; set; }
+
+        public Territory? Territory { get; set; }
+
+        /// <summary>Raw image bytes for the user's avatar. Stored directly on User (not via the generic Document entity) to avoid an extra lookup/auth round-trip per avatar when rendering many users in a list at once.</summary>
+        public byte[]? ProfilePhotoContent { get; set; }
+
+        public string? ProfilePhotoContentType { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAtUtc { get; set; }
