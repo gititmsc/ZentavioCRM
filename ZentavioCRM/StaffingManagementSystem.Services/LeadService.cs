@@ -72,6 +72,11 @@ namespace ZentavioCRM.Services
                 Industry = request.Industry,
                 Source = request.Source,
                 Campaign = request.Campaign,
+                UtmSource = request.UtmSource,
+                UtmMedium = request.UtmMedium,
+                UtmCampaign = request.UtmCampaign,
+                UtmTerm = request.UtmTerm,
+                UtmContent = request.UtmContent,
                 Budget = request.Budget,
                 Timeline = request.Timeline,
                 ExpectedValue = request.ExpectedValue,
@@ -155,6 +160,11 @@ namespace ZentavioCRM.Services
             lead.Industry = request.Industry;
             lead.Source = request.Source;
             lead.Campaign = request.Campaign;
+            lead.UtmSource = request.UtmSource;
+            lead.UtmMedium = request.UtmMedium;
+            lead.UtmCampaign = request.UtmCampaign;
+            lead.UtmTerm = request.UtmTerm;
+            lead.UtmContent = request.UtmContent;
             lead.Budget = request.Budget;
             lead.Timeline = request.Timeline;
             lead.ExpectedValue = request.ExpectedValue;
@@ -296,7 +306,8 @@ namespace ZentavioCRM.Services
         private static readonly string[] ExportHeaders =
         [
             "LeadNumber", "CompanyName", "ContactName", "Email", "Mobile", "Industry", "Source",
-            "Campaign", "Budget", "Timeline", "ExpectedValue", "Territory", "Status", "LeadScore",
+            "Campaign", "UtmSource", "UtmMedium", "UtmCampaign", "UtmTerm", "UtmContent",
+            "Budget", "Timeline", "ExpectedValue", "Territory", "Status", "LeadScore",
             "AssignedToUserName", "Notes", "CreatedAtUtc",
         ];
 
@@ -304,7 +315,8 @@ namespace ZentavioCRM.Services
         private static readonly string[] ImportHeaders =
         [
             "CompanyName", "ContactName", "Email", "Mobile", "Industry", "Source",
-            "Campaign", "Budget", "Timeline", "ExpectedValue", "Territory", "Notes",
+            "Campaign", "UtmSource", "UtmMedium", "UtmCampaign", "UtmTerm", "UtmContent",
+            "Budget", "Timeline", "ExpectedValue", "Territory", "Notes",
         ];
 
         public async Task<string> ExportCsvAsync()
@@ -321,6 +333,11 @@ namespace ZentavioCRM.Services
                 l.Industry,
                 l.Source.ToString(),
                 l.Campaign,
+                l.UtmSource,
+                l.UtmMedium,
+                l.UtmCampaign,
+                l.UtmTerm,
+                l.UtmContent,
                 l.Budget?.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 l.Timeline,
                 l.ExpectedValue?.ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -416,6 +433,11 @@ namespace ZentavioCRM.Services
                         Industry = Get(row, "Industry"),
                         Source = source,
                         Campaign = Get(row, "Campaign"),
+                        UtmSource = Get(row, "UtmSource"),
+                        UtmMedium = Get(row, "UtmMedium"),
+                        UtmCampaign = Get(row, "UtmCampaign"),
+                        UtmTerm = Get(row, "UtmTerm"),
+                        UtmContent = Get(row, "UtmContent"),
                         Budget = budget,
                         Timeline = Get(row, "Timeline"),
                         ExpectedValue = expectedValue,
@@ -604,6 +626,11 @@ namespace ZentavioCRM.Services
             Industry = lead.Industry,
             Source = lead.Source,
             Campaign = lead.Campaign,
+            UtmSource = lead.UtmSource,
+            UtmMedium = lead.UtmMedium,
+            UtmCampaign = lead.UtmCampaign,
+            UtmTerm = lead.UtmTerm,
+            UtmContent = lead.UtmContent,
             Budget = lead.Budget,
             Timeline = lead.Timeline,
             ExpectedValue = lead.ExpectedValue,

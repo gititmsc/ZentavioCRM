@@ -23,6 +23,11 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
             builder.Property(l => l.Mobile).HasMaxLength(30);
             builder.Property(l => l.Industry).HasMaxLength(100);
             builder.Property(l => l.Campaign).HasMaxLength(150);
+            builder.Property(l => l.UtmSource).HasMaxLength(150);
+            builder.Property(l => l.UtmMedium).HasMaxLength(150);
+            builder.Property(l => l.UtmCampaign).HasMaxLength(150);
+            builder.Property(l => l.UtmTerm).HasMaxLength(150);
+            builder.Property(l => l.UtmContent).HasMaxLength(150);
             builder.Property(l => l.Timeline).HasMaxLength(100);
             builder.Property(l => l.Territory).HasMaxLength(100);
             builder.Property(l => l.LostReason).HasMaxLength(300);

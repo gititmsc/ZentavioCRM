@@ -47,6 +47,16 @@ namespace ZentavioCRM.Core.DTOs.Leads
 
         public string? Campaign { get; set; }
 
+        public string? UtmSource { get; set; }
+
+        public string? UtmMedium { get; set; }
+
+        public string? UtmCampaign { get; set; }
+
+        public string? UtmTerm { get; set; }
+
+        public string? UtmContent { get; set; }
+
         public decimal? Budget { get; set; }
 
         public string? Timeline { get; set; }

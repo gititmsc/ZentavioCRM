@@ -61,6 +61,11 @@ export interface Lead {
   industry: string | null;
   source: LeadSource;
   campaign: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  utmTerm: string | null;
+  utmContent: string | null;
   budget: number | null;
   timeline: string | null;
   expectedValue: number | null;
@@ -87,6 +92,11 @@ export interface SaveLeadRequest {
   industry: string | null;
   source: LeadSource;
   campaign: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  utmTerm: string | null;
+  utmContent: string | null;
   budget: number | null;
   timeline: string | null;
   expectedValue: number | null;

@@ -228,6 +228,18 @@ export default function LeadDetail() {
                 <div className="text-muted small">Campaign</div>
                 <div>{lead.campaign ?? "—"}</div>
               </div>
+              {(lead.utmSource || lead.utmMedium || lead.utmCampaign || lead.utmTerm || lead.utmContent) && (
+                <div className="col-12">
+                  <div className="text-muted small mb-1">UTM Tracking</div>
+                  <div className="d-flex flex-wrap gap-1">
+                    {lead.utmSource && <span className="badge text-bg-light border">source: {lead.utmSource}</span>}
+                    {lead.utmMedium && <span className="badge text-bg-light border">medium: {lead.utmMedium}</span>}
+                    {lead.utmCampaign && <span className="badge text-bg-light border">campaign: {lead.utmCampaign}</span>}
+                    {lead.utmTerm && <span className="badge text-bg-light border">term: {lead.utmTerm}</span>}
+                    {lead.utmContent && <span className="badge text-bg-light border">content: {lead.utmContent}</span>}
+                  </div>
+                </div>
+              )}
               <div className="col-md-6">
                 <div className="text-muted small">Budget</div>
                 <div>{lead.budget != null ? lead.budget.toLocaleString() : "—"}</div>

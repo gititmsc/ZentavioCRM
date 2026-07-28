@@ -50,6 +50,11 @@ export default function LeadForm() {
       industry: null,
       source: "ManualEntry",
       campaign: null,
+      utmSource: null,
+      utmMedium: null,
+      utmCampaign: null,
+      utmTerm: null,
+      utmContent: null,
       budget: null,
       timeline: null,
       expectedValue: null,
@@ -77,6 +82,11 @@ export default function LeadForm() {
             industry: l.industry,
             source: l.source,
             campaign: l.campaign,
+            utmSource: l.utmSource,
+            utmMedium: l.utmMedium,
+            utmCampaign: l.utmCampaign,
+            utmTerm: l.utmTerm,
+            utmContent: l.utmContent,
             budget: l.budget,
             timeline: l.timeline,
             expectedValue: l.expectedValue,
@@ -199,7 +209,28 @@ export default function LeadForm() {
 
               <div className="col-md-4">
                 <label className="form-label">Campaign</label>
-                <input className="form-control" {...register("campaign")} />
+                <input className="form-control" placeholder="Human-readable label, e.g. Spring Promo" {...register("campaign")} />
+              </div>
+
+              <div className="col-12">
+                <label className="form-label small text-muted mb-1">UTM Tracking</label>
+                <div className="row g-2">
+                  <div className="col-md-4">
+                    <input className="form-control form-control-sm" placeholder="utm_source (e.g. google)" {...register("utmSource")} />
+                  </div>
+                  <div className="col-md-4">
+                    <input className="form-control form-control-sm" placeholder="utm_medium (e.g. cpc)" {...register("utmMedium")} />
+                  </div>
+                  <div className="col-md-4">
+                    <input className="form-control form-control-sm" placeholder="utm_campaign" {...register("utmCampaign")} />
+                  </div>
+                  <div className="col-md-4">
+                    <input className="form-control form-control-sm" placeholder="utm_term" {...register("utmTerm")} />
+                  </div>
+                  <div className="col-md-4">
+                    <input className="form-control form-control-sm" placeholder="utm_content" {...register("utmContent")} />
+                  </div>
+                </div>
               </div>
 
               <div className="col-md-4">

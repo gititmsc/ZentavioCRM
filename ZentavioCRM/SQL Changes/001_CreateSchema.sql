@@ -342,6 +342,11 @@ BEGIN
         Industry            NVARCHAR(100)    NULL,
         Source              NVARCHAR(30)     NOT NULL,
         Campaign            NVARCHAR(150)    NULL,
+        UtmSource           NVARCHAR(150)    NULL,
+        UtmMedium           NVARCHAR(150)    NULL,
+        UtmCampaign         NVARCHAR(150)    NULL,
+        UtmTerm             NVARCHAR(150)    NULL,
+        UtmContent          NVARCHAR(150)    NULL,
         Budget              DECIMAL(18, 2)   NULL,
         Timeline            NVARCHAR(100)    NULL,
         ExpectedValue       DECIMAL(18, 2)   NULL,
@@ -384,6 +389,38 @@ GO
 IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL AND COL_LENGTH('dbo.Leads', 'FollowUpReminderSentAtUtc') IS NULL
 BEGIN
     ALTER TABLE dbo.Leads ADD FollowUpReminderSentAtUtc DATETIME2 NULL;
+END
+GO
+
+-- Leads.Utm* — structured UTM tracking parameters, added post-launch alongside the pre-existing
+-- freeform Campaign label; guarded ALTERs for a Leads table that already existed from an earlier run.
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL AND COL_LENGTH('dbo.Leads', 'UtmSource') IS NULL
+BEGIN
+    ALTER TABLE dbo.Leads ADD UtmSource NVARCHAR(150) NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL AND COL_LENGTH('dbo.Leads', 'UtmMedium') IS NULL
+BEGIN
+    ALTER TABLE dbo.Leads ADD UtmMedium NVARCHAR(150) NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL AND COL_LENGTH('dbo.Leads', 'UtmCampaign') IS NULL
+BEGIN
+    ALTER TABLE dbo.Leads ADD UtmCampaign NVARCHAR(150) NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL AND COL_LENGTH('dbo.Leads', 'UtmTerm') IS NULL
+BEGIN
+    ALTER TABLE dbo.Leads ADD UtmTerm NVARCHAR(150) NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL AND COL_LENGTH('dbo.Leads', 'UtmContent') IS NULL
+BEGIN
+    ALTER TABLE dbo.Leads ADD UtmContent NVARCHAR(150) NULL;
 END
 GO
 

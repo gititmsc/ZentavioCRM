@@ -27,6 +27,21 @@ namespace ZentavioCRM.Core.Entities
 
         public string? Campaign { get; set; }
 
+        /// <summary>utm_source — the referring site or platform (e.g. "google", "linkedin", "newsletter").</summary>
+        public string? UtmSource { get; set; }
+
+        /// <summary>utm_medium — the marketing medium (e.g. "cpc", "email", "social", "organic").</summary>
+        public string? UtmMedium { get; set; }
+
+        /// <summary>utm_campaign — the specific campaign identifier. Distinct from the freeform <see cref="Campaign"/> field, which is a human-readable label; this is the structured tracking parameter as it would appear in a URL.</summary>
+        public string? UtmCampaign { get; set; }
+
+        /// <summary>utm_term — paid search keyword, if applicable.</summary>
+        public string? UtmTerm { get; set; }
+
+        /// <summary>utm_content — differentiates similar content/links within the same campaign (e.g. A/B test variant, specific ad or CTA).</summary>
+        public string? UtmContent { get; set; }
+
         public decimal? Budget { get; set; }
 
         public string? Timeline { get; set; }
