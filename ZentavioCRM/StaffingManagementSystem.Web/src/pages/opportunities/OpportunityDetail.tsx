@@ -8,11 +8,11 @@ import {
   type OpportunityStage,
 } from "@/services/opportunityService";
 import { userService, type ManagedUser } from "@/services/userService";
-import { activityService, type Activity, type ActivityType } from "@/services/activityService";
 import { quotationService, type QuotationListItem } from "@/services/quotationService";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { HistoryPanel } from "@/components/history/HistoryPanel";
 import { DocumentsPanel } from "@/components/documents/DocumentsPanel";
+import { ActivityTimelinePanel } from "@/components/activities/ActivityTimelinePanel";
 
 const QUOTATION_STATUS_BADGE: Record<string, string> = {
   Draft: "text-bg-secondary",
@@ -31,8 +31,6 @@ const NEXT_STAGES: Record<OpportunityStage, OpportunityStage[]> = {
   ClosedWon: [],
   ClosedLost: [],
 };
-
-const ACTIVITY_TYPES: ActivityType[] = ["Call", "Email", "Meeting", "Task", "Note", "Visit", "WhatsApp", "Sms"];
 
 const CONTACT_ROLE_LABEL: Record<OpportunityContactRole, string> = {
   Champion: "Champion",
@@ -61,15 +59,11 @@ export default function OpportunityDetail() {
 
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [users, setUsers] = useState<ManagedUser[]>([]);
-  const [timeline, setTimeline] = useState<Activity[]>([]);
   const [quotations, setQuotations] = useState<QuotationListItem[]>([]);
   const [assignToUserId, setAssignToUserId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  const [newActivityType, setNewActivityType] = useState<ActivityType>("Note");
-  const [newActivitySubject, setNewActivitySubject] = useState("");
 
   const canEdit = hasPermission(PermissionCodes.OpportunitiesEdit);
   const canAssign = hasPermission(PermissionCodes.OpportunitiesAssign);
@@ -78,10 +72,9 @@ export default function OpportunityDetail() {
   const load = async () => {
     if (!id) return;
     setIsLoading(true);
-    const [opportunityResult, usersResult, timelineResult, quotationsResult] = await Promise.all([
+    const [opportunityResult, usersResult, quotationsResult] = await Promise.all([
       opportunityService.getById(id),
       userService.getAll(),
-      activityService.getTimeline("Opportunity", id),
       quotationService.search({ opportunityId: id, pageSize: 50 }),
     ]);
     setIsLoading(false);
@@ -94,7 +87,6 @@ export default function OpportunityDetail() {
     setAssignToUserId(opportunityResult.data.assignedToUserId ?? "");
 
     if (usersResult.success && usersResult.data) setUsers(usersResult.data);
-    if (timelineResult.success && timelineResult.data) setTimeline(timelineResult.data);
     if (quotationsResult.success && quotationsResult.data) setQuotations(quotationsResult.data.items);
   };
 
@@ -130,22 +122,6 @@ export default function OpportunityDetail() {
       return;
     }
     load();
-  };
-
-  const handleAddActivity = async () => {
-    if (!id || !newActivitySubject.trim()) return;
-    const result = await activityService.create("Opportunity", id, {
-      type: newActivityType,
-      subject: newActivitySubject.trim(),
-      description: null,
-      dueAtUtc: null,
-      assignedToUserId: null,
-    });
-    if (result.success) {
-      setNewActivitySubject("");
-      const timelineResult = await activityService.getTimeline("Opportunity", id);
-      if (timelineResult.success && timelineResult.data) setTimeline(timelineResult.data);
-    }
   };
 
   if (isLoading) {
@@ -349,57 +325,7 @@ export default function OpportunityDetail() {
             )}
           </div>
 
-          <div className="card shadow-sm border-0">
-            <div className="card-header bg-white fw-semibold">Timeline</div>
-            <div className="card-body">
-              <div className="d-flex gap-2 mb-3">
-                <select
-                  className="form-select"
-                  style={{ maxWidth: 140 }}
-                  value={newActivityType}
-                  onChange={(e) => setNewActivityType(e.target.value as ActivityType)}
-                >
-                  {ACTIVITY_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  className="form-control"
-                  placeholder="Log a call, note, or task..."
-                  value={newActivitySubject}
-                  onChange={(e) => setNewActivitySubject(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddActivity();
-                    }
-                  }}
-                />
-                <button type="button" className="btn btn-outline-primary" onClick={handleAddActivity}>
-                  Log
-                </button>
-              </div>
-
-              {timeline.length === 0 && <div className="text-muted">No activity logged yet.</div>}
-
-              <ul className="list-unstyled mb-0">
-                {timeline.map((activity) => (
-                  <li key={activity.id} className="border-bottom py-2">
-                    <div className="d-flex justify-content-between">
-                      <span className="fw-semibold">
-                        <i className="bi bi-clock-history me-2 text-muted" aria-hidden="true" />
-                        {activity.type}: {activity.subject}
-                      </span>
-                      <span className="text-muted small">{new Date(activity.createdAtUtc).toLocaleString()}</span>
-                    </div>
-                    {activity.description && <div className="text-muted small ms-4">{activity.description}</div>}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          <ActivityTimelinePanel relatedToType="Opportunity" relatedToId={opportunity.id} users={users} />
 
           <DocumentsPanel entityType="Opportunity" entityId={opportunity.id} />
 

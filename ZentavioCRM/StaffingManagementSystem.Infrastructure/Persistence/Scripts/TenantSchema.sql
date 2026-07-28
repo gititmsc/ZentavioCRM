@@ -472,6 +472,8 @@ CREATE TABLE dbo.Activities
     DueAtUtc         DATETIME2        NULL,
     CompletedAtUtc   DATETIME2        NULL,
     ReminderSentAtUtc DATETIME2       NULL,
+    RecurrenceRule   NVARCHAR(20)     NULL,
+    RecurrenceGroupId UNIQUEIDENTIFIER NULL,
     AssignedToUserId UNIQUEIDENTIFIER NULL,
     CreatedByUserId  UNIQUEIDENTIFIER NULL,
     CreatedAtUtc     DATETIME2        NOT NULL,
@@ -481,6 +483,7 @@ CREATE TABLE dbo.Activities
 );
 
 CREATE INDEX IX_Activities_RelatedToType_RelatedToId ON dbo.Activities (RelatedToType, RelatedToId);
+CREATE INDEX IX_Activities_RecurrenceGroupId ON dbo.Activities (RecurrenceGroupId);
 GO
 
 -- ============================================================================

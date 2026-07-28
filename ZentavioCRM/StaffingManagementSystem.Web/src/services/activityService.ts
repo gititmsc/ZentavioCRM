@@ -9,6 +9,8 @@ export type ActivityType = "Call" | "Email" | "Meeting" | "Task" | "Note" | "Vis
 
 export type RelatedEntityType = "Lead" | "Customer" | "Opportunity" | "Quotation" | "SalesOrder";
 
+export type ActivityRecurrenceRule = "Daily" | "Weekly" | "Monthly";
+
 export interface Activity {
   id: string;
   type: ActivityType;
@@ -21,6 +23,8 @@ export interface Activity {
   assignedToUserId: string | null;
   assignedToUserName: string | null;
   createdByUserName: string | null;
+  recurrenceRule: ActivityRecurrenceRule | null;
+  recurrenceGroupId: string | null;
   createdAtUtc: string;
 }
 
@@ -30,6 +34,8 @@ export interface CreateActivityRequest {
   description: string | null;
   dueAtUtc: string | null;
   assignedToUserId: string | null;
+  recurrenceRule: ActivityRecurrenceRule | null;
+  recurrenceCount: number | null;
 }
 
 const getTimeline = (relatedToType: RelatedEntityType, relatedToId: string) =>

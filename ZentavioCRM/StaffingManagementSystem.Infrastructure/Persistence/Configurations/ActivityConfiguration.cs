@@ -19,6 +19,9 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
 
             builder.Property(a => a.Subject).IsRequired().HasMaxLength(200);
             builder.Property(a => a.Description).HasMaxLength(2000);
+            builder.Property(a => a.RecurrenceRule).HasConversion<string>().HasMaxLength(20);
+
+            builder.HasIndex(a => a.RecurrenceGroupId);
 
             builder.Property(a => a.CreatedAtUtc).IsRequired();
 

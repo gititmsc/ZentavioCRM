@@ -670,6 +670,8 @@ BEGIN
         DueAtUtc         DATETIME2        NULL,
         CompletedAtUtc   DATETIME2        NULL,
         ReminderSentAtUtc DATETIME2       NULL,
+        RecurrenceRule   NVARCHAR(20)     NULL,
+        RecurrenceGroupId UNIQUEIDENTIFIER NULL,
         AssignedToUserId UNIQUEIDENTIFIER NULL,
         CreatedByUserId  UNIQUEIDENTIFIER NULL,
         CreatedAtUtc     DATETIME2        NOT NULL,
@@ -679,6 +681,7 @@ BEGIN
     );
 
     CREATE INDEX IX_Activities_RelatedToType_RelatedToId ON dbo.Activities (RelatedToType, RelatedToId);
+    CREATE INDEX IX_Activities_RecurrenceGroupId ON dbo.Activities (RecurrenceGroupId);
 END
 GO
 
@@ -687,6 +690,28 @@ GO
 IF OBJECT_ID(N'dbo.Activities', N'U') IS NOT NULL AND COL_LENGTH('dbo.Activities', 'ReminderSentAtUtc') IS NULL
 BEGIN
     ALTER TABLE dbo.Activities ADD ReminderSentAtUtc DATETIME2 NULL;
+END
+GO
+
+-- Activities.RecurrenceRule / RecurrenceGroupId — added post-launch; guarded ALTERs for an
+-- Activities table that already existed from an earlier run of this script.
+IF OBJECT_ID(N'dbo.Activities', N'U') IS NOT NULL AND COL_LENGTH('dbo.Activities', 'RecurrenceRule') IS NULL
+BEGIN
+    ALTER TABLE dbo.Activities ADD RecurrenceRule NVARCHAR(20) NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Activities', N'U') IS NOT NULL AND COL_LENGTH('dbo.Activities', 'RecurrenceGroupId') IS NULL
+BEGIN
+    ALTER TABLE dbo.Activities ADD RecurrenceGroupId UNIQUEIDENTIFIER NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Activities', N'U') IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM sys.indexes WHERE name = 'IX_Activities_RecurrenceGroupId' AND object_id = OBJECT_ID(N'dbo.Activities')
+)
+BEGIN
+    CREATE INDEX IX_Activities_RecurrenceGroupId ON dbo.Activities (RecurrenceGroupId);
 END
 GO
 
