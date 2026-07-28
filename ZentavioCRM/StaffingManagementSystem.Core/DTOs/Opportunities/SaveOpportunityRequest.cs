@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ZentavioCRM.Core.Enums;
 
 namespace ZentavioCRM.Core.DTOs.Opportunities
 {
@@ -12,6 +13,9 @@ namespace ZentavioCRM.Core.DTOs.Opportunities
         public Guid CustomerId { get; set; }
 
         public decimal? Value { get; set; }
+
+        /// <summary>When omitted/blank, defaults to the selected customer's CurrencyCode.</summary>
+        public string? CurrencyCode { get; set; }
 
         [Range(0, 100, ErrorMessage = "Probability must be between 0 and 100.")]
         public int? Probability { get; set; }
@@ -32,6 +36,19 @@ namespace ZentavioCRM.Core.DTOs.Opportunities
 
         /// <summary>When non-empty, <see cref="Value"/> is recomputed server-side as the sum of these lines' totals instead of using the submitted Value.</summary>
         public List<SaveOpportunityLineItemRequest> LineItems { get; set; } = [];
+
+        /// <summary>The buying committee — replaces the full set on every save, same convention as LineItems. Each ContactPersonId must belong to the selected Customer.</summary>
+        public List<SaveOpportunityContactRequest> Contacts { get; set; } = [];
+    }
+
+    public class SaveOpportunityContactRequest
+    {
+        [Required(ErrorMessage = "A contact must be selected.")]
+        public Guid ContactPersonId { get; set; }
+
+        public OpportunityContactRole Role { get; set; } = OpportunityContactRole.Other;
+
+        public string? Notes { get; set; }
     }
 
     public class SaveOpportunityLineItemRequest

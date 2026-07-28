@@ -22,6 +22,9 @@ namespace ZentavioCRM.Core.Entities
 
         public decimal? Value { get; set; }
 
+        /// <summary>Explicit currency for <see cref="Value"/> and the line items. Defaulted from the Customer's CurrencyCode at creation time but independently editable — a deal doesn't have to be priced in the customer's default currency.</summary>
+        public string CurrencyCode { get; set; } = "USD";
+
         /// <summary>0-100. Subjective likelihood of closing, set by the salesperson (not yet AI-driven).</summary>
         public int? Probability { get; set; }
 
@@ -63,5 +66,8 @@ namespace ZentavioCRM.Core.Entities
 
         /// <summary>Real, priceable product/service rows — see <see cref="OpportunityLineItem"/>. Empty when the deal only uses the free-text <see cref="Products"/> summary.</summary>
         public ICollection<OpportunityLineItem> LineItems { get; set; } = new List<OpportunityLineItem>();
+
+        /// <summary>The buying committee for this deal — see <see cref="OpportunityContact"/>.</summary>
+        public ICollection<OpportunityContact> Contacts { get; set; } = new List<OpportunityContact>();
     }
 }

@@ -17,6 +17,8 @@ namespace ZentavioCRM.Core.DTOs.Opportunities
 
         public decimal? Value { get; set; }
 
+        public string CurrencyCode { get; set; } = "USD";
+
         public int? Probability { get; set; }
 
         public DateTime? ExpectedCloseDate { get; set; }
@@ -44,6 +46,8 @@ namespace ZentavioCRM.Core.DTOs.Opportunities
         public string CustomerName { get; set; } = string.Empty;
 
         public decimal? Value { get; set; }
+
+        public string CurrencyCode { get; set; } = "USD";
 
         public int? Probability { get; set; }
 
@@ -76,6 +80,8 @@ namespace ZentavioCRM.Core.DTOs.Opportunities
         public DateTime? UpdatedAtUtc { get; set; }
 
         public List<OpportunityLineItemDto> LineItems { get; set; } = [];
+
+        public List<OpportunityContactDto> Contacts { get; set; } = [];
     }
 
     public class OpportunityLineItemDto
@@ -91,5 +97,21 @@ namespace ZentavioCRM.Core.DTOs.Opportunities
         public decimal? DiscountPercent { get; set; }
 
         public decimal LineTotal { get; set; }
+    }
+
+    /// <summary>A buying-committee member — see <see cref="Entities.OpportunityContact"/>.</summary>
+    public class OpportunityContactDto
+    {
+        public Guid Id { get; set; }
+
+        public Guid ContactPersonId { get; set; }
+
+        public string ContactPersonName { get; set; } = string.Empty;
+
+        public string? ContactPersonDesignation { get; set; }
+
+        public OpportunityContactRole Role { get; set; }
+
+        public string? Notes { get; set; }
     }
 }

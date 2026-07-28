@@ -437,6 +437,7 @@ BEGIN
         Name              NVARCHAR(200)    NOT NULL,
         CustomerId        UNIQUEIDENTIFIER NOT NULL,
         Value             DECIMAL(18, 2)   NULL,
+        CurrencyCode      NVARCHAR(10)     NOT NULL CONSTRAINT DF_Opportunities_CurrencyCode DEFAULT ('USD'),
         Probability       INT              NULL,
         Products          NVARCHAR(1000)   NULL,
         Competitors       NVARCHAR(500)    NULL,
@@ -482,6 +483,14 @@ BEGIN
 END
 GO
 
+-- Opportunities.CurrencyCode — added post-launch; guarded ALTER for an Opportunities table that
+-- already existed from an earlier run of this script. Existing rows default to 'USD'.
+IF OBJECT_ID(N'dbo.Opportunities', N'U') IS NOT NULL AND COL_LENGTH('dbo.Opportunities', 'CurrencyCode') IS NULL
+BEGIN
+    ALTER TABLE dbo.Opportunities ADD CurrencyCode NVARCHAR(10) NOT NULL CONSTRAINT DF_Opportunities_CurrencyCode DEFAULT ('USD');
+END
+GO
+
 -- ============================================================================
 -- OpportunityLineItems (optional priced line items on an Opportunity; when present,
 -- Opportunities.Value is server-computed as the sum of line totals)
@@ -501,6 +510,28 @@ BEGIN
     );
 
     CREATE INDEX IX_OpportunityLineItems_OpportunityId ON dbo.OpportunityLineItems (OpportunityId);
+END
+GO
+
+-- ============================================================================
+-- OpportunityContacts (buying committee — Champion/Economic Buyer/Blocker/etc. per deal)
+-- ============================================================================
+IF OBJECT_ID(N'dbo.OpportunityContacts', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.OpportunityContacts
+    (
+        Id              UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_OpportunityContacts_Id DEFAULT NEWID(),
+        OpportunityId   UNIQUEIDENTIFIER NOT NULL,
+        ContactPersonId UNIQUEIDENTIFIER NOT NULL,
+        Role            NVARCHAR(30)     NOT NULL,
+        Notes           NVARCHAR(500)    NULL,
+        CONSTRAINT PK_OpportunityContacts PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT FK_OpportunityContacts_Opportunities FOREIGN KEY (OpportunityId) REFERENCES dbo.Opportunities (Id) ON DELETE CASCADE,
+        CONSTRAINT FK_OpportunityContacts_ContactPersons FOREIGN KEY (ContactPersonId) REFERENCES dbo.ContactPersons (Id) ON DELETE CASCADE
+    );
+
+    CREATE UNIQUE INDEX IX_OpportunityContacts_OpportunityId_ContactPersonId ON dbo.OpportunityContacts (OpportunityId, ContactPersonId);
+    CREATE INDEX IX_OpportunityContacts_ContactPersonId ON dbo.OpportunityContacts (ContactPersonId);
 END
 GO
 

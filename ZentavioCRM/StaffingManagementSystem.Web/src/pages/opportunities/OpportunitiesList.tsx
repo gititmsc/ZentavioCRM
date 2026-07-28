@@ -147,7 +147,11 @@ export default function OpportunitiesList() {
                   <td>{opportunity.opportunityNumber}</td>
                   <td>{opportunity.name}</td>
                   <td>{opportunity.customerName}</td>
-                  <td>{opportunity.value != null ? opportunity.value.toLocaleString() : "—"}</td>
+                  <td>
+                    {opportunity.value != null
+                      ? `${opportunity.currencyCode} ${opportunity.value.toLocaleString()}`
+                      : "—"}
+                  </td>
                   <td>{opportunity.expectedCloseDate ? new Date(opportunity.expectedCloseDate).toLocaleDateString() : "—"}</td>
                   <td>{opportunity.assignedToUserName ?? <span className="text-muted">Unassigned</span>}</td>
                   <td>

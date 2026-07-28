@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { opportunityService, type Opportunity, type OpportunityStage } from "@/services/opportunityService";
+import {
+  opportunityService,
+  type Opportunity,
+  type OpportunityContactRole,
+  type OpportunityStage,
+} from "@/services/opportunityService";
 import { userService, type ManagedUser } from "@/services/userService";
 import { activityService, type Activity, type ActivityType } from "@/services/activityService";
 import { quotationService, type QuotationListItem } from "@/services/quotationService";
@@ -28,6 +33,26 @@ const NEXT_STAGES: Record<OpportunityStage, OpportunityStage[]> = {
 };
 
 const ACTIVITY_TYPES: ActivityType[] = ["Call", "Email", "Meeting", "Task", "Note", "Visit", "WhatsApp", "Sms"];
+
+const CONTACT_ROLE_LABEL: Record<OpportunityContactRole, string> = {
+  Champion: "Champion",
+  EconomicBuyer: "Economic Buyer",
+  Blocker: "Blocker",
+  Influencer: "Influencer",
+  DecisionMaker: "Decision Maker",
+  TechnicalEvaluator: "Technical Evaluator",
+  Other: "Other",
+};
+
+const CONTACT_ROLE_BADGE: Record<OpportunityContactRole, string> = {
+  Champion: "text-bg-success",
+  EconomicBuyer: "text-bg-primary",
+  Blocker: "text-bg-danger",
+  Influencer: "text-bg-info",
+  DecisionMaker: "text-bg-dark",
+  TechnicalEvaluator: "text-bg-secondary",
+  Other: "text-bg-light border",
+};
 
 export default function OpportunityDetail() {
   const { id } = useParams<{ id: string }>();
@@ -183,7 +208,11 @@ export default function OpportunityDetail() {
               </div>
               <div className="col-md-6">
                 <div className="text-muted small">Value</div>
-                <div>{opportunity.value != null ? opportunity.value.toLocaleString() : "—"}</div>
+                <div>
+                  {opportunity.value != null
+                    ? `${opportunity.currencyCode} ${opportunity.value.toLocaleString()}`
+                    : "—"}
+                </div>
               </div>
               <div className="col-md-6">
                 <div className="text-muted small">Probability</div>
@@ -232,6 +261,39 @@ export default function OpportunityDetail() {
                         <td className="text-end">{li.unitPrice.toLocaleString()}</td>
                         <td className="text-end">{li.discountPercent ? `${li.discountPercent}%` : "—"}</td>
                         <td className="text-end fw-semibold">{li.lineTotal.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {opportunity.contacts.length > 0 && (
+            <div className="card shadow-sm border-0 mb-4">
+              <div className="card-header bg-white fw-semibold">Buying Committee</div>
+              <div className="table-responsive">
+                <table className="table mb-0 align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Contact</th>
+                      <th>Role</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {opportunity.contacts.map((c) => (
+                      <tr key={c.id}>
+                        <td>
+                          <Link to={`/customers/${opportunity.customerId}/edit`}>{c.contactPersonName}</Link>
+                          {c.contactPersonDesignation && (
+                            <div className="text-muted small">{c.contactPersonDesignation}</div>
+                          )}
+                        </td>
+                        <td>
+                          <span className={`badge ${CONTACT_ROLE_BADGE[c.role]}`}>{CONTACT_ROLE_LABEL[c.role]}</span>
+                        </td>
+                        <td className="text-muted small">{c.notes ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -14,6 +14,15 @@ export type OpportunityStage =
   | "ClosedWon"
   | "ClosedLost";
 
+export type OpportunityContactRole =
+  | "Champion"
+  | "EconomicBuyer"
+  | "Blocker"
+  | "Influencer"
+  | "DecisionMaker"
+  | "TechnicalEvaluator"
+  | "Other";
+
 export interface OpportunityListItem {
   id: string;
   opportunityNumber: string;
@@ -21,6 +30,7 @@ export interface OpportunityListItem {
   customerId: string;
   customerName: string;
   value: number | null;
+  currencyCode: string;
   probability: number | null;
   expectedCloseDate: string | null;
   stage: OpportunityStage;
@@ -38,6 +48,15 @@ export interface OpportunityLineItem {
   lineTotal: number;
 }
 
+export interface OpportunityContact {
+  id: string;
+  contactPersonId: string;
+  contactPersonName: string;
+  contactPersonDesignation: string | null;
+  role: OpportunityContactRole;
+  notes: string | null;
+}
+
 export interface Opportunity {
   id: string;
   opportunityNumber: string;
@@ -45,6 +64,7 @@ export interface Opportunity {
   customerId: string;
   customerName: string;
   value: number | null;
+  currencyCode: string;
   probability: number | null;
   products: string | null;
   competitors: string | null;
@@ -61,6 +81,7 @@ export interface Opportunity {
   createdAtUtc: string;
   updatedAtUtc: string | null;
   lineItems: OpportunityLineItem[];
+  contacts: OpportunityContact[];
 }
 
 export interface SaveOpportunityLineItemRequest {
@@ -70,10 +91,17 @@ export interface SaveOpportunityLineItemRequest {
   discountPercent: number | null;
 }
 
+export interface SaveOpportunityContactRequest {
+  contactPersonId: string;
+  role: OpportunityContactRole;
+  notes: string | null;
+}
+
 export interface SaveOpportunityRequest {
   name: string;
   customerId: string;
   value: number | null;
+  currencyCode: string | null;
   probability: number | null;
   products: string | null;
   competitors: string | null;
@@ -83,6 +111,7 @@ export interface SaveOpportunityRequest {
   nextStep: string | null;
   nextStepDate: string | null;
   lineItems: SaveOpportunityLineItemRequest[];
+  contacts: SaveOpportunityContactRequest[];
 }
 
 export interface OpportunitySearchParams {

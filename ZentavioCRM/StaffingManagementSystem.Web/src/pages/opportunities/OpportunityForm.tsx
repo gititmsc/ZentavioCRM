@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { opportunityService, type SaveOpportunityRequest } from "@/services/opportunityService";
+import { opportunityService, type OpportunityContactRole, type SaveOpportunityRequest } from "@/services/opportunityService";
 import { userService, type ManagedUser } from "@/services/userService";
-import { customerService, type CustomerListItem } from "@/services/customerService";
+import { customerService, type CustomerListItem, type ContactPerson } from "@/services/customerService";
 
 /** yyyy-MM-dd for a native <input type="date">, or "" if null. */
 function toDateInputValue(value: string | null): string {
@@ -18,6 +18,16 @@ function lineTotal(quantity: number, unitPrice: number, discountPercent: number 
   return Math.round(qty * price * (1 - discount / 100) * 100) / 100;
 }
 
+const OPPORTUNITY_CONTACT_ROLES: { value: OpportunityContactRole; label: string }[] = [
+  { value: "Champion", label: "Champion" },
+  { value: "EconomicBuyer", label: "Economic Buyer" },
+  { value: "Blocker", label: "Blocker" },
+  { value: "Influencer", label: "Influencer" },
+  { value: "DecisionMaker", label: "Decision Maker" },
+  { value: "TechnicalEvaluator", label: "Technical Evaluator" },
+  { value: "Other", label: "Other" },
+];
+
 export default function OpportunityForm() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -26,6 +36,7 @@ export default function OpportunityForm() {
 
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [customers, setCustomers] = useState<CustomerListItem[]>([]);
+  const [customerContacts, setCustomerContacts] = useState<ContactPerson[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,12 +46,15 @@ export default function OpportunityForm() {
     reset,
     control,
     watch,
+    setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<SaveOpportunityRequest>({
     defaultValues: {
       name: "",
       customerId: searchParams.get("customerId") ?? "",
       value: null,
+      currencyCode: null,
       probability: null,
       products: null,
       competitors: null,
@@ -50,11 +64,14 @@ export default function OpportunityForm() {
       nextStep: null,
       nextStepDate: null,
       lineItems: [],
+      contacts: [],
     },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "lineItems" });
+  const contactsArray = useFieldArray({ control, name: "contacts" });
   const watchedLineItems = watch("lineItems");
+  const watchedCustomerId = watch("customerId");
   const hasLineItems = watchedLineItems.length > 0;
   const computedTotal = watchedLineItems.reduce(
     (sum, item) => sum + lineTotal(item.quantity, item.unitPrice, item.discountPercent),
@@ -78,6 +95,7 @@ export default function OpportunityForm() {
             name: o.name,
             customerId: o.customerId,
             value: o.value,
+            currencyCode: o.currencyCode,
             probability: o.probability,
             products: o.products,
             competitors: o.competitors,
@@ -92,6 +110,11 @@ export default function OpportunityForm() {
               unitPrice: li.unitPrice,
               discountPercent: li.discountPercent,
             })),
+            contacts: o.contacts.map((c) => ({
+              contactPersonId: c.contactPersonId,
+              role: c.role,
+              notes: c.notes,
+            })),
           });
         }
       }
@@ -99,6 +122,25 @@ export default function OpportunityForm() {
       setIsLoading(false);
     })();
   }, [id, isEditMode, reset]);
+
+  // Keep the buying-committee contact picker (and the default currency, on new opportunities)
+  // in sync with whichever customer is currently selected.
+  useEffect(() => {
+    if (!watchedCustomerId) {
+      setCustomerContacts([]);
+      return;
+    }
+
+    (async () => {
+      const result = await customerService.getById(watchedCustomerId);
+      if (result.success && result.data) {
+        setCustomerContacts(result.data.contacts);
+        if (!isEditMode && !getValues("currencyCode")) {
+          setValue("currencyCode", result.data.currencyCode);
+        }
+      }
+    })();
+  }, [watchedCustomerId, isEditMode, getValues, setValue]);
 
   const onSubmit = async (values: SaveOpportunityRequest) => {
     setServerError(null);
@@ -165,7 +207,17 @@ export default function OpportunityForm() {
                 )}
               </div>
 
-              <div className="col-md-4">
+              <div className="col-md-2">
+                <label className="form-label">Currency</label>
+                <input
+                  className="form-control"
+                  placeholder="USD"
+                  maxLength={10}
+                  {...register("currencyCode")}
+                />
+              </div>
+
+              <div className="col-md-2">
                 <label className="form-label">Probability (%)</label>
                 <input type="number" min={0} max={100} className="form-control" {...register("probability")} />
               </div>
@@ -289,6 +341,79 @@ export default function OpportunityForm() {
             {hasLineItems && (
               <div className="text-end fw-semibold mt-2">Total: {computedTotal.toLocaleString()}</div>
             )}
+
+            <hr className="my-4" />
+
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h2 className="h6 mb-0">Buying Committee</h2>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary"
+                disabled={customerContacts.length === 0}
+                onClick={() => contactsArray.append({ contactPersonId: "", role: "Other", notes: null })}
+              >
+                <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+                Add Contact
+              </button>
+            </div>
+
+            {customerContacts.length === 0 && (
+              <div className="text-muted small mb-2">
+                {watchedCustomerId
+                  ? "This customer has no contacts yet — add one from the customer's edit screen first."
+                  : "Select a customer above to add buying-committee members."}
+              </div>
+            )}
+
+            {contactsArray.fields.length === 0 && customerContacts.length > 0 && (
+              <div className="text-muted small mb-2">
+                No buying-committee members added yet — track who's the champion, economic buyer, or a blocker on this deal.
+              </div>
+            )}
+
+            {contactsArray.fields.map((field, index) => (
+              <div className="row g-2 align-items-center mb-2" key={field.id}>
+                <div className="col-md-4">
+                  <select
+                    className="form-select form-select-sm"
+                    {...register(`contacts.${index}.contactPersonId`, { required: true })}
+                  >
+                    <option value="">Select a contact</option>
+                    {customerContacts.map((contact) => (
+                      <option key={contact.id} value={contact.id}>
+                        {contact.firstName} {contact.lastName}
+                        {contact.designation ? ` — ${contact.designation}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-md-3">
+                  <select className="form-select form-select-sm" {...register(`contacts.${index}.role`)}>
+                    {OPPORTUNITY_CONTACT_ROLES.map((role) => (
+                      <option key={role.value} value={role.value}>
+                        {role.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-md-4">
+                  <input
+                    className="form-control form-control-sm"
+                    placeholder="Notes (optional)"
+                    {...register(`contacts.${index}.notes`)}
+                  />
+                </div>
+                <div className="col-md-1 text-end">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-danger"
+                    onClick={() => contactsArray.remove(index)}
+                  >
+                    <i className="bi bi-trash" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            ))}
 
             <div className="d-flex gap-2 mt-4">
               <button type="submit" className="btn btn-primary" disabled={isSubmitting}>

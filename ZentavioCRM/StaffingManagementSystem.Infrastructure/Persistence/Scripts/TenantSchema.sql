@@ -285,6 +285,7 @@ CREATE TABLE dbo.Opportunities
     Name              NVARCHAR(200)    NOT NULL,
     CustomerId        UNIQUEIDENTIFIER NOT NULL,
     Value             DECIMAL(18, 2)   NULL,
+    CurrencyCode      NVARCHAR(10)     NOT NULL CONSTRAINT DF_Opportunities_CurrencyCode DEFAULT ('USD'),
     Probability       INT              NULL,
     Products          NVARCHAR(1000)   NULL,
     Competitors       NVARCHAR(500)    NULL,
@@ -329,6 +330,25 @@ CREATE TABLE dbo.OpportunityLineItems
 );
 
 CREATE INDEX IX_OpportunityLineItems_OpportunityId ON dbo.OpportunityLineItems (OpportunityId);
+GO
+
+-- ============================================================================
+-- OpportunityContacts (buying committee — Champion/Economic Buyer/Blocker/etc. per deal)
+-- ============================================================================
+CREATE TABLE dbo.OpportunityContacts
+(
+    Id              UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_OpportunityContacts_Id DEFAULT NEWID(),
+    OpportunityId   UNIQUEIDENTIFIER NOT NULL,
+    ContactPersonId UNIQUEIDENTIFIER NOT NULL,
+    Role            NVARCHAR(30)     NOT NULL,
+    Notes           NVARCHAR(500)    NULL,
+    CONSTRAINT PK_OpportunityContacts PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_OpportunityContacts_Opportunities FOREIGN KEY (OpportunityId) REFERENCES dbo.Opportunities (Id) ON DELETE CASCADE,
+    CONSTRAINT FK_OpportunityContacts_ContactPersons FOREIGN KEY (ContactPersonId) REFERENCES dbo.ContactPersons (Id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IX_OpportunityContacts_OpportunityId_ContactPersonId ON dbo.OpportunityContacts (OpportunityId, ContactPersonId);
+CREATE INDEX IX_OpportunityContacts_ContactPersonId ON dbo.OpportunityContacts (ContactPersonId);
 GO
 
 -- ============================================================================

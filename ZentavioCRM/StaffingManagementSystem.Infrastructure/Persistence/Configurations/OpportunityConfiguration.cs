@@ -26,6 +26,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
             builder.Property(o => o.Stage).IsRequired().HasConversion<string>().HasMaxLength(30);
 
             builder.Property(o => o.Value).HasColumnType("decimal(18,2)");
+            builder.Property(o => o.CurrencyCode).IsRequired().HasMaxLength(10);
 
             builder.Property(o => o.CreatedAtUtc).IsRequired();
 
@@ -47,6 +48,11 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
             builder.HasMany(o => o.LineItems)
                 .WithOne()
                 .HasForeignKey(li => li.OpportunityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(o => o.Contacts)
+                .WithOne(oc => oc.Opportunity)
+                .HasForeignKey(oc => oc.OpportunityId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasIndex(o => o.CustomerId);

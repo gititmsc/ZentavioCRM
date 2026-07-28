@@ -23,5 +23,8 @@ namespace ZentavioCRM.Repositories.Interfaces
 
         /// <summary>Replaces every line item on the opportunity with the given set (simple full-replace, matching ICustomerRepository's contacts/addresses pattern).</summary>
         Task ReplaceLineItemsAsync(Guid opportunityId, IEnumerable<OpportunityLineItem> lineItems);
+
+        /// <summary>Replaces every buying-committee row on the opportunity with the given set (same full-replace convention as line items).</summary>
+        Task ReplaceContactsAsync(Guid opportunityId, IEnumerable<OpportunityContact> contacts);
     }
 }

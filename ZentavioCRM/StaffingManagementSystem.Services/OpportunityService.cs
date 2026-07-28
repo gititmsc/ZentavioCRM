@@ -64,12 +64,19 @@ namespace ZentavioCRM.Services
                 return ApiResponse<OpportunityDto>.FailureResponse("The selected customer does not exist.");
             }
 
+            var contactValidationError = ValidateContacts(request, customer);
+            if (contactValidationError is not null)
+            {
+                return contactValidationError;
+            }
+
             var opportunity = new Opportunity
             {
                 OpportunityNumber = await _opportunityRepository.GetNextOpportunityNumberAsync(),
                 Name = request.Name.Trim(),
                 CustomerId = request.CustomerId,
                 Value = ResolveValue(request),
+                CurrencyCode = ResolveCurrencyCode(request.CurrencyCode, customer.CurrencyCode),
                 Probability = request.Probability,
                 Products = request.Products,
                 Competitors = request.Competitors,
@@ -85,6 +92,7 @@ namespace ZentavioCRM.Services
 
             await _opportunityRepository.AddAsync(opportunity);
             await ReplaceLineItemsAsync(opportunity.Id, request);
+            await ReplaceContactsAsync(opportunity.Id, request);
             await _auditLogService.LogAsync(EntityType, opportunity.Id, "Created", $"Opportunity {opportunity.OpportunityNumber} created.", currentUserId);
 
             var created = await _opportunityRepository.GetByIdAsync(opportunity.Id);
@@ -105,18 +113,24 @@ namespace ZentavioCRM.Services
                     $"This opportunity is {opportunity.Stage} and can no longer be edited.");
             }
 
-            if (request.CustomerId != opportunity.CustomerId)
+            // Always re-fetched (even if CustomerId is unchanged) since it's needed both to validate the
+            // buying-committee contacts below and to resolve the default CurrencyCode.
+            var customer = await _customerRepository.GetByIdAsync(request.CustomerId);
+            if (customer is null)
             {
-                var customer = await _customerRepository.GetByIdAsync(request.CustomerId);
-                if (customer is null)
-                {
-                    return ApiResponse<OpportunityDto>.FailureResponse("The selected customer does not exist.");
-                }
+                return ApiResponse<OpportunityDto>.FailureResponse("The selected customer does not exist.");
+            }
+
+            var contactValidationError = ValidateContacts(request, customer);
+            if (contactValidationError is not null)
+            {
+                return contactValidationError;
             }
 
             opportunity.Name = request.Name.Trim();
             opportunity.CustomerId = request.CustomerId;
             opportunity.Value = ResolveValue(request);
+            opportunity.CurrencyCode = ResolveCurrencyCode(request.CurrencyCode, customer.CurrencyCode);
             opportunity.Probability = request.Probability;
             opportunity.Products = request.Products;
             opportunity.Competitors = request.Competitors;
@@ -129,6 +143,7 @@ namespace ZentavioCRM.Services
             // AssignedToUserId is changed exclusively through AssignAsync, matching the Lead convention.
             await _opportunityRepository.UpdateAsync(opportunity);
             await ReplaceLineItemsAsync(id, request);
+            await ReplaceContactsAsync(id, request);
             await _auditLogService.LogAsync(EntityType, id, "Updated", "Opportunity details updated.", currentUserId);
 
             var updated = await _opportunityRepository.GetByIdAsync(id);
@@ -236,6 +251,26 @@ namespace ZentavioCRM.Services
         private static decimal LineTotal(decimal quantity, decimal unitPrice, decimal? discountPercent)
             => Math.Round(quantity * unitPrice * (1 - (discountPercent ?? 0) / 100m), 2);
 
+        /// <summary>Falls back to the customer's currency when the request doesn't specify one — preserves the old implicit behavior as a default while making it explicit and overridable.</summary>
+        private static string ResolveCurrencyCode(string? requestedCurrencyCode, string customerCurrencyCode)
+            => string.IsNullOrWhiteSpace(requestedCurrencyCode) ? customerCurrencyCode : requestedCurrencyCode.Trim().ToUpperInvariant();
+
+        /// <summary>Every ContactPersonId on the request must belong to the selected Customer — a buying-committee member can't be a contact from a different account.</summary>
+        private static ApiResponse<OpportunityDto>? ValidateContacts(SaveOpportunityRequest request, Customer customer)
+        {
+            if (request.Contacts.Count == 0)
+            {
+                return null;
+            }
+
+            var validContactIds = customer.Contacts.Select(c => c.Id).ToHashSet();
+            var hasInvalidContact = request.Contacts.Any(c => !validContactIds.Contains(c.ContactPersonId));
+
+            return hasInvalidContact
+                ? ApiResponse<OpportunityDto>.FailureResponse("One or more selected buying-committee contacts do not belong to this opportunity's customer.")
+                : null;
+        }
+
         private async Task ReplaceLineItemsAsync(Guid opportunityId, SaveOpportunityRequest request)
         {
             var lineItems = request.LineItems.Select(li => new OpportunityLineItem
@@ -249,6 +284,18 @@ namespace ZentavioCRM.Services
             await _opportunityRepository.ReplaceLineItemsAsync(opportunityId, lineItems);
         }
 
+        private async Task ReplaceContactsAsync(Guid opportunityId, SaveOpportunityRequest request)
+        {
+            var contacts = request.Contacts.Select(c => new OpportunityContact
+            {
+                ContactPersonId = c.ContactPersonId,
+                Role = c.Role,
+                Notes = c.Notes,
+            });
+
+            await _opportunityRepository.ReplaceContactsAsync(opportunityId, contacts);
+        }
+
         private static OpportunityListItemDto MapListItem(Opportunity opportunity) => new()
         {
             Id = opportunity.Id,
@@ -257,6 +304,7 @@ namespace ZentavioCRM.Services
             CustomerId = opportunity.CustomerId,
             CustomerName = opportunity.Customer?.DisplayName ?? string.Empty,
             Value = opportunity.Value,
+            CurrencyCode = opportunity.CurrencyCode,
             Probability = opportunity.Probability,
             ExpectedCloseDate = opportunity.ExpectedCloseDate,
             Stage = opportunity.Stage,
@@ -273,6 +321,7 @@ namespace ZentavioCRM.Services
             CustomerId = opportunity.CustomerId,
             CustomerName = opportunity.Customer?.DisplayName ?? string.Empty,
             Value = opportunity.Value,
+            CurrencyCode = opportunity.CurrencyCode,
             Probability = opportunity.Probability,
             Products = opportunity.Products,
             Competitors = opportunity.Competitors,
@@ -296,6 +345,15 @@ namespace ZentavioCRM.Services
                 UnitPrice = li.UnitPrice,
                 DiscountPercent = li.DiscountPercent,
                 LineTotal = li.LineTotal,
+            }).ToList(),
+            Contacts = opportunity.Contacts.Select(oc => new OpportunityContactDto
+            {
+                Id = oc.Id,
+                ContactPersonId = oc.ContactPersonId,
+                ContactPersonName = oc.ContactPerson?.FullName ?? string.Empty,
+                ContactPersonDesignation = oc.ContactPerson?.Designation,
+                Role = oc.Role,
+                Notes = oc.Notes,
             }).ToList(),
         };
     }

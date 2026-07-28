@@ -38,6 +38,8 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<OpportunityLineItem> OpportunityLineItems => Set<OpportunityLineItem>();
 
+        public DbSet<OpportunityContact> OpportunityContacts => Set<OpportunityContact>();
+
         public DbSet<Activity> Activities => Set<Activity>();
 
         public DbSet<Quotation> Quotations => Set<Quotation>();
