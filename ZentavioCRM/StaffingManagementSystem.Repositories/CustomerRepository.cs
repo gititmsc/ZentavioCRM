@@ -83,6 +83,12 @@ namespace ZentavioCRM.Repositories
             await _dbContext.SaveChangesAsync();
         }
 
+        /// <remarks>
+        /// Note: since this is a full replace (not a merge), BirthdayReminderSentYear/AnniversaryReminderSentYear
+        /// reset to null on every save of the parent Customer — a resaved contact could theoretically get a
+        /// duplicate birthday/anniversary notification if the Customer is edited again later the same day.
+        /// Accepted as a minor edge case rather than adding contact-matching logic to preserve it.
+        /// </remarks>
         public async Task ReplaceContactsAsync(Guid customerId, IEnumerable<ContactPerson> contacts)
         {
             var existing = await _dbContext.ContactPersons.Where(cp => cp.CustomerId == customerId).ToListAsync();
@@ -141,6 +147,34 @@ namespace ZentavioCRM.Repositories
                 .ToListAsync();
 
             return customers;
+        }
+
+        public async Task<IReadOnlyList<ContactPerson>> GetDueForBirthdayReminderAsync(Guid userId, DateTime nowUtc)
+            => await _dbContext.ContactPersons
+                .Include(cp => cp.Customer)
+                .Where(cp =>
+                    cp.Customer!.AssignedToUserId == userId &&
+                    cp.DateOfBirth != null &&
+                    cp.DateOfBirth.Value.Month == nowUtc.Month &&
+                    cp.DateOfBirth.Value.Day == nowUtc.Day &&
+                    cp.BirthdayReminderSentYear != nowUtc.Year)
+                .ToListAsync();
+
+        public async Task<IReadOnlyList<ContactPerson>> GetDueForAnniversaryReminderAsync(Guid userId, DateTime nowUtc)
+            => await _dbContext.ContactPersons
+                .Include(cp => cp.Customer)
+                .Where(cp =>
+                    cp.Customer!.AssignedToUserId == userId &&
+                    cp.AnniversaryDate != null &&
+                    cp.AnniversaryDate.Value.Month == nowUtc.Month &&
+                    cp.AnniversaryDate.Value.Day == nowUtc.Day &&
+                    cp.AnniversaryReminderSentYear != nowUtc.Year)
+                .ToListAsync();
+
+        public async Task UpdateContactAsync(ContactPerson contact)
+        {
+            _dbContext.ContactPersons.Update(contact);
+            await _dbContext.SaveChangesAsync();
         }
     }
 }

@@ -22,6 +22,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
             builder.Property(cp => cp.Mobile).HasMaxLength(30);
             builder.Property(cp => cp.WhatsApp).HasMaxLength(30);
             builder.Property(cp => cp.LinkedIn).HasMaxLength(300);
+            builder.Property(cp => cp.PreferredContactMethod).HasConversion<string>().HasMaxLength(20);
 
             builder.Property(cp => cp.CreatedAtUtc).IsRequired();
 

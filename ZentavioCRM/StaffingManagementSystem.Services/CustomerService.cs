@@ -68,6 +68,7 @@ namespace ZentavioCRM.Services
                 Rating = request.Rating,
                 Tags = request.Tags,
                 AcquisitionSource = request.AcquisitionSource,
+                HealthStatus = request.HealthStatus,
                 AssignedToUserId = request.AssignedToUserId,
                 IsActive = request.IsActive,
                 CreatedAtUtc = DateTime.UtcNow,
@@ -105,6 +106,7 @@ namespace ZentavioCRM.Services
             customer.Rating = request.Rating;
             customer.Tags = request.Tags;
             customer.AcquisitionSource = request.AcquisitionSource;
+            customer.HealthStatus = request.HealthStatus;
             customer.AssignedToUserId = request.AssignedToUserId;
             customer.IsActive = request.IsActive;
             customer.UpdatedAtUtc = DateTime.UtcNow;
@@ -134,7 +136,7 @@ namespace ZentavioCRM.Services
         [
             "CustomerNumber", "Type", "LegalName", "DisplayName", "Industry", "Website", "Email", "Phone",
             "TaxNumber", "EmployeesCount", "AnnualRevenue", "CurrencyCode", "PaymentTermsDays", "CreditLimit",
-            "Rating", "Tags", "AcquisitionSource", "AssignedToUserName", "IsActive", "CreatedAtUtc",
+            "Rating", "Tags", "AcquisitionSource", "HealthStatus", "AssignedToUserName", "IsActive", "CreatedAtUtc",
         ];
 
         /// <summary>Columns accepted on import — a subset of the export columns: system-managed fields (CustomerNumber, AssignedToUserName, CreatedAtUtc) are not importable. Contacts/Addresses are not importable via CSV in this milestone — add them afterward on the Customer's edit screen.</summary>
@@ -142,7 +144,7 @@ namespace ZentavioCRM.Services
         [
             "Type", "LegalName", "DisplayName", "Industry", "Website", "Email", "Phone", "TaxNumber",
             "EmployeesCount", "AnnualRevenue", "CurrencyCode", "PaymentTermsDays", "CreditLimit", "Rating",
-            "Tags", "AcquisitionSource", "IsActive",
+            "Tags", "AcquisitionSource", "HealthStatus", "IsActive",
         ];
 
         public async Task<string> ExportCsvAsync()
@@ -168,6 +170,7 @@ namespace ZentavioCRM.Services
                 c.Rating,
                 c.Tags,
                 c.AcquisitionSource?.ToString(),
+                c.HealthStatus?.ToString(),
                 c.AssignedToUser?.FullName,
                 c.IsActive.ToString(),
                 c.CreatedAtUtc.ToString("O"),
@@ -277,6 +280,11 @@ namespace ZentavioCRM.Services
                         ? parsedAcquisitionSource
                         : null;
 
+                    var healthStatusRaw = Get(row, "HealthStatus");
+                    CustomerHealthStatus? healthStatus = healthStatusRaw is not null && Enum.TryParse<CustomerHealthStatus>(healthStatusRaw, true, out var parsedHealthStatus)
+                        ? parsedHealthStatus
+                        : null;
+
                     var customer = new Customer
                     {
                         CustomerNumber = await _customerRepository.GetNextCustomerNumberAsync(),
@@ -296,6 +304,7 @@ namespace ZentavioCRM.Services
                         Rating = Get(row, "Rating"),
                         Tags = Get(row, "Tags"),
                         AcquisitionSource = acquisitionSource,
+                        HealthStatus = healthStatus,
                         IsActive = isActive,
                         CreatedAtUtc = DateTime.UtcNow,
                     };
@@ -328,6 +337,9 @@ namespace ZentavioCRM.Services
                 LinkedIn = c.LinkedIn,
                 IsPrimary = c.IsPrimary,
                 IsDecisionMaker = c.IsDecisionMaker,
+                PreferredContactMethod = c.PreferredContactMethod,
+                DateOfBirth = c.DateOfBirth,
+                AnniversaryDate = c.AnniversaryDate,
                 Notes = c.Notes,
             });
             await _customerRepository.ReplaceContactsAsync(customerId, contacts);
@@ -357,6 +369,7 @@ namespace ZentavioCRM.Services
             Phone = customer.Phone,
             AssignedToUserName = customer.AssignedToUser?.FullName,
             Tags = customer.Tags,
+            HealthStatus = customer.HealthStatus,
             IsActive = customer.IsActive,
             CreatedAtUtc = customer.CreatedAtUtc,
         };
@@ -381,6 +394,7 @@ namespace ZentavioCRM.Services
             Rating = customer.Rating,
             Tags = customer.Tags,
             AcquisitionSource = customer.AcquisitionSource,
+            HealthStatus = customer.HealthStatus,
             AssignedToUserId = customer.AssignedToUserId,
             AssignedToUserName = customer.AssignedToUser?.FullName,
             IsActive = customer.IsActive,
@@ -398,6 +412,9 @@ namespace ZentavioCRM.Services
                 LinkedIn = c.LinkedIn,
                 IsPrimary = c.IsPrimary,
                 IsDecisionMaker = c.IsDecisionMaker,
+                PreferredContactMethod = c.PreferredContactMethod,
+                DateOfBirth = c.DateOfBirth,
+                AnniversaryDate = c.AnniversaryDate,
                 Notes = c.Notes,
             }).ToList(),
             Addresses = customer.Addresses.Select(a => new CustomerAddressDto

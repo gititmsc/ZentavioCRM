@@ -9,15 +9,18 @@ namespace ZentavioCRM.Services
     {
         private readonly IActivityRepository _activityRepository;
         private readonly ILeadRepository _leadRepository;
+        private readonly ICustomerRepository _customerRepository;
         private readonly INotificationService _notificationService;
 
         public ReminderService(
             IActivityRepository activityRepository,
             ILeadRepository leadRepository,
+            ICustomerRepository customerRepository,
             INotificationService notificationService)
         {
             _activityRepository = activityRepository;
             _leadRepository = leadRepository;
+            _customerRepository = customerRepository;
             _notificationService = notificationService;
         }
 
@@ -49,6 +52,32 @@ namespace ZentavioCRM.Services
 
                 lead.FollowUpReminderSentAtUtc = now;
                 await _leadRepository.UpdateAsync(lead);
+            }
+
+            var dueBirthdays = await _customerRepository.GetDueForBirthdayReminderAsync(userId, now);
+            foreach (var contact in dueBirthdays)
+            {
+                await _notificationService.NotifyAsync(
+                    userId,
+                    $"Today is {contact.FullName}'s birthday — a good time to reach out ({contact.Customer!.DisplayName}).",
+                    RelatedEntityType.Customer,
+                    contact.CustomerId);
+
+                contact.BirthdayReminderSentYear = now.Year;
+                await _customerRepository.UpdateContactAsync(contact);
+            }
+
+            var dueAnniversaries = await _customerRepository.GetDueForAnniversaryReminderAsync(userId, now);
+            foreach (var contact in dueAnniversaries)
+            {
+                await _notificationService.NotifyAsync(
+                    userId,
+                    $"Today is {contact.FullName}'s anniversary — a good time to reach out ({contact.Customer!.DisplayName}).",
+                    RelatedEntityType.Customer,
+                    contact.CustomerId);
+
+                contact.AnniversaryReminderSentYear = now.Year;
+                await _customerRepository.UpdateContactAsync(contact);
             }
         }
     }

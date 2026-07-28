@@ -28,5 +28,14 @@ namespace ZentavioCRM.Repositories.Interfaces
 
         /// <summary>Every customer, no paging — used for CSV export. SMB-scale data volumes.</summary>
         Task<IReadOnlyList<Customer>> GetAllAsync();
+
+        /// <summary>Contacts (with Customer loaded) whose Customer is assigned to the user and whose DateOfBirth's month/day matches today, and no reminder has been sent yet this calendar year.</summary>
+        Task<IReadOnlyList<ContactPerson>> GetDueForBirthdayReminderAsync(Guid userId, DateTime nowUtc);
+
+        /// <summary>Contacts (with Customer loaded) whose Customer is assigned to the user and whose AnniversaryDate's month/day matches today, and no reminder has been sent yet this calendar year.</summary>
+        Task<IReadOnlyList<ContactPerson>> GetDueForAnniversaryReminderAsync(Guid userId, DateTime nowUtc);
+
+        /// <summary>Persists changes to a single contact — used to stamp the reminder-sent-year fields after a birthday/anniversary notification is sent.</summary>
+        Task UpdateContactAsync(ContactPerson contact);
     }
 }

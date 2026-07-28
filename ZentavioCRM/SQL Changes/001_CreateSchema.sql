@@ -199,6 +199,7 @@ BEGIN
         Rating           NVARCHAR(20)     NULL,
         Tags             NVARCHAR(500)    NULL,
         AcquisitionSource NVARCHAR(30)    NULL,
+        HealthStatus     NVARCHAR(20)     NULL,
         AssignedToUserId UNIQUEIDENTIFIER NULL,
         IsActive         BIT              NOT NULL CONSTRAINT DF_Customers_IsActive DEFAULT (1),
         CreatedAtUtc     DATETIME2        NOT NULL,
@@ -227,6 +228,13 @@ BEGIN
 END
 GO
 
+-- Customers.HealthStatus — manually-set relationship health/engagement indicator (Hot/Warm/Cold/AtRisk).
+IF OBJECT_ID(N'dbo.Customers', N'U') IS NOT NULL AND COL_LENGTH('dbo.Customers', 'HealthStatus') IS NULL
+BEGIN
+    ALTER TABLE dbo.Customers ADD HealthStatus NVARCHAR(20) NULL;
+END
+GO
+
 -- ============================================================================
 -- ContactPersons (unlimited contacts per Customer)
 -- ============================================================================
@@ -246,6 +254,11 @@ BEGIN
         LinkedIn        NVARCHAR(300)    NULL,
         IsPrimary       BIT              NOT NULL,
         IsDecisionMaker BIT              NOT NULL,
+        PreferredContactMethod      NVARCHAR(20) NULL,
+        DateOfBirth                 DATETIME2 NULL,
+        AnniversaryDate             DATETIME2 NULL,
+        BirthdayReminderSentYear    INT       NULL,
+        AnniversaryReminderSentYear INT       NULL,
         Notes           NVARCHAR(MAX)    NULL,
         CreatedAtUtc    DATETIME2        NOT NULL,
         CONSTRAINT PK_ContactPersons PRIMARY KEY CLUSTERED (Id),
@@ -253,6 +266,38 @@ BEGIN
     );
 
     CREATE INDEX IX_ContactPersons_CustomerId ON dbo.ContactPersons (CustomerId);
+END
+GO
+
+-- ContactPersons.PreferredContactMethod / DateOfBirth / AnniversaryDate / *ReminderSentYear — added
+-- post-launch; guarded ALTERs for a ContactPersons table that already existed from an earlier run.
+IF OBJECT_ID(N'dbo.ContactPersons', N'U') IS NOT NULL AND COL_LENGTH('dbo.ContactPersons', 'PreferredContactMethod') IS NULL
+BEGIN
+    ALTER TABLE dbo.ContactPersons ADD PreferredContactMethod NVARCHAR(20) NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.ContactPersons', N'U') IS NOT NULL AND COL_LENGTH('dbo.ContactPersons', 'DateOfBirth') IS NULL
+BEGIN
+    ALTER TABLE dbo.ContactPersons ADD DateOfBirth DATETIME2 NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.ContactPersons', N'U') IS NOT NULL AND COL_LENGTH('dbo.ContactPersons', 'AnniversaryDate') IS NULL
+BEGIN
+    ALTER TABLE dbo.ContactPersons ADD AnniversaryDate DATETIME2 NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.ContactPersons', N'U') IS NOT NULL AND COL_LENGTH('dbo.ContactPersons', 'BirthdayReminderSentYear') IS NULL
+BEGIN
+    ALTER TABLE dbo.ContactPersons ADD BirthdayReminderSentYear INT NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.ContactPersons', N'U') IS NOT NULL AND COL_LENGTH('dbo.ContactPersons', 'AnniversaryReminderSentYear') IS NULL
+BEGIN
+    ALTER TABLE dbo.ContactPersons ADD AnniversaryReminderSentYear INT NULL;
 END
 GO
 

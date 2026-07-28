@@ -20,6 +20,10 @@ export type CustomerType =
 
 export type AddressType = "Billing" | "Shipping" | "RegisteredOffice" | "BranchOffice" | "Warehouse" | "Site";
 
+export type CustomerHealthStatus = "Hot" | "Warm" | "Cold" | "AtRisk";
+
+export type PreferredContactMethod = "Email" | "Mobile" | "WhatsApp" | "LinkedIn";
+
 export interface CustomerListItem {
   id: string;
   customerNumber: string;
@@ -30,6 +34,7 @@ export interface CustomerListItem {
   phone: string | null;
   assignedToUserName: string | null;
   tags: string | null;
+  healthStatus: CustomerHealthStatus | null;
   isActive: boolean;
   createdAtUtc: string;
 }
@@ -46,6 +51,9 @@ export interface ContactPerson {
   linkedIn: string | null;
   isPrimary: boolean;
   isDecisionMaker: boolean;
+  preferredContactMethod: PreferredContactMethod | null;
+  dateOfBirth: string | null;
+  anniversaryDate: string | null;
   notes: string | null;
 }
 
@@ -80,6 +88,7 @@ export interface Customer {
   rating: string | null;
   tags: string | null;
   acquisitionSource: LeadSource | null;
+  healthStatus: CustomerHealthStatus | null;
   assignedToUserId: string | null;
   assignedToUserName: string | null;
   isActive: boolean;
@@ -105,6 +114,7 @@ export interface SaveCustomerRequest {
   rating: string | null;
   tags: string | null;
   acquisitionSource: LeadSource | null;
+  healthStatus: CustomerHealthStatus | null;
   assignedToUserId: string | null;
   isActive: boolean;
   contacts: Omit<ContactPerson, "id">[];

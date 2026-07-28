@@ -1,3 +1,5 @@
+using ZentavioCRM.Core.Enums;
+
 namespace ZentavioCRM.Core.Entities
 {
     /// <summary>An individual contact belonging to a <see cref="Customer"/>. A customer may have unlimited contacts.</summary>
@@ -28,6 +30,20 @@ namespace ZentavioCRM.Core.Entities
         public bool IsPrimary { get; set; }
 
         public bool IsDecisionMaker { get; set; }
+
+        public PreferredContactMethod? PreferredContactMethod { get; set; }
+
+        /// <summary>Used for birthday relationship-touch reminders. Only month/day are meaningful for the reminder check — the year is whatever was entered (or unknown).</summary>
+        public DateTime? DateOfBirth { get; set; }
+
+        /// <summary>e.g. a business relationship anniversary or a personal one the contact has shared — used for anniversary relationship-touch reminders. Only month/day are meaningful for the reminder check.</summary>
+        public DateTime? AnniversaryDate { get; set; }
+
+        /// <summary>Calendar year a birthday reminder was last sent for this contact, so it isn't re-sent every day within the same year. Compared against DateOfBirth's month/day, not year.</summary>
+        public int? BirthdayReminderSentYear { get; set; }
+
+        /// <summary>Calendar year an anniversary reminder was last sent for this contact.</summary>
+        public int? AnniversaryReminderSentYear { get; set; }
 
         public string? Notes { get; set; }
 

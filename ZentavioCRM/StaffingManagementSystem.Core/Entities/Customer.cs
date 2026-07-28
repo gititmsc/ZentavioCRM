@@ -48,6 +48,9 @@ namespace ZentavioCRM.Core.Entities
         /// <summary>How this customer was originally acquired. Auto-populated from the source Lead when converted; set manually for customers created directly.</summary>
         public LeadSource? AcquisitionSource { get; set; }
 
+        /// <summary>Manually-set relationship health/engagement indicator (e.g. Hot Account, At-Risk). See <see cref="Enums.CustomerHealthStatus"/> doc comment for how this differs from Rating.</summary>
+        public CustomerHealthStatus? HealthStatus { get; set; }
+
         public Guid? AssignedToUserId { get; set; }
 
         public User? AssignedToUser { get; set; }

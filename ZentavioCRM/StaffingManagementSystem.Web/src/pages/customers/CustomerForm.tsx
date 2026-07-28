@@ -3,13 +3,21 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   customerService,
+  type CustomerHealthStatus,
   type CustomerType,
+  type PreferredContactMethod,
   type SaveCustomerRequest,
 } from "@/services/customerService";
 import type { LeadSource } from "@/services/leadService";
 import { userService, type ManagedUser } from "@/services/userService";
 import { DocumentsPanel } from "@/components/documents/DocumentsPanel";
 import { HistoryPanel } from "@/components/history/HistoryPanel";
+
+/** yyyy-MM-dd for a native <input type="date">, or "" if null. */
+function toDateInputValue(value: string | null): string {
+  if (!value) return "";
+  return value.slice(0, 10);
+}
 
 const CUSTOMER_TYPES: CustomerType[] = [
   "Prospect",
@@ -23,6 +31,15 @@ const CUSTOMER_TYPES: CustomerType[] = [
   "Franchise",
   "Consultant",
 ];
+
+const HEALTH_STATUSES: { value: CustomerHealthStatus; label: string }[] = [
+  { value: "Hot", label: "Hot Account" },
+  { value: "Warm", label: "Warm" },
+  { value: "Cold", label: "Cold" },
+  { value: "AtRisk", label: "At Risk" },
+];
+
+const PREFERRED_CONTACT_METHODS: PreferredContactMethod[] = ["Email", "Mobile", "WhatsApp", "LinkedIn"];
 
 const ACQUISITION_SOURCES: LeadSource[] = [
   "Website",
@@ -71,6 +88,7 @@ export default function CustomerForm() {
       rating: null,
       tags: null,
       acquisitionSource: null,
+      healthStatus: null,
       assignedToUserId: null,
       isActive: true,
       contacts: [],
@@ -107,9 +125,14 @@ export default function CustomerForm() {
             rating: c.rating,
             tags: c.tags,
             acquisitionSource: c.acquisitionSource,
+            healthStatus: c.healthStatus,
             assignedToUserId: c.assignedToUserId,
             isActive: c.isActive,
-            contacts: c.contacts.map(({ id: _cid, ...rest }) => rest),
+            contacts: c.contacts.map(({ id: _cid, dateOfBirth, anniversaryDate, ...rest }) => ({
+              ...rest,
+              dateOfBirth: toDateInputValue(dateOfBirth),
+              anniversaryDate: toDateInputValue(anniversaryDate),
+            })),
             addresses: c.addresses.map(({ id: _aid, ...rest }) => rest),
           });
         }
@@ -126,6 +149,13 @@ export default function CustomerForm() {
       ...values,
       assignedToUserId: values.assignedToUserId || null,
       acquisitionSource: values.acquisitionSource || null,
+      healthStatus: values.healthStatus || null,
+      contacts: values.contacts.map((c) => ({
+        ...c,
+        preferredContactMethod: c.preferredContactMethod || null,
+        dateOfBirth: c.dateOfBirth || null,
+        anniversaryDate: c.anniversaryDate || null,
+      })),
     };
 
     const result = isEditMode && id ? await customerService.update(id, request) : await customerService.create(request);
@@ -244,6 +274,18 @@ export default function CustomerForm() {
               </select>
             </div>
 
+            <div className="col-md-3">
+              <label className="form-label">Health Status</label>
+              <select className="form-select" {...register("healthStatus")}>
+                <option value="">Not set</option>
+                {HEALTH_STATUSES.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="col-md-3 d-flex align-items-end">
               <div className="form-check">
                 <input id="isActive" type="checkbox" className="form-check-input" {...register("isActive")} />
@@ -292,6 +334,9 @@ export default function CustomerForm() {
                   linkedIn: null,
                   isPrimary: contactsArray.fields.length === 0,
                   isDecisionMaker: false,
+                  preferredContactMethod: null,
+                  dateOfBirth: null,
+                  anniversaryDate: null,
                   notes: null,
                 })
               }
@@ -323,6 +368,33 @@ export default function CustomerForm() {
                 <div className="col-md-3">
                   <label className="form-label small">Mobile</label>
                   <input className="form-control form-control-sm" {...register(`contacts.${index}.mobile`)} />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label small">Preferred Contact</label>
+                  <select className="form-select form-select-sm" {...register(`contacts.${index}.preferredContactMethod`)}>
+                    <option value="">Not set</option>
+                    {PREFERRED_CONTACT_METHODS.map((method) => (
+                      <option key={method} value={method}>
+                        {method}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label small">Birthday</label>
+                  <input
+                    type="date"
+                    className="form-control form-control-sm"
+                    {...register(`contacts.${index}.dateOfBirth`)}
+                  />
+                </div>
+                <div className="col-md-3">
+                  <label className="form-label small">Anniversary</label>
+                  <input
+                    type="date"
+                    className="form-control form-control-sm"
+                    {...register(`contacts.${index}.anniversaryDate`)}
+                  />
                 </div>
                 <div className="col-md-2 form-check">
                   <input

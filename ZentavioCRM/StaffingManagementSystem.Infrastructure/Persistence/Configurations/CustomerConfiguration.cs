@@ -30,6 +30,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
             builder.Property(c => c.Rating).HasMaxLength(20);
             builder.Property(c => c.Tags).HasMaxLength(500);
             builder.Property(c => c.AcquisitionSource).HasConversion<string>().HasMaxLength(30);
+            builder.Property(c => c.HealthStatus).HasConversion<string>().HasMaxLength(20);
 
             builder.Property(c => c.AnnualRevenue).HasColumnType("decimal(18,2)");
             builder.Property(c => c.CreditLimit).HasColumnType("decimal(18,2)");

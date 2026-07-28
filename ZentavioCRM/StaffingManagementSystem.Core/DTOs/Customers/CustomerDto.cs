@@ -23,6 +23,8 @@ namespace ZentavioCRM.Core.DTOs.Customers
 
         public string? Tags { get; set; }
 
+        public CustomerHealthStatus? HealthStatus { get; set; }
+
         public bool IsActive { get; set; }
 
         public DateTime CreatedAtUtc { get; set; }
@@ -66,6 +68,8 @@ namespace ZentavioCRM.Core.DTOs.Customers
         public string? Tags { get; set; }
 
         public LeadSource? AcquisitionSource { get; set; }
+
+        public CustomerHealthStatus? HealthStatus { get; set; }
 
         public Guid? AssignedToUserId { get; set; }
 
@@ -113,6 +117,8 @@ namespace ZentavioCRM.Core.DTOs.Customers
         public string? Tags { get; set; }
 
         public LeadSource? AcquisitionSource { get; set; }
+
+        public CustomerHealthStatus? HealthStatus { get; set; }
 
         public Guid? AssignedToUserId { get; set; }
 

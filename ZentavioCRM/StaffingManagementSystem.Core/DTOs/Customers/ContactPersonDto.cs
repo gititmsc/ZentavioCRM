@@ -1,3 +1,5 @@
+using ZentavioCRM.Core.Enums;
+
 namespace ZentavioCRM.Core.DTOs.Customers
 {
     public class ContactPersonDto
@@ -23,6 +25,12 @@ namespace ZentavioCRM.Core.DTOs.Customers
         public bool IsPrimary { get; set; }
 
         public bool IsDecisionMaker { get; set; }
+
+        public PreferredContactMethod? PreferredContactMethod { get; set; }
+
+        public DateTime? DateOfBirth { get; set; }
+
+        public DateTime? AnniversaryDate { get; set; }
 
         public string? Notes { get; set; }
     }
@@ -50,6 +58,12 @@ namespace ZentavioCRM.Core.DTOs.Customers
         public bool IsPrimary { get; set; }
 
         public bool IsDecisionMaker { get; set; }
+
+        public PreferredContactMethod? PreferredContactMethod { get; set; }
+
+        public DateTime? DateOfBirth { get; set; }
+
+        public DateTime? AnniversaryDate { get; set; }
 
         public string? Notes { get; set; }
     }
