@@ -53,6 +53,16 @@ export function MainLayout() {
             </NavLink>
           ))}
         </nav>
+
+        <a
+          href="/user-manual.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="app-sidebar__manual-link"
+        >
+          <i className="bi bi-book-half" aria-hidden="true" />
+          <span>User Manual</span>
+        </a>
       </aside>
 
       <div className="app-main">

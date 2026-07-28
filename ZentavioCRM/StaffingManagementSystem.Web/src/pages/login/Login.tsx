@@ -216,6 +216,11 @@ export default function Login() {
               Google
             </button>
           </div>
+
+          <a href="/user-manual.html" target="_blank" rel="noopener noreferrer" className="login-manual-link">
+            <i className="bi bi-book-half" aria-hidden="true" />
+            User Manual
+          </a>
         </div>
       </main>
     </div>

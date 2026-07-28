@@ -330,6 +330,21 @@
   opacity: 0.65;
 }
 
+.login-manual-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 1.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--itm-muted);
+}
+
+.login-manual-link:hover {
+  color: var(--itm-accent);
+}
+
 .login-alert {
   display: flex;
   align-items: center;

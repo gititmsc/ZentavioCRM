@@ -211,14 +211,36 @@ namespace ZentavioCRM.Services
             }
             lead.NextFollowUpDate = request.NextFollowUpDate;
 
+            var reassigned = request.AssignedToUserId.HasValue && lead.AssignedToUserId != request.AssignedToUserId;
+            if (reassigned)
+            {
+                lead.AssignedToUserId = request.AssignedToUserId;
+                if (lead.Status == LeadStatus.New)
+                {
+                    lead.Status = LeadStatus.Assigned;
+                }
+            }
+
             lead.UpdatedAtUtc = DateTime.UtcNow;
             lead.LeadScore = ComputeLeadScore(lead);
 
-            // AssignedToUserId is changed exclusively through AssignAsync, which also drives the status transition.
             await _leadRepository.UpdateAsync(lead);
             await _auditLogService.LogAsync(EntityType, id, "Updated", "Lead details updated.", currentUserId);
+            if (reassigned)
+            {
+                await _auditLogService.LogAsync(EntityType, id, "Assigned", $"Lead {lead.LeadNumber} assigned.", currentUserId);
+            }
 
             var updated = await _leadRepository.GetByIdAsync(id);
+            if (reassigned)
+            {
+                await _notificationService.NotifyAsync(
+                    request.AssignedToUserId!.Value,
+                    $"You were assigned lead {updated!.LeadNumber} — {updated.CompanyName}.",
+                    RelatedEntityType.Lead,
+                    updated.Id);
+            }
+
             return ApiResponse<LeadDto>.SuccessResponse(Map(updated!), "Lead updated.");
         }
 

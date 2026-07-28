@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZentavioCRM &mdash; User &amp; QA Manual</title>
+<style>
+  :root {
+    --itm-primary: #163a63;
+    --itm-primary-rgb: 22, 58, 99;
+    --itm-secondary: #e53935;
+    --itm-accent: #2f80ed;
+    --itm-bg: #f5f7fa;
+    --itm-card-bg: #ffffff;
+    --itm-border: #e5e7eb;
+    --itm-text: #374151;
+    --itm-muted: #6b7280;
+    --itm-gradient-primary: linear-gradient(135deg, var(--itm-primary) 0%, var(--itm-secondary) 100%);
+    --itm-gradient-panel: linear-gradient(160deg, #0f2647 0%, #163a63 45%, #7a2530 100%);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--itm-text);
+    background: var(--itm-bg);
+    line-height: 1.55;
+    font-size: 14.5px;
+  }
+
+  a { color: var(--itm-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  code {
+    background: #eef1f6;
+    border: 1px solid var(--itm-border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.88em;
+    color: #8a2b0c;
+  }
+
+  /* ---------- Cover / header banner ---------- */
+
+  .manual-cover {
+    background: var(--itm-gradient-panel);
+    color: #fff;
+    padding: 48px 56px 40px;
+  }
+
+  .manual-cover__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    margin-bottom: 28px;
+    opacity: 0.95;
+  }
+
+  .manual-cover__badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: rgba(255,255,255,0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+  }
+
+  .manual-cover h1 {
+    font-size: 2.1rem;
+    margin: 0 0 6px;
+  }
+
+  .manual-cover__sub {
+    font-size: 1.05rem;
+    color: #ffe0de;
+    margin: 0 0 18px;
+  }
+
+  .manual-cover__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.78);
+    border-top: 1px solid rgba(255,255,255,0.16);
+    padding-top: 16px;
+    margin-top: 10px;
+  }
+
+  .manual-cover__meta strong { color: #fff; }
+
+  /* ---------- Layout ---------- */
+
+  .manual-wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    background: var(--itm-card-bg);
+    box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 8px 24px rgba(16,24,40,0.06);
+  }
+
+  .manual-body {
+    padding: 8px 56px 60px;
+  }
+
+  /* ---------- TOC ---------- */
+
+  .manual-toc {
+    background: #f8fafc;
+    border: 1px solid var(--itm-border);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin: 32px 0 44px;
+  }
+
+  .manual-toc h2 {
+    margin-top: 0;
+    font-size: 1.05rem;
+    color: var(--itm-primary);
+  }
+
+  .manual-toc ol {
+    column-count: 2;
+    column-gap: 40px;
+    padding-left: 20px;
+    margin: 10px 0 0;
+  }
+
+  .manual-toc li {
+    break-inside: avoid;
+    margin-bottom: 6px;
+    font-size: 0.92rem;
+  }
+
+  /* ---------- Sections ---------- */
+
+  section.module {
+    padding-top: 28px;
+    border-top: 1px solid var(--itm-border);
+    margin-top: 28px;
+  }
+
+  section.module:first-of-type { border-top: none; }
+
+  h2.module-title {
+    font-size: 1.5rem;
+    color: var(--itm-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .module-title .tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: rgba(var(--itm-primary-rgb), 0.08);
+    color: var(--itm-primary);
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+
+  .module-route {
+    font-size: 0.82rem;
+    color: var(--itm-muted);
+    margin: 0 0 16px;
+  }
+
+  h3 {
+    font-size: 1.08rem;
+    color: var(--itm-primary);
+    margin: 26px 0 8px;
+  }
+
+  h4 {
+    font-size: 0.96rem;
+    color: var(--itm-text);
+    margin: 18px 0 6px;
+  }
+
+  p { margin: 8px 0; }
+
+  ul, ol { padding-left: 22px; }
+  li { margin-bottom: 4px; }
+
+  /* ---------- Tables ---------- */
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 18px;
+    font-size: 0.87rem;
+    break-inside: avoid;
+  }
+
+  caption {
+    text-align: left;
+    font-size: 0.8rem;
+    color: var(--itm-muted);
+    margin-bottom: 4px;
+  }
+
+  th, td {
+    border: 1px solid var(--itm-border);
+    padding: 6px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: #f1f5f9;
+    color: var(--itm-primary);
+    font-weight: 600;
+  }
+
+  tr:nth-child(even) td { background: #fafbfc; }
+
+  /* ---------- Callouts ---------- */
+
+  .callout {
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin: 14px 0;
+    font-size: 0.88rem;
+    break-inside: avoid;
+    border: 1px solid transparent;
+  }
+
+  .callout-title {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .callout.qa {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #7c2d12;
+  }
+
+  .callout.rule {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1e3a5f;
+  }
+
+  .callout.gap {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #7f1d1d;
+  }
+
+  .perm-pill {
+    display: inline-block;
+    background: rgba(47, 128, 237, 0.1);
+    color: var(--itm-accent);
+    border-radius: 6px;
+    padding: 1px 8px;
+    font-size: 0.8rem;
+    font-family: monospace;
+    margin: 1px 2px 1px 0;
+  }
+
+  .steps {
+    counter-reset: step;
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 34px;
+    margin-bottom: 10px;
+  }
+
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--itm-primary);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ---------- Nav bar (screen only) ---------- */
+
+  .manual-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(255,255,255,0.97);
+    border-bottom: 1px solid var(--itm-border);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 56px;
+    font-size: 0.85rem;
+  }
+
+  .manual-navbar a {
+    color: var(--itm-primary);
+    font-weight: 600;
+  }
+
+  .back-to-top {
+    display: inline-block;
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+  }
+
+  footer.manual-footer {
+    text-align: center;
+    padding: 30px 20px 50px;
+    color: var(--itm-muted);
+    font-size: 0.8rem;
+  }
+
+  @media print {
+    body { background: #fff; }
+    .manual-navbar { display: none; }
+    .manual-wrap { box-shadow: none; max-width: 100%; }
+    .manual-cover { padding: 20px 10px; }
+    section.module { break-before: page; border-top: none; padding-top: 0; }
+    section.module:first-of-type { break-before: avoid; }
+    a { color: var(--itm-primary); }
+    .back-to-top { display: none; }
+  }
+
+  @page {
+    size: A4;
+    margin: 16mm 14mm;
+  }
+</style>
+</head>
+<body>
+
+<div class="manual-navbar">
+  <span><strong>ZentavioCRM</strong> &mdash; User &amp; QA Manual</span>
+  <a href="#toc">Jump to Contents ↑</a>
+</div>
+
+<div class="manual-wrap">
+
+  <div class="manual-cover">
+    <div class="manual-cover__brand">
+      <span class="manual-cover__badge">Z</span>
+      ZentavioCRM
+    </div>
+    <h1>User &amp; QA Manual</h1>
+    <p class="manual-cover__sub">Everything currently implemented, explained for end users and mapped for test coverage.</p>
+    <div class="manual-cover__meta">
+      <span><strong>Version:</strong> 1.0</span>
+      <span><strong>Covers build as of:</strong> July 2026</span>
+      <span><strong>Prepared for:</strong> End users &amp; QA</span>
+      <span><strong>Prepared by:</strong> ITMusketeers Consultancy Services</span>
+    </div>
+  </div>
+
+  <div class="manual-body">
+
+    <h2 id="toc" style="margin-top:28px;">How to use this manual</h2>
+    <p>This document has two audiences and both can read it straight through.</p>
+    <ul>
+      <li><strong>End users</strong> get a plain-language walk-through of every screen: what it's for, what each field means, and the steps to complete common tasks.</li>
+      <li><strong>QA testers</strong> get the same walk-through plus two extra layers highlighted throughout in colored boxes: orange <strong>QA Focus</strong> boxes calling out specific things worth testing (edge cases, mismatches between what the screen offers and what the server actually allows), and red <strong>Known Gap</strong> boxes documenting things that are not yet built or behave differently than you might expect &mdash; these are not bugs to re-report, they're documented current behavior, useful as a checklist when triaging new findings.</li>
+    </ul>
+    <p>Section <a href="#permissions-reference">14, Permissions Reference</a> lists every permission code in the system. Section <a href="#qa-focus-summary">16, Known Limitations &amp; Test Focus Summary</a> collects every QA/Gap box in the manual into one master checklist.</p>
+
+    <div class="manual-toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#overview">System Overview</a></li>
+        <li><a href="#getting-started">Getting Started (Login, Dashboard, Navigation)</a></li>
+        <li><a href="#my-profile">My Profile (Photo &amp; Out-of-Office Delegation)</a></li>
+        <li><a href="#leads">Leads</a></li>
+        <li><a href="#opportunities">Opportunities</a></li>
+        <li><a href="#quotations">Quotations</a></li>
+        <li><a href="#sales-orders">Sales Orders</a></li>
+        <li><a href="#customers">Customers</a></li>
+        <li><a href="#departments">Departments</a></li>
+        <li><a href="#territories">Territories</a></li>
+        <li><a href="#users">Users</a></li>
+        <li><a href="#roles-permissions">Roles, Permissions &amp; Visibility Scope</a></li>
+        <li><a href="#notifications-reminders">Notifications &amp; Reminders</a></li>
+        <li><a href="#shared-features">Activities, Documents &amp; History</a></li>
+        <li><a href="#permissions-reference">Permissions Reference</a></li>
+        <li><a href="#glossary">Glossary of Statuses &amp; Fields</a></li>
+        <li><a href="#qa-focus-summary">Known Limitations &amp; Test Focus Summary</a></li>
+      </ol>
+    </div>
+
+    <!-- ============================================================ -->
+    <section class="module" id="overview">
+      <h2 class="module-title">1. System Overview</h2>
+      <p>ZentavioCRM is a sales-pipeline CRM covering the full customer-acquisition lifecycle: a <strong>Lead</strong> comes in, gets qualified, converts into a <strong>Customer</strong> and/or an <strong>Opportunity</strong>, an <strong>Opportunity</strong> produces one or more <strong>Quotations</strong>, an accepted <strong>Quotation</strong> becomes a <strong>Sales Order</strong>, and a Sales Order tracks delivery until complete. Around this pipeline sit administrative modules (Users, Roles, Departments, Territories) and supporting features (Activities, Documents, Notifications, Audit History).</p>
+      <p>Access to every module is controlled by <strong>permissions</strong> assigned to a user's <strong>Role</strong>. On top of that, a Role also carries a <strong>Visibility Scope</strong> (Own / Team / All) that controls <em>which records</em> a user can see within Leads, Customers and Opportunities &mdash; see <a href="#roles-permissions">section 12</a> for full details, since this is one of the most important behaviors to understand and to test.</p>
+      <table>
+        <tr><th style="width:22%">Concept</th><th>What it means here</th></tr>
+        <tr><td>Lead</td><td>An unqualified prospect captured from a source (website, referral, campaign, etc.)</td></tr>
+        <tr><td>Customer</td><td>A qualified account &mdash; a company or individual with a full record of contacts, addresses, and history</td></tr>
+        <tr><td>Opportunity</td><td>A specific, tracked deal against a Customer, moving through sales stages</td></tr>
+        <tr><td>Quotation</td><td>A versioned, priced proposal document tied to one Opportunity</td></tr>
+        <tr><td>Sales Order</td><td>The confirmed order created once a Quotation is accepted; tracks delivery</td></tr>
+      </table>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="getting-started">
+      <h2 class="module-title">2. Getting Started</h2>
+
+      <h3>2.1 Logging in</h3>
+      <p>Go to the login screen and enter your email address and password (minimum 8 characters). Check <strong>Remember Me</strong> to stay signed in on this device between browser sessions; leave it unchecked and your session ends when you close the browser tab.</p>
+      <div class="callout gap">
+        <span class="callout-title">Known Gap &mdash; Session expiry</span>
+        Your sign-in session (access token) expires after <strong>15 minutes</strong>. There is currently no automatic renewal and no "your session expired, please log in again" message &mdash; API calls will simply start failing. If the app seems to stop responding to actions, refresh the page and log in again.
+      </div>
+      <div class="callout gap">
+        <span class="callout-title">Known Gap &mdash; Forgot Password / SSO</span>
+        The <em>Forgot Password?</em> link and the Microsoft/Google sign-in buttons are shown on the login screen but are <strong>not functional yet</strong>. There is also no password-reset or password-change feature anywhere in the app once an account is created &mdash; contact your administrator if you need your password changed.
+      </div>
+
+      <h3>2.2 The Dashboard</h3>
+      <p>The Dashboard (<code>/dashboard</code>) is the landing page after login and is visible to every signed-in user regardless of permissions. It shows: Open Leads, Active Customers, Leads Converted This Month, total Pipeline Value, Open Opportunities, Win Rate percentage, and a Pipeline by Stage breakdown (count and value per Opportunity stage).</p>
+      <div class="callout qa">
+        <span class="callout-title">QA Focus</span>
+        Dashboard counts are calculated <strong>globally</strong> across the whole company &mdash; they are <em>not</em> filtered by the viewing user's Visibility Scope. A user restricted to "Own" records will still see company-wide totals on the Dashboard, which may look inconsistent with what they can actually open in Leads/Customers/Opportunities. Worth confirming this is the intended behavior during UAT.
+      </div>
+
+      <h3>2.3 Navigation</h3>
+      <p>The left sidebar lists every module the signed-in user has permission to view; a module the user lacks permission for simply does not appear as a menu item (it is not just visually disabled &mdash; the underlying pages and API calls are also blocked, see <a href="#roles-permissions">section 12</a>).</p>
+      <table>
+        <tr><th>Menu item</th><th>Route</th><th>Shown when user has permission</th></tr>
+        <tr><td>Dashboard</td><td><code>/dashboard</code></td><td>always shown</td></tr>
+        <tr><td>Leads</td><td><code>/leads</code></td><td><span class="perm-pill">Leads.View</span></td></tr>
+        <tr><td>Opportunities</td><td><code>/opportunities</code></td><td><span class="perm-pill">Opportunities.View</span></td></tr>
+        <tr><td>Quotations</td><td><code>/quotations</code></td><td><span class="perm-pill">Quotations.View</span></td></tr>
+        <tr><td>Sales Orders</td><td><code>/sales-orders</code></td><td><span class="perm-pill">SalesOrders.View</span></td></tr>
+        <tr><td>Customers</td><td><code>/customers</code></td><td><span class="perm-pill">Customers.View</span></td></tr>
+        <tr><td>Departments</td><td><code>/departments</code></td><td><span class="perm-pill">Departments.View</span></td></tr>
+        <tr><td>Territories</td><td><code>/territories</code></td><td><span class="perm-pill">Territories.View</span></td></tr>
+        <tr><td>Users</td><td><code>/users</code></td><td><span class="perm-pill">Users.View</span></td></tr>
+        <tr><td>Roles</td><td><code>/roles</code></td><td><span class="perm-pill">Roles.View</span></td></tr>
+      </table>
+      <p>The bell icon in the top bar shows unread notifications (see <a href="#notifications-reminders">section 13</a>). Clicking your name/avatar in the top-right opens <a href="#my-profile">My Profile</a>. A <strong>User Manual</strong> link sits at the bottom-left of the sidebar at all times, opening this document in a new tab.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="my-profile">
+      <h2 class="module-title">3. My Profile</h2>
+      <p class="module-route">Route: <code>/profile</code> &middot; reached via your name/avatar in the top bar</p>
+
+      <h3>3.1 Profile Photo</h3>
+      <ol class="steps">
+        <li>Open <strong>My Profile</strong> and click <strong>Upload Photo</strong> (or <strong>Change Photo</strong> if you already have one).</li>
+        <li>Choose an image file. Accepted types: PNG, JPEG, GIF, WEBP, up to 5 MB.</li>
+        <li>The photo appears immediately across the app (top bar, Users list, avatars anywhere your name appears).</li>
+        <li>Use <strong>Remove</strong> to delete your photo and fall back to your initials.</li>
+      </ol>
+      <p>You can manage your own photo at any time. An administrator holding the <span class="perm-pill">Users.Manage</span> permission can also add/remove a photo for any other user from that user's edit screen.</p>
+      <div class="callout qa">
+        <span class="callout-title">QA Focus</span>
+        The file-type restriction is enforced on the server, not just the file picker &mdash; try uploading a renamed non-image file (e.g. a <code>.html</code> file saved with a <code>.png</code> extension) to confirm the server rejects it by actual content type, not just filename.
+      </div>
+
+      <h3>3.2 Out-of-Office / Delegation</h3>
+      <p>Use this to temporarily hand off your assigned records and reminders to a colleague while you're away.</p>
+      <ol class="steps">
+        <li>On <strong>My Profile</strong>, scroll to <strong>Out of Office / Delegation</strong>.</li>
+        <li>Choose a <strong>Delegate To</strong> colleague, a <strong>Start Date</strong> and <strong>End Date</strong>, and optional notes.</li>
+        <li>Click <strong>Add</strong>. The delegation appears in the list below with an Active/Not Active badge.</li>
+        <li>Click <strong>Cancel</strong> on any delegation you created to end it early.</li>
+      </ol>
+      <p>While a delegation is active: your delegate can see your assigned Leads, Customers and Opportunities exactly as if they owned them &mdash; regardless of the delegate's own Visibility Scope &mdash; and your delegate <strong>also</strong> receives your due-date, follow-up, birthday and anniversary reminder notifications, in addition to you (you are not muted while delegating).</p>
+      <div class="callout rule">
+        <span class="callout-title">Business rule</span>
+        You cannot delegate to yourself, and End Date must be on or after Start Date. Only the person who created a delegation can cancel it &mdash; cancelling someone else's delegation (e.g. by guessing an ID) returns a generic "not found" response.
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="leads">
+      <h2 class="module-title">4. Leads <span class="tag">Own / Team / All scoped</span></h2>
+      <p class="module-route">Route: <code>/leads</code> &middot; Permissions: <span class="perm-pill">Leads.View</span> <span class="perm-pill">Leads.Create</span> <span class="perm-pill">Leads.Edit</span> <span class="perm-pill">Leads.Delete</span> <span class="perm-pill">Leads.Assign</span> <span class="perm-pill">Leads.Convert</span></p>
+      <p>A Lead is an unqualified prospect. It carries a lead number (auto-generated, e.g. <code>LEAD-000123</code>), company and contact details, source and campaign/UTM tracking, an expected value/budget/timeline, a status, and a calculated <strong>Lead Score</strong>.</p>
+
+      <h3>4.1 Fields</h3>
+      <table>
+        <tr><th>Field</th><th>Notes</th></tr>
+        <tr><td>Company Name / Contact Name</td><td>Required</td></tr>
+        <tr><td>Email / Mobile</td><td>Optional; email is format-validated</td></tr>
+        <tr><td>Industry</td><td>Optional free text</td></tr>
+        <tr><td>Source</td><td>Website, Landing Page, Referral, Exhibition, WhatsApp, Facebook, LinkedIn, Email Campaign, Google Ads, Manual Entry, API Integration</td></tr>
+        <tr><td>Campaign</td><td>Free-text campaign label</td></tr>
+        <tr><td>UTM Source / Medium / Campaign / Term / Content</td><td>Structured tracking parameters, separate from the Campaign label</td></tr>
+        <tr><td>Budget / Expected Value</td><td>Numeric, optional</td></tr>
+        <tr><td>Timeline</td><td>Free text (e.g. "this quarter")</td></tr>
+        <tr><td>Territory (legacy free text)</td><td>Older free-text field, kept for backward compatibility with CSV import/export</td></tr>
+        <tr><td>Territory (structured)</td><td>Optional link to a <a href="#territories">Territory</a> record &mdash; the two Territory fields are independent; a lead can have either, both, or neither</td></tr>
+        <tr><td>Status</td><td>See status flow below</td></tr>
+        <tr><td>Next Follow-Up Date</td><td>Drives the follow-up reminder &mdash; see <a href="#notifications-reminders">section 13</a></td></tr>
+        <tr><td>Lead Score</td><td>0&ndash;100, calculated automatically (see below), read-only</td></tr>
+      </table>
+
+      <h3>4.2 Status flow</h3>
+      <p>New &rarr; Assigned &rarr; Contacted &rarr; (Qualified or Nurturing) &rarr; Proposal Sent &rarr; (Converted, Lost, or Junk).</p>
+      <div class="callout qa">
+        <span class="callout-title">QA Focus &mdash; status transitions</span>
+        The screen only offers a curated set of "next status" buttons, but the server accepts almost any status change (except leaving a terminal status). A direct API call can jump between non-adjacent statuses that the UI never offers &mdash; e.g. Nurturing straight back to New. Test both through the UI and via direct API calls if you have that access.
+      </div>
+      <div class="callout rule">
+        <span class="callout-title">Business rule</span>
+        A Reason is required when moving a Lead to Lost or Junk. Once a Lead is Converted, Lost, or Junk it becomes <strong>read-only</strong> &mdash; it cannot be edited, reassigned, or have its status changed again, even though the error message references "reopening" a lead, which is not an available action anywhere in the app.
+      </div>
+
+      <h3>4.3 Lead Score</h3>
+      <p>Recalculated automatically every time a lead is saved: up to +15 for having an email, +15 for a mobile number, +10 for industry filled in, +10 for being assigned, up to +25 for a high expected value, +20 for a Referral source (+10 for several other sources), and +5 if the Timeline text suggests urgency. Capped at 100. This is a simple rule-based score, not AI-driven (an "AI Score" field exists in the data model for a future scoring engine but is not populated by anything today).</p>
+
+      <h3>4.4 Everyday actions</h3>
+      <ol class="steps">
+        <li><strong>Create a Lead</strong> &mdash; <span class="perm-pill">Leads.Create</span>. As you enter Email or Mobile, the form checks for duplicates against existing Leads and Customers and shows a dismissible warning with links to the possible matches &mdash; this is informational only and does not block saving.</li>
+        <li><strong>Assign a Lead</strong> &mdash; <span class="perm-pill">Leads.Assign</span>. Sets the owner and automatically advances status from New to Assigned; the new owner gets a notification.</li>
+        <li><strong>Convert to Customer</strong> &mdash; <span class="perm-pill">Leads.Convert</span>. Creates a new Customer record from the lead's company details and marks the lead Converted.</li>
+        <li><strong>Convert to Opportunity</strong> &mdash; <span class="perm-pill">Leads.Convert</span>. Creates (or reuses, if already converted) the Customer <em>and</em> a new Opportunity in one step, carrying across the expected value.</li>
+      </ol>
+      <div class="callout gap">
+        <span class="callout-title">Known Gap</span>
+        There is a working Delete endpoint for Leads (<span class="perm-pill">Leads.Delete</span>) but no Delete button anywhere in the current UI.
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="opportunities">
+      <h2 class="module-title">5. Opportunities <span class="tag">Own / Team / All scoped</span></h2>
+      <p class="module-route">Route: <code>/opportunities</code> &middot; Permissions: <span class="perm-pill">Opportunities.View</span> <span class="perm-pill">Opportunities.Create</span> <span class="perm-pill">Opportunities.Edit</span> <span class="perm-pill">Opportunities.Delete</span> <span class="perm-pill">Opportunities.Assign</span></p>
+      <p>An Opportunity is a tracked deal against a specific Customer. It has line items (products/quantities/prices), a buying-committee contact list, a stage, and a value that is auto-computed from its line items whenever any exist.</p>
+
+      <h3>5.1 Fields</h3>
+      <table>
+        <tr><th>Field</th><th>Notes</th></tr>
+        <tr><td>Name</td><td>Required</td></tr>
+        <tr><td>Customer</td><td>Required &mdash; picking a customer also filters the buying-committee contact list to that customer's own contacts</td></tr>
+        <tr><td>Value</td><td>Auto-calculated as the sum of line items once any line item is added; otherwise entered manually</td></tr>
+        <tr><td>Currency</td><td>Defaults from the customer's currency, editable afterward</td></tr>
+        <tr><td>Probability</td><td>0&ndash;100%</td></tr>
+        <tr><td>Products</td><td>Free-text summary, independent of the structured line items</td></tr>
+        <tr><td>Competitors</td><td>Free text</td></tr>
+        <tr><td>Expected Close Date</td><td>&nbsp;</td></tr>
+        <tr><td>Stage</td><td>See stage flow below</td></tr>
+        <tr><td>Next Step / Next Step Date</td><td>The single next action to move the deal forward</td></tr>
+        <tr><td>Line Items</td><td>Product name, quantity, unit price, discount % &mdash; each computes a line total</td></tr>
+        <tr><td>Buying Committee</td><td>Links existing contacts from the same customer, each tagged with a role: Champion, Economic Buyer, Blocker, Influencer, Decision Maker, Technical Evaluator, Other</td></tr>
+      </table>
+
+      <h3>5.2 Stage flow</h3>
+      <p>Qualification &rarr; Discovery &rarr; Proposal &rarr; Negotiation &rarr; Verbal Commit &rarr; (Closed Won or Closed Lost).</p>
+      <div class="callout qa">
+        <span class="callout-title">QA Focus &mdash; stage transitions</span>
+        As with Leads, the UI presents a linear pipeline, but the server does not enforce that order &mdash; only that a Closed Won/Closed Lost opportunity cannot change again, and that Closed Lost requires a reason. A direct API call can jump from Qualification straight to Negotiation, skipping stages. Good candidate for a negative test case.
+      </div>
+      <p>Reaching Closed Won or Closed Lost notifies both the assignee and the creator.</p>
+
+      <h3>5.3 Everyday actions</h3>
+      <ol class="steps">
+        <li><strong>Create an Opportunity</strong> directly, or via <strong>Convert to Opportunity</strong> from a Lead.</li>
+        <li><strong>Assign</strong> &mdash; <span class="perm-pill">Opportunities.Assign</span>; blocked once the opportunity is closed.</li>
+        <li><strong>Create Quotation</strong> button on the Opportunity detail page (requires <span class="perm-pill">Quotations.Create</span>) jumps straight to a pre-linked new Quotation.</li>
+      </ol>
+      <div class="callout gap">
+        <span class="callout-title">Known Gap</span>
+        No Delete button in the UI despite a working API endpoint. Deleting an Opportunity that already has a Quotation will fail at the database level with a generic error rather than a friendly message, because the service does not pre-check for dependent Quotations.
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="quotations">
+      <h2 class="module-title">6. Quotations <span class="tag">Not visibility-scoped</span></h2>
+      <p class="module-route">Route: <code>/quotations</code> &middot; Permissions: <span class="perm-pill">Quotations.View</span> <span class="perm-pill">Quotations.Create</span> <span class="perm-pill">Quotations.Edit</span> <span class="perm-pill">Quotations.Delete</span> <span class="perm-pill">Quotations.Assign</span></p>
+      <p>A Quotation is a versioned, priced proposal tied to exactly one Opportunity. Totals (subtotal, tax, grand total) are computed automatically from its line items, which additionally carry a tax percentage (unlike Opportunity line items).</p>
+      <div class="callout rule">
+        <span class="callout-title">Important behavior</span>
+        Unlike Leads, Customers and Opportunities, Quotations are <strong>not</strong> subject to Own/Team/All Visibility Scope. Anyone holding <span class="perm-pill">Quotations.View</span> can see every quotation in the system regardless of who created or is assigned to it.
+      </div>
+
+      <h3>6.1 Status flow (strictly enforced)</h3>
+      <p>Draft &rarr; Sent &rarr; (Accepted, Rejected, or Expired). Unlike Leads/Opportunities, this transition list <strong>is</strong> fully enforced on the server &mdash; you cannot skip Draft straight to Accepted, and no transition is possible once Accepted/Rejected/Expired.</p>
+
+      <h3>6.2 Everyday actions</h3>
+      <ol class="steps">
+        <li><strong>Create</strong> &mdash; pick an Opportunity (locked once saved) and add at least one line item.</li>
+        <li><strong>Edit</strong> &mdash; only possible while the quotation is still Draft.</li>
+        <li><strong>New Version</strong> &mdash; clones the current line items into a fresh quotation at the next version number, always starting at Draft again. Available regardless of the current quotation's status, so you can spin up v2 from an Accepted, Rejected, or Expired v1.</li>
+        <li><strong>Convert to Sales Order</strong> &mdash; appears once Status = Accepted and no sales order exists yet for it; requires <span class="perm-pill">SalesOrders.Create</span>.</li>
+        <li><strong>Delete</strong> &mdash; only possible while Draft (no UI button currently, API only).</li>
+      </ol>
+      <p>Reaching Accepted notifies the assignee/creator that the quotation is ready to convert.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="sales-orders">
+      <h2 class="module-title">7. Sales Orders <span class="tag">Not visibility-scoped</span></h2>
+      <p class="module-route">Route: <code>/sales-orders</code> &middot; Permissions: <span class="perm-pill">SalesOrders.View</span> <span class="perm-pill">SalesOrders.Create</span> <span class="perm-pill">SalesOrders.Edit</span> <span class="perm-pill">SalesOrders.Assign</span></p>
+      <p>A Sales Order is created only by converting an Accepted Quotation &mdash; there is no standalone "New Sales Order" screen. Its pricing (subtotal/tax/total, line items) is a permanent <strong>snapshot</strong> taken at conversion time; later changes to the source quotation never retroactively change an already-created order. One Quotation can produce at most one Sales Order.</p>
+
+      <h3>7.1 Status flow</h3>
+      <p>Draft/Confirmed (set automatically at creation) &rarr; Partially Delivered &rarr; Delivered, or Cancelled at any point before full delivery. Partially Delivered and Delivered are calculated automatically from recorded deliveries &mdash; there is no manual "set status" action for those two.</p>
+
+      <h3>7.2 Everyday actions</h3>
+      <ol class="steps">
+        <li><strong>Record Delivery</strong> &mdash; on the order detail page, enter delivered quantity per line item (capped at the remaining undelivered amount). Saving recalculates the order's status automatically.</li>
+        <li><strong>Cancel</strong> &mdash; available any time before the order is fully delivered.</li>
+        <li><strong>Assign</strong>, and <strong>Update</strong> notes/expected delivery date (blocked once cancelled).</li>
+      </ol>
+      <div class="callout gap">
+        <span class="callout-title">Known Gap</span>
+        A <span class="perm-pill">SalesOrders.Delete</span> permission exists and can be granted to a Role, but there is no delete endpoint or button anywhere &mdash; granting it currently has no effect.
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="customers">
+      <h2 class="module-title">8. Customers <span class="tag">Own / Team / All scoped</span></h2>
+      <p class="module-route">Route: <code>/customers</code> &middot; Permissions: <span class="perm-pill">Customers.View</span> <span class="perm-pill">Customers.Create</span> <span class="perm-pill">Customers.Edit</span> <span class="perm-pill">Customers.Delete</span></p>
+      <p>The Customer record ("Customer Master") is the central account record: legal/display name, type, industry, financials, tags, and health status, plus unlimited child <strong>Contacts</strong> and <strong>Addresses</strong>.</p>
+
+      <h3>8.1 Key fields</h3>
+      <table>
+        <tr><th>Field</th><th>Notes</th></tr>
+        <tr><td>Customer Number</td><td>Auto-generated (e.g. <code>CUST-000123</code>)</td></tr>
+        <tr><td>Type</td><td>Prospect, Individual, Business, Vendor, Partner, Supplier, Distributor, Dealer, Franchise, Consultant</td></tr>
+        <tr><td>Legal Name / Display Name</td><td>Legal Name is required; Display Name defaults to Legal Name if left blank</td></tr>
+        <tr><td>Rating</td><td>Hot / Warm / Cold &mdash; a deal-quality label</td></tr>
+        <tr><td>Health Status</td><td>Hot / Warm / Cold / At Risk &mdash; a distinct concept from Rating, describing relationship health</td></tr>
+        <tr><td>Tags</td><td>Free-text, comma-separated</td></tr>
+        <tr><td>Acquisition Source</td><td>Filled automatically when converted from a Lead</td></tr>
+        <tr><td>Credit Limit / Payment Terms / Currency</td><td>Financial terms</td></tr>
+      </table>
+
+      <h3>8.2 Contacts (unlimited per customer)</h3>
+      <p>Name, designation, department, email, mobile, WhatsApp, LinkedIn, whether they are the primary contact and/or a decision maker, preferred contact method, and <strong>Date of Birth</strong> / <strong>Anniversary Date</strong>, which drive the reminder notifications described in <a href="#notifications-reminders">section 13</a>.</p>
+
+      <h3>8.3 Addresses (unlimited per customer)</h3>
+      <p>Type (Billing, Shipping, Registered Office, Branch Office, Warehouse, Site), address lines, city/state/country/postal code, and a primary flag.</p>
+
+      <div class="callout gap">
+        <span class="callout-title">Known Gap &mdash; saving replaces child records</span>
+        Every time a Customer is saved, its entire Contacts list and entire Addresses list are <strong>replaced</strong>, not diffed. Removing a contact/address row and saving permanently deletes that row (including its history); it is not a soft-remove. Be deliberate when editing these lists.
+      </div>
+
+      <h3>8.4 Everyday actions</h3>
+      <ol class="steps">
+        <li><strong>Search/filter</strong> by name, number, email, assigned owner, active status.</li>
+        <li><strong>Export to CSV</strong> and <strong>Import from CSV</strong> (10 MB limit) &mdash; note contacts and addresses are not part of the CSV import; add them afterward on the edit screen.</li>
+        <li><strong>Documents</strong> panel &mdash; attach files to the customer record.</li>
+        <li><strong>History</strong> panel &mdash; a plain-English audit trail of changes.</li>
+      </ol>
+      <div class="callout gap">
+        <span class="callout-title">Known Gap</span>
+        No Delete button in the UI. Deleting a Customer that has any Opportunity will currently fail with an unhandled database error rather than a friendly message, because the delete does not pre-check for dependent Opportunities.
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="departments">
+      <h2 class="module-title">9. Departments</h2>
+      <p class="module-route">Route: <code>/departments</code> &middot; Permissions: <span class="perm-pill">Departments.View</span> <span class="perm-pill">Departments.Manage</span></p>
+      <p>A simple, optionally hierarchical (parent/child) organizational grouping. Every user can optionally belong to one department. Department membership is what <strong>Team</strong> Visibility Scope uses to decide who counts as "your team" &mdash; see <a href="#roles-permissions">section 12</a>.</p>
+      <ol class="steps">
+        <li><strong>Create/Edit</strong> &mdash; name (must be unique) and an optional parent department.</li>
+        <li><strong>Delete</strong> &mdash; blocked if any user is currently assigned to the department; reassign or remove those users first.</li>
+      </ol>
+      <p>The list shows a live user count and active/inactive status per department.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="territories">
+      <h2 class="module-title">10. Territories</h2>
+      <p class="module-route">Route: <code>/territories</code> &middot; Permissions: <span class="perm-pill">Territories.View</span> <span class="perm-pill">Territories.Manage</span></p>
+      <p>A structured, optionally hierarchical territory list, assignable to both Users and Leads. This is a newer, structured replacement direction for the older free-text Territory field on Leads &mdash; both fields exist side by side today (see <a href="#leads">section 4</a>) and neither is required.</p>
+      <div class="callout rule">
+        <span class="callout-title">Important &mdash; not the same as Visibility Scope</span>
+        Territory is purely an organizational/reporting classification. It does <strong>not</strong> feed into the Own/Team/All record-visibility engine at all &mdash; "Team" scope is based on Department membership, not Territory. Don't confuse the two when testing access control.
+      </div>
+      <ol class="steps">
+        <li><strong>Create/Edit</strong> &mdash; name (unique) and optional parent territory.</li>
+        <li><strong>Delete</strong> &mdash; blocked if any User <em>or</em> any Lead currently references the territory.</li>
+      </ol>
+      <p>The list shows a live user count and live lead count per territory, plus active/inactive status.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="users">
+      <h2 class="module-title">11. Users</h2>
+      <p class="module-route">Route: <code>/users</code> &middot; Viewing the list/detail: any signed-in user &middot; Create/Edit: <span class="perm-pill">Users.Manage</span></p>
+      <p>Every login account: employee code, name, email, mobile, role, department, reporting manager, territory, and profile photo.</p>
+      <table>
+        <tr><th>Field</th><th>Notes</th></tr>
+        <tr><td>Employee Code</td><td>Required, unique, cannot be changed after creation</td></tr>
+        <tr><td>Email</td><td>Required, unique, format-validated, cannot be changed after creation, stored lower-cased</td></tr>
+        <tr><td>Role</td><td>Required &mdash; determines permissions and Visibility Scope, see <a href="#roles-permissions">section 12</a></td></tr>
+        <tr><td>Department</td><td>Optional &mdash; drives "Team" scope membership</td></tr>
+        <tr><td>Reporting Manager</td><td>Optional; a user cannot be set as their own manager</td></tr>
+        <tr><td>Territory</td><td>Optional</td></tr>
+        <tr><td>Active</td><td>Only editable on existing users &mdash; new users are always created active</td></tr>
+      </table>
+      <div class="callout gap">
+        <span class="callout-title">Known Gap</span>
+        Users are never permanently deleted &mdash; there is no delete function at all, only Active/Inactive. There is also no password reset or change feature after account creation; if a user forgets their password, an administrator currently has no in-app way to issue a new one. A deactivated user cannot log in (a deliberately vague "invalid email or password" message is shown, rather than revealing the account exists but is inactive).
+      </div>
+      <p>The user's own profile photo is managed from <a href="#my-profile">My Profile</a>, or by an administrator from this Users screen.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="roles-permissions">
+      <h2 class="module-title">12. Roles, Permissions &amp; Visibility Scope</h2>
+      <p class="module-route">Route: <code>/roles</code> &middot; Permissions: <span class="perm-pill">Roles.View</span> <span class="perm-pill">Roles.Manage</span></p>
+      <p>A Role bundles a set of module permissions plus one Visibility Scope, and is assigned to one or more Users. This is the single mechanism controlling both <em>what</em> a user can do and <em>which records</em> they can see.</p>
+
+      <h3>12.1 Managing Roles</h3>
+      <ol class="steps">
+        <li><strong>Create/Edit</strong> &mdash; name (unique), description, Visibility Scope, and a checkbox grid of every permission in the system grouped by module.</li>
+        <li>Saving a role's permissions <strong>replaces</strong> the full permission set &mdash; there's no incremental add/remove, the form always submits everything currently checked.</li>
+        <li><strong>Delete</strong> &mdash; blocked if any user currently has that role.</li>
+      </ol>
+      <div class="callout rule">
+        <span class="callout-title">System roles</span>
+        Built-in roles (such as Admin) are marked as System Roles and cannot be renamed, edited, or deleted &mdash; the Edit/Delete controls are hidden for them in the UI, and the API independently rejects any attempt to modify or delete a system role even via a direct call.
+      </div>
+
+      <h3>12.2 Visibility Scope &mdash; Own / Team / All</h3>
+      <p>This setting on the Role controls which <strong>Leads, Customers, and Opportunities</strong> a user can see and act on. It does not affect Quotations, Sales Orders, Departments, Territories, Users, or Roles &mdash; those modules are governed by permissions alone.</p>
+      <table>
+        <tr><th>Scope</th><th>What the user can see</th></tr>
+        <tr><td><strong>Own</strong></td><td>Only records assigned to them, or &mdash; if unassigned &mdash; records they created</td></tr>
+        <tr><td><strong>Team</strong></td><td>Everything in Own, plus records assigned to or created by anyone else in the <strong>same Department</strong>. A user with no department behaves the same as Own.</td></tr>
+        <tr><td><strong>All</strong></td><td>Every record in the module, company-wide</td></tr>
+      </table>
+      <p>An active <a href="#my-profile">Delegation</a> is layered on top of all three scopes: a delegate can see the delegator's records regardless of the delegate's own scope.</p>
+      <div class="callout qa">
+        <span class="callout-title">QA Focus &mdash; how to test scope</span>
+        <ul style="margin:4px 0 0;">
+          <li>Trying to open a record outside your scope (e.g. by URL/ID) returns the same "not found" response as a genuinely non-existent record &mdash; it never says "forbidden." This is deliberate (it avoids confirming a record exists to someone who shouldn't see it), but means QA should not assume a 404-style response equals "the ID was wrong."</li>
+          <li>List screens (search results, counts, pagination) are filtered server-side per scope; single-record screens (open/edit/delete/assign/status-change) are checked independently after fetching the record. Test both paths &mdash; a bug could exist in one but not the other.</li>
+          <li>If a Role can't be resolved at all for some reason, the system defaults that user to <strong>Own</strong> scope (fail-closed, not fail-open) &mdash; the safer default.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="notifications-reminders">
+      <h2 class="module-title">13. Notifications &amp; Reminders</h2>
+      <p>The bell icon in the top bar shows a live unread count and a dropdown of recent notifications. Clicking an unread notification marks it read and, where applicable, opens the related record.</p>
+
+      <h3>13.1 What generates a notification</h3>
+      <ul>
+        <li>An overdue <strong>Activity</strong> assigned to you that hasn't been completed yet.</li>
+        <li>A <strong>Lead</strong> assigned to you whose Next Follow-Up Date has arrived.</li>
+        <li>A <strong>Customer contact's birthday</strong>, for contacts belonging to a customer assigned to you.</li>
+        <li>A <strong>Customer contact's anniversary date</strong>, same ownership rule as above.</li>
+        <li>Being <strong>assigned</strong> a Lead or Opportunity, and a Quotation reaching Accepted, or a Sales Order becoming fully Delivered.</li>
+        <li>If someone is currently <strong>delegating</strong> to you, you additionally receive their due-date/follow-up/birthday/anniversary notifications on their behalf (see <a href="#my-profile">section 3.2</a>) &mdash; they still receive their own copy too.</li>
+      </ul>
+      <p>Each reminder fires once per due item (it is stamped internally so it won't repeat), and a follow-up date change on a Lead resets that stamp so it can fire again against the new date.</p>
+
+      <div class="callout gap">
+        <span class="callout-title">Known Gap &mdash; polling only, no push</span>
+        There is no background job/scheduler in this build. Reminders are only checked and generated at the moment a signed-in user's browser polls for notifications, which happens automatically roughly <strong>every 30 seconds</strong> while the app is open. If nobody who owns (or is delegated) the overdue item is logged in, the reminder simply does not get created until the next time someone opens the app &mdash; it is not silently missed forever, but it is also not real-time or guaranteed while no one is online.
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="shared-features">
+      <h2 class="module-title">14. Activities, Documents &amp; History</h2>
+      <p>These three panels appear embedded on Lead, Opportunity, and/or Customer detail screens rather than as their own top-level menu items. They are available to any signed-in user &mdash; there is no dedicated permission gate on them today.</p>
+
+      <h3>14.1 Activities</h3>
+      <p>A timeline of calls, emails, meetings, tasks, notes, visits, WhatsApp messages, and SMS logged against a record, each with a subject, description, due date, and assignee.</p>
+      <div class="callout rule">
+        <span class="callout-title">Recurrence</span>
+        Setting a recurrence rule (Daily/Weekly/Monthly) and a count (2&ndash;52) generates <strong>all occurrences immediately</strong> as separate Activity rows &mdash; there is no background process creating future occurrences over time, since none exists in this build.
+      </div>
+
+      <h3>14.2 Documents</h3>
+      <p>Generic file attachments (up to 10 MB) against a Customer or Opportunity record, stored directly in the database (no external cloud storage integration).</p>
+
+      <h3>14.3 History / Audit Log</h3>
+      <p>A plain-English list of what happened to a record &mdash; created, updated, deleted, status/stage changed, assigned, converted, cancelled, delivery recorded &mdash; with who and when. It records that something changed and in what category, but not a field-by-field before/after diff.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="permissions-reference">
+      <h2 class="module-title">15. Permissions Reference</h2>
+      <p>Full list of every permission code in the system, grouped by module. Use this table when configuring a Role or when writing permission-boundary test cases.</p>
+      <table>
+        <tr><th>Module</th><th>Permission codes</th></tr>
+        <tr><td>Departments</td><td><span class="perm-pill">Departments.View</span> <span class="perm-pill">Departments.Manage</span></td></tr>
+        <tr><td>Territories</td><td><span class="perm-pill">Territories.View</span> <span class="perm-pill">Territories.Manage</span></td></tr>
+        <tr><td>Users</td><td><span class="perm-pill">Users.View</span>* <span class="perm-pill">Users.Manage</span></td></tr>
+        <tr><td>Roles</td><td><span class="perm-pill">Roles.View</span> <span class="perm-pill">Roles.Manage</span></td></tr>
+        <tr><td>Customers</td><td><span class="perm-pill">Customers.View</span> <span class="perm-pill">Customers.Create</span> <span class="perm-pill">Customers.Edit</span> <span class="perm-pill">Customers.Delete</span></td></tr>
+        <tr><td>Leads</td><td><span class="perm-pill">Leads.View</span> <span class="perm-pill">Leads.Create</span> <span class="perm-pill">Leads.Edit</span> <span class="perm-pill">Leads.Delete</span> <span class="perm-pill">Leads.Assign</span> <span class="perm-pill">Leads.Convert</span></td></tr>
+        <tr><td>Opportunities</td><td><span class="perm-pill">Opportunities.View</span> <span class="perm-pill">Opportunities.Create</span> <span class="perm-pill">Opportunities.Edit</span> <span class="perm-pill">Opportunities.Delete</span> <span class="perm-pill">Opportunities.Assign</span></td></tr>
+        <tr><td>Quotations</td><td><span class="perm-pill">Quotations.View</span> <span class="perm-pill">Quotations.Create</span> <span class="perm-pill">Quotations.Edit</span> <span class="perm-pill">Quotations.Delete</span> <span class="perm-pill">Quotations.Assign</span></td></tr>
+        <tr><td>Sales Orders</td><td><span class="perm-pill">SalesOrders.View</span> <span class="perm-pill">SalesOrders.Create</span> <span class="perm-pill">SalesOrders.Edit</span> <span class="perm-pill">SalesOrders.Assign</span> <span class="perm-pill">SalesOrders.Delete</span>**</td></tr>
+      </table>
+      <p style="font-size:0.82rem;color:var(--itm-muted);">* Not actually enforced server-side today &mdash; any signed-in user can list/view users regardless of this permission, since assignment dropdowns throughout the app need the user directory. &nbsp; ** Exists as a grantable permission but has no corresponding feature (see section 7).</p>
+      <p>Modules with <strong>no</strong> dedicated permission code &mdash; open to any signed-in user regardless of role: Dashboard, My Profile / Delegation, Activities, Documents, Audit History/Notifications.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="glossary">
+      <h2 class="module-title">16. Glossary of Statuses &amp; Fields</h2>
+      <table>
+        <tr><th>Term</th><th>Meaning</th></tr>
+        <tr><td>Lead Status</td><td>New, Assigned, Contacted, Qualified, Nurturing, Proposal Sent, Converted, Lost, Junk</td></tr>
+        <tr><td>Opportunity Stage</td><td>Qualification, Discovery, Proposal, Negotiation, Verbal Commit, Closed Won, Closed Lost</td></tr>
+        <tr><td>Quotation Status</td><td>Draft, Sent, Accepted, Rejected, Expired</td></tr>
+        <tr><td>Sales Order Status</td><td>Draft/Confirmed, Partially Delivered, Delivered, Cancelled</td></tr>
+        <tr><td>Customer Type</td><td>Prospect, Individual, Business, Vendor, Partner, Supplier, Distributor, Dealer, Franchise, Consultant</td></tr>
+        <tr><td>Customer Rating vs. Health Status</td><td>Rating = a deal-quality label (Hot/Warm/Cold); Health Status = a separate relationship-health indicator (Hot/Warm/Cold/At Risk)</td></tr>
+        <tr><td>Visibility Scope</td><td>Own / Team / All &mdash; see section 12.2</td></tr>
+        <tr><td>Territory (legacy) vs. Territory (structured)</td><td>Two independent fields on Lead/User &mdash; see sections 4 and 10</td></tr>
+      </table>
+    </section>
+
+    <!-- ============================================================ -->
+    <section class="module" id="qa-focus-summary">
+      <h2 class="module-title">17. Known Limitations &amp; Test Focus Summary</h2>
+      <p>A single checklist gathering every orange/red callout in this manual, for quick reference during test planning.</p>
+      <ul>
+        <li>Access tokens expire after 15 minutes with no refresh and no "please log in again" message &mdash; the app just starts failing silently.</li>
+        <li>Forgot Password and Microsoft/Google sign-in are visible but non-functional; there is no password reset/change flow anywhere post-creation.</li>
+        <li>Dashboard totals are global, not filtered by the viewer's Visibility Scope.</li>
+        <li>Lead status and Opportunity stage transitions are enforced loosely on the server (only terminal-state and reason-required rules) even though the UI presents a stricter linear flow &mdash; test both the UI paths and out-of-sequence transitions directly.</li>
+        <li>Visibility Scope (Own/Team/All) applies only to Leads, Customers, and Opportunities &mdash; not to Quotations or Sales Orders.</li>
+        <li>Out-of-scope records return a generic "not found," never "forbidden" &mdash; don't conflate the two when triaging.</li>
+        <li>Deleting a Customer with existing Opportunities, or an Opportunity with existing Quotations, or a Quotation with an existing Sales Order, is expected to fail ungracefully (a raw database error) rather than a friendly validation message, since those delete operations don't pre-check dependents.</li>
+        <li>Leads, Customers, Opportunities and Quotations each have a working Delete API but no Delete button in the UI. Sales Orders have a Delete permission with no feature behind it at all.</li>
+        <li>Editing a Customer or an Opportunity fully replaces their child collections (Contacts/Addresses, or Line Items/Buying Committee) &mdash; removing a row and saving is a permanent delete of that row.</li>
+        <li>Record numbers (LEAD-, CUST-, OPP-, QUO-, SO-) are based on current row counts, not a guaranteed sequence &mdash; deleting and recreating records can produce number collisions.</li>
+        <li>Reminders (due activities, follow-ups, birthdays, anniversaries) only get generated when a relevant user's browser polls the app (roughly every 30 seconds while logged in) &mdash; there is no background scheduler, so nothing fires while no relevant user is online.</li>
+        <li>Recurring Activities generate every occurrence immediately at creation time rather than progressively over time.</li>
+        <li>Territory is unrelated to Visibility Scope &mdash; "Team" scope is based on Department, not Territory.</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <footer class="manual-footer">
+    ZentavioCRM User &amp; QA Manual &middot; Version 1.0 &middot; &copy; 2026 ITMusketeers Consultancy Services
+    <div class="back-to-top"><a href="#toc">Back to top ↑</a></div>
+  </footer>
+
+</div>
+
+</body>
+</html>
