@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { opportunityService, type Opportunity, type OpportunityStage } from "@/services/opportunityService";
 import { userService, type ManagedUser } from "@/services/userService";
 import { activityService, type Activity, type ActivityType } from "@/services/activityService";
+import { quotationService, type QuotationListItem } from "@/services/quotationService";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { HistoryPanel } from "@/components/history/HistoryPanel";
+import { DocumentsPanel } from "@/components/documents/DocumentsPanel";
+
+const QUOTATION_STATUS_BADGE: Record<string, string> = {
+  Draft: "text-bg-secondary",
+  Sent: "text-bg-info",
+  Accepted: "text-bg-success",
+  Rejected: "text-bg-danger",
+  Expired: "text-bg-dark",
+};
 
 const NEXT_STAGES: Record<OpportunityStage, OpportunityStage[]> = {
   Qualification: ["Discovery", "ClosedWon", "ClosedLost"],
@@ -21,11 +31,13 @@ const ACTIVITY_TYPES: ActivityType[] = ["Call", "Email", "Meeting", "Task", "Not
 
 export default function OpportunityDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { hasPermission } = useAuth();
 
   const [opportunity, setOpportunity] = useState<Opportunity | null>(null);
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [timeline, setTimeline] = useState<Activity[]>([]);
+  const [quotations, setQuotations] = useState<QuotationListItem[]>([]);
   const [assignToUserId, setAssignToUserId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,14 +48,16 @@ export default function OpportunityDetail() {
 
   const canEdit = hasPermission(PermissionCodes.OpportunitiesEdit);
   const canAssign = hasPermission(PermissionCodes.OpportunitiesAssign);
+  const canCreateQuotation = hasPermission(PermissionCodes.QuotationsCreate);
 
   const load = async () => {
     if (!id) return;
     setIsLoading(true);
-    const [opportunityResult, usersResult, timelineResult] = await Promise.all([
+    const [opportunityResult, usersResult, timelineResult, quotationsResult] = await Promise.all([
       opportunityService.getById(id),
       userService.getAll(),
       activityService.getTimeline("Opportunity", id),
+      quotationService.search({ opportunityId: id, pageSize: 50 }),
     ]);
     setIsLoading(false);
 
@@ -56,6 +70,7 @@ export default function OpportunityDetail() {
 
     if (usersResult.success && usersResult.data) setUsers(usersResult.data);
     if (timelineResult.success && timelineResult.data) setTimeline(timelineResult.data);
+    if (quotationsResult.success && quotationsResult.data) setQuotations(quotationsResult.data.items);
   };
 
   useEffect(() => {
@@ -225,6 +240,53 @@ export default function OpportunityDetail() {
             </div>
           )}
 
+          <div className="card shadow-sm border-0 mb-4">
+            <div className="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+              <span>Quotations</span>
+              {canCreateQuotation && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => navigate(`/quotations/new?opportunityId=${opportunity.id}`)}
+                >
+                  <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+                  Create Quotation
+                </button>
+              )}
+            </div>
+            {quotations.length === 0 ? (
+              <div className="card-body text-muted small">
+                No quotations yet — once you're ready to price this deal, create one to move it toward a sales order.
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table mb-0 align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Number</th>
+                      <th className="text-end">Total</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quotations.map((q) => (
+                      <tr key={q.id} role="button" onClick={() => navigate(`/quotations/${q.id}`)}>
+                        <td>
+                          {q.quotationNumber}
+                          {q.version > 1 && <span className="text-muted"> v{q.version}</span>}
+                        </td>
+                        <td className="text-end">{q.grandTotal.toLocaleString()}</td>
+                        <td>
+                          <span className={`badge ${QUOTATION_STATUS_BADGE[q.status]}`}>{q.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
           <div className="card shadow-sm border-0">
             <div className="card-header bg-white fw-semibold">Timeline</div>
             <div className="card-body">
@@ -276,6 +338,8 @@ export default function OpportunityDetail() {
               </ul>
             </div>
           </div>
+
+          <DocumentsPanel entityType="Opportunity" entityId={opportunity.id} />
 
           <HistoryPanel entityType="Opportunity" entityId={opportunity.id} />
         </div>

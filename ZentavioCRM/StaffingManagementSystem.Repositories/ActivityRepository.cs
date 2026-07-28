@@ -29,5 +29,20 @@ namespace ZentavioCRM.Repositories
             _dbContext.Activities.Add(activity);
             await _dbContext.SaveChangesAsync();
         }
+
+        public async Task<IReadOnlyList<Activity>> GetDueForReminderAsync(Guid userId, DateTime nowUtc)
+            => await _dbContext.Activities
+                .Where(a =>
+                    a.AssignedToUserId == userId &&
+                    a.CompletedAtUtc == null &&
+                    a.ReminderSentAtUtc == null &&
+                    a.DueAtUtc != null && a.DueAtUtc <= nowUtc)
+                .ToListAsync();
+
+        public async Task UpdateAsync(Activity activity)
+        {
+            _dbContext.Activities.Update(activity);
+            await _dbContext.SaveChangesAsync();
+        }
     }
 }

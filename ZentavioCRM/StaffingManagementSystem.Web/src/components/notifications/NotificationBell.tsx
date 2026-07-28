@@ -13,6 +13,10 @@ function relatedPath(notification: Notification): string | null {
       return `/opportunities/${notification.relatedEntityId}`;
     case "Customer":
       return `/customers/${notification.relatedEntityId}/edit`;
+    case "Quotation":
+      return `/quotations/${notification.relatedEntityId}`;
+    case "SalesOrder":
+      return `/sales-orders/${notification.relatedEntityId}`;
     default:
       return null;
   }

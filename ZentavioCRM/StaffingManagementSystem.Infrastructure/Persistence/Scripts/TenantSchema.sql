@@ -158,6 +158,8 @@ CREATE TABLE dbo.Customers
     PaymentTermsDays INT              NULL,
     CreditLimit      DECIMAL(18, 2)   NULL,
     Rating           NVARCHAR(20)     NULL,
+    Tags             NVARCHAR(500)    NULL,
+    AcquisitionSource NVARCHAR(30)    NULL,
     AssignedToUserId UNIQUEIDENTIFIER NULL,
     IsActive         BIT              NOT NULL CONSTRAINT DF_Customers_IsActive DEFAULT (1),
     CreatedAtUtc     DATETIME2        NOT NULL,
@@ -242,6 +244,8 @@ CREATE TABLE dbo.Leads
     LeadScore           INT              NULL,
     AiScore             INT              NULL,
     Notes               NVARCHAR(MAX)    NULL,
+    NextFollowUpDate    DATETIME2        NULL,
+    FollowUpReminderSentAtUtc DATETIME2  NULL,
     LostReason          NVARCHAR(300)    NULL,
     ConvertedCustomerId UNIQUEIDENTIFIER NULL,
     ConvertedAtUtc      DATETIME2        NULL,
@@ -317,6 +321,113 @@ CREATE INDEX IX_OpportunityLineItems_OpportunityId ON dbo.OpportunityLineItems (
 GO
 
 -- ============================================================================
+-- Quotations (priced proposals against an Opportunity — CRM SRS Phase 6, section 5)
+-- ============================================================================
+CREATE TABLE dbo.Quotations
+(
+    Id                 UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Quotations_Id DEFAULT NEWID(),
+    QuotationNumber    NVARCHAR(30)     NOT NULL,
+    Version            INT              NOT NULL CONSTRAINT DF_Quotations_Version DEFAULT (1),
+    OpportunityId      UNIQUEIDENTIFIER NOT NULL,
+    CustomerId         UNIQUEIDENTIFIER NOT NULL,
+    Status             NVARCHAR(30)     NOT NULL,
+    ValidUntil         DATETIME2        NULL,
+    TermsAndConditions NVARCHAR(4000)   NULL,
+    Notes              NVARCHAR(MAX)    NULL,
+    Subtotal           DECIMAL(18, 2)   NOT NULL CONSTRAINT DF_Quotations_Subtotal DEFAULT (0),
+    TaxTotal           DECIMAL(18, 2)   NOT NULL CONSTRAINT DF_Quotations_TaxTotal DEFAULT (0),
+    GrandTotal         DECIMAL(18, 2)   NOT NULL CONSTRAINT DF_Quotations_GrandTotal DEFAULT (0),
+    AssignedToUserId   UNIQUEIDENTIFIER NULL,
+    CreatedByUserId    UNIQUEIDENTIFIER NULL,
+    CreatedAtUtc       DATETIME2        NOT NULL,
+    UpdatedAtUtc       DATETIME2        NULL,
+    CONSTRAINT PK_Quotations PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_Quotations_Opportunities FOREIGN KEY (OpportunityId) REFERENCES dbo.Opportunities (Id) ON DELETE NO ACTION,
+    CONSTRAINT FK_Quotations_Customers FOREIGN KEY (CustomerId) REFERENCES dbo.Customers (Id) ON DELETE NO ACTION,
+    CONSTRAINT FK_Quotations_AssignedToUser FOREIGN KEY (AssignedToUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL
+);
+
+CREATE UNIQUE INDEX IX_Quotations_QuotationNumber_Version ON dbo.Quotations (QuotationNumber, Version);
+CREATE INDEX IX_Quotations_OpportunityId ON dbo.Quotations (OpportunityId);
+CREATE INDEX IX_Quotations_CustomerId ON dbo.Quotations (CustomerId);
+CREATE INDEX IX_Quotations_Status ON dbo.Quotations (Status);
+CREATE INDEX IX_Quotations_AssignedToUserId ON dbo.Quotations (AssignedToUserId);
+GO
+
+-- ============================================================================
+-- QuotationLineItems
+-- ============================================================================
+CREATE TABLE dbo.QuotationLineItems
+(
+    Id              UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_QuotationLineItems_Id DEFAULT NEWID(),
+    QuotationId     UNIQUEIDENTIFIER NOT NULL,
+    ProductName     NVARCHAR(200)    NOT NULL,
+    Quantity        DECIMAL(18, 2)   NOT NULL,
+    UnitPrice       DECIMAL(18, 2)   NOT NULL,
+    DiscountPercent DECIMAL(5, 2)    NULL,
+    TaxPercent      DECIMAL(5, 2)    NULL,
+    CONSTRAINT PK_QuotationLineItems PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_QuotationLineItems_Quotations FOREIGN KEY (QuotationId) REFERENCES dbo.Quotations (Id) ON DELETE CASCADE
+);
+
+CREATE INDEX IX_QuotationLineItems_QuotationId ON dbo.QuotationLineItems (QuotationId);
+GO
+
+-- ============================================================================
+-- SalesOrders (converted from an Accepted Quotation — CRM SRS Phase 6, section 6)
+-- ============================================================================
+CREATE TABLE dbo.SalesOrders
+(
+    Id                    UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_SalesOrders_Id DEFAULT NEWID(),
+    SalesOrderNumber      NVARCHAR(30)     NOT NULL,
+    QuotationId           UNIQUEIDENTIFIER NOT NULL,
+    CustomerId            UNIQUEIDENTIFIER NOT NULL,
+    Status                NVARCHAR(30)     NOT NULL,
+    OrderDate             DATETIME2        NOT NULL,
+    ExpectedDeliveryDate  DATETIME2        NULL,
+    Notes                 NVARCHAR(MAX)    NULL,
+    Subtotal              DECIMAL(18, 2)   NOT NULL CONSTRAINT DF_SalesOrders_Subtotal DEFAULT (0),
+    TaxTotal              DECIMAL(18, 2)   NOT NULL CONSTRAINT DF_SalesOrders_TaxTotal DEFAULT (0),
+    GrandTotal            DECIMAL(18, 2)   NOT NULL CONSTRAINT DF_SalesOrders_GrandTotal DEFAULT (0),
+    AssignedToUserId      UNIQUEIDENTIFIER NULL,
+    CreatedByUserId       UNIQUEIDENTIFIER NULL,
+    CreatedAtUtc          DATETIME2        NOT NULL,
+    UpdatedAtUtc          DATETIME2        NULL,
+    CONSTRAINT PK_SalesOrders PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_SalesOrders_Quotations FOREIGN KEY (QuotationId) REFERENCES dbo.Quotations (Id) ON DELETE NO ACTION,
+    CONSTRAINT FK_SalesOrders_Customers FOREIGN KEY (CustomerId) REFERENCES dbo.Customers (Id) ON DELETE NO ACTION,
+    CONSTRAINT FK_SalesOrders_AssignedToUser FOREIGN KEY (AssignedToUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL
+);
+
+-- One quotation converts to at most one sales order.
+CREATE UNIQUE INDEX IX_SalesOrders_QuotationId ON dbo.SalesOrders (QuotationId);
+CREATE UNIQUE INDEX IX_SalesOrders_SalesOrderNumber ON dbo.SalesOrders (SalesOrderNumber);
+CREATE INDEX IX_SalesOrders_CustomerId ON dbo.SalesOrders (CustomerId);
+CREATE INDEX IX_SalesOrders_Status ON dbo.SalesOrders (Status);
+CREATE INDEX IX_SalesOrders_AssignedToUserId ON dbo.SalesOrders (AssignedToUserId);
+GO
+
+-- ============================================================================
+-- SalesOrderLineItems (DeliveredQuantity tracks partial/split delivery)
+-- ============================================================================
+CREATE TABLE dbo.SalesOrderLineItems
+(
+    Id                UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_SalesOrderLineItems_Id DEFAULT NEWID(),
+    SalesOrderId      UNIQUEIDENTIFIER NOT NULL,
+    ProductName       NVARCHAR(200)    NOT NULL,
+    Quantity          DECIMAL(18, 2)   NOT NULL,
+    UnitPrice         DECIMAL(18, 2)   NOT NULL,
+    DiscountPercent   DECIMAL(5, 2)    NULL,
+    TaxPercent        DECIMAL(5, 2)    NULL,
+    DeliveredQuantity DECIMAL(18, 2)   NOT NULL CONSTRAINT DF_SalesOrderLineItems_DeliveredQuantity DEFAULT (0),
+    CONSTRAINT PK_SalesOrderLineItems PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_SalesOrderLineItems_SalesOrders FOREIGN KEY (SalesOrderId) REFERENCES dbo.SalesOrders (Id) ON DELETE CASCADE
+);
+
+CREATE INDEX IX_SalesOrderLineItems_SalesOrderId ON dbo.SalesOrderLineItems (SalesOrderId);
+GO
+
+-- ============================================================================
 -- Activities (generic timeline shared by Leads, Customers, Opportunities, and future modules)
 -- ============================================================================
 CREATE TABLE dbo.Activities
@@ -329,6 +440,7 @@ CREATE TABLE dbo.Activities
     RelatedToId      UNIQUEIDENTIFIER NOT NULL,
     DueAtUtc         DATETIME2        NULL,
     CompletedAtUtc   DATETIME2        NULL,
+    ReminderSentAtUtc DATETIME2       NULL,
     AssignedToUserId UNIQUEIDENTIFIER NULL,
     CreatedByUserId  UNIQUEIDENTIFIER NULL,
     CreatedAtUtc     DATETIME2        NOT NULL,
@@ -377,4 +489,26 @@ CREATE TABLE dbo.Notifications
 );
 
 CREATE INDEX IX_Notifications_RecipientUserId_IsRead ON dbo.Notifications (RecipientUserId, IsRead);
+GO
+
+-- ============================================================================
+-- Documents (generic file attachments for any CRM record — content stored as a blob directly
+-- in the tenant database; see Document.cs for the storage-location rationale)
+-- ============================================================================
+CREATE TABLE dbo.Documents
+(
+    Id               UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Documents_Id DEFAULT NEWID(),
+    EntityType       NVARCHAR(50)     NOT NULL,
+    EntityId         UNIQUEIDENTIFIER NOT NULL,
+    FileName         NVARCHAR(260)    NOT NULL,
+    ContentType      NVARCHAR(150)    NOT NULL,
+    SizeBytes        BIGINT           NOT NULL,
+    Content          VARBINARY(MAX)   NOT NULL,
+    UploadedByUserId UNIQUEIDENTIFIER NULL,
+    CreatedAtUtc     DATETIME2        NOT NULL,
+    CONSTRAINT PK_Documents PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_Documents_UploadedByUser FOREIGN KEY (UploadedByUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL
+);
+
+CREATE INDEX IX_Documents_EntityType_EntityId ON dbo.Documents (EntityType, EntityId);
 GO

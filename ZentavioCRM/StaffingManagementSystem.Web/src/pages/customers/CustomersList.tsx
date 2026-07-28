@@ -85,6 +85,7 @@ export default function CustomersList() {
                 <th>Name</th>
                 <th>Type</th>
                 <th>Industry</th>
+                <th>Tags</th>
                 <th>Owner</th>
                 <th>Status</th>
               </tr>
@@ -92,14 +93,14 @@ export default function CustomersList() {
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={6} className="text-center text-muted py-4">
+                  <td colSpan={7} className="text-center text-muted py-4">
                     Loading...
                   </td>
                 </tr>
               )}
               {!isLoading && customers.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center text-muted py-4">
+                  <td colSpan={7} className="text-center text-muted py-4">
                     No customers found.
                   </td>
                 </tr>
@@ -114,6 +115,15 @@ export default function CustomersList() {
                   <td>{customer.displayName}</td>
                   <td>{customer.type}</td>
                   <td>{customer.industry ?? <span className="text-muted">&mdash;</span>}</td>
+                  <td>
+                    {customer.tags
+                      ? customer.tags.split(",").map((tag) => (
+                          <span key={tag} className="badge text-bg-light border me-1">
+                            {tag.trim()}
+                          </span>
+                        ))
+                      : <span className="text-muted">&mdash;</span>}
+                  </td>
                   <td>{customer.assignedToUserName ?? <span className="text-muted">Unassigned</span>}</td>
                   <td>
                     <span className={`badge ${customer.isActive ? "text-bg-success" : "text-bg-secondary"}`}>

@@ -14,10 +14,12 @@ namespace ZentavioCRM.Api.Controllers
     public sealed class NotificationsController : ControllerBase
     {
         private readonly INotificationService _notificationService;
+        private readonly IReminderService _reminderService;
 
-        public NotificationsController(INotificationService notificationService)
+        public NotificationsController(INotificationService notificationService, IReminderService reminderService)
         {
             _notificationService = notificationService;
+            _reminderService = reminderService;
         }
 
         [HttpGet]
@@ -28,6 +30,8 @@ namespace ZentavioCRM.Api.Controllers
             {
                 return Unauthorized();
             }
+
+            await _reminderService.CheckDueRemindersAsync(userId.Value);
 
             var notifications = await _notificationService.GetRecentAsync(userId.Value);
             return Ok(ApiResponse<IReadOnlyList<NotificationDto>>.SuccessResponse(notifications));
@@ -41,6 +45,11 @@ namespace ZentavioCRM.Api.Controllers
             {
                 return Unauthorized();
             }
+
+            // Piggy-backs the due-reminder check on the frontend's existing ~30s poll — no
+            // background job scheduler exists in this milestone, so this is how overdue
+            // Activities/Leads turn into Notification rows without adding new infrastructure.
+            await _reminderService.CheckDueRemindersAsync(userId.Value);
 
             var count = await _notificationService.GetUnreadCountAsync(userId.Value);
             return Ok(ApiResponse<int>.SuccessResponse(count));

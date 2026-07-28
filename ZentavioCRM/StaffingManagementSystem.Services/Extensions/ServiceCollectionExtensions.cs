@@ -17,10 +17,14 @@ namespace ZentavioCRM.Services.Extensions
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<ILeadService, LeadService>();
             services.AddScoped<IOpportunityService, OpportunityService>();
+            services.AddScoped<IQuotationService, QuotationService>();
+            services.AddScoped<ISalesOrderService, SalesOrderService>();
             services.AddScoped<IActivityService, ActivityService>();
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IAuditLogService, AuditLogService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IDocumentService, DocumentService>();
+            services.AddScoped<IReminderService, ReminderService>();
 
             return services;
         }

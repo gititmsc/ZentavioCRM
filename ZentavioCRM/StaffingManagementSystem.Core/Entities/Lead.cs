@@ -48,6 +48,12 @@ namespace ZentavioCRM.Core.Entities
 
         public string? Notes { get; set; }
 
+        /// <summary>When to next follow up with this lead — one of the most-used fields in a real lead pipeline.</summary>
+        public DateTime? NextFollowUpDate { get; set; }
+
+        /// <summary>Set once a reminder notification has been sent for the current <see cref="NextFollowUpDate"/>, so it isn't re-sent on every poll. Cleared whenever NextFollowUpDate changes.</summary>
+        public DateTime? FollowUpReminderSentAtUtc { get; set; }
+
         public string? LostReason { get; set; }
 
         public Guid? ConvertedCustomerId { get; set; }

@@ -37,6 +37,18 @@ namespace ZentavioCRM.Core.Common
         public const string OpportunitiesDelete = "Opportunities.Delete";
         public const string OpportunitiesAssign = "Opportunities.Assign";
 
+        public const string QuotationsView = "Quotations.View";
+        public const string QuotationsCreate = "Quotations.Create";
+        public const string QuotationsEdit = "Quotations.Edit";
+        public const string QuotationsDelete = "Quotations.Delete";
+        public const string QuotationsAssign = "Quotations.Assign";
+
+        public const string SalesOrdersView = "SalesOrders.View";
+        public const string SalesOrdersCreate = "SalesOrders.Create";
+        public const string SalesOrdersEdit = "SalesOrders.Edit";
+        public const string SalesOrdersDelete = "SalesOrders.Delete";
+        public const string SalesOrdersAssign = "SalesOrders.Assign";
+
         /// <summary>All codes, keyed by module, used by the seeder and the admin role grant.</summary>
         public static readonly IReadOnlyDictionary<string, string[]> ByModule = new Dictionary<string, string[]>
         {
@@ -46,6 +58,8 @@ namespace ZentavioCRM.Core.Common
             ["Customers"] = [CustomersView, CustomersCreate, CustomersEdit, CustomersDelete],
             ["Leads"] = [LeadsView, LeadsCreate, LeadsEdit, LeadsDelete, LeadsAssign, LeadsConvert],
             ["Opportunities"] = [OpportunitiesView, OpportunitiesCreate, OpportunitiesEdit, OpportunitiesDelete, OpportunitiesAssign],
+            ["Quotations"] = [QuotationsView, QuotationsCreate, QuotationsEdit, QuotationsDelete, QuotationsAssign],
+            ["SalesOrders"] = [SalesOrdersView, SalesOrdersCreate, SalesOrdersEdit, SalesOrdersDelete, SalesOrdersAssign],
         };
 
         public static IEnumerable<string> All => ByModule.Values.SelectMany(codes => codes);

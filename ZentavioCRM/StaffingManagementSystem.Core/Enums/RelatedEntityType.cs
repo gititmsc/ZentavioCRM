@@ -7,6 +7,8 @@ namespace ZentavioCRM.Core.Enums
     {
         Lead = 1,
         Customer = 2,
-        Opportunity = 3
+        Opportunity = 3,
+        Quotation = 4,
+        SalesOrder = 5
     }
 }

@@ -4,6 +4,12 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { leadService, type DuplicateMatch, type LeadSource, type SaveLeadRequest } from "@/services/leadService";
 import { userService, type ManagedUser } from "@/services/userService";
 
+/** yyyy-MM-dd for a native <input type="date">, or "" if null. */
+function toDateInputValue(value: string | null): string {
+  if (!value) return "";
+  return value.slice(0, 10);
+}
+
 const SOURCES: LeadSource[] = [
   "Website",
   "LandingPage",
@@ -50,6 +56,7 @@ export default function LeadForm() {
       assignedToUserId: null,
       territory: null,
       notes: null,
+      nextFollowUpDate: null,
     },
   });
 
@@ -76,6 +83,7 @@ export default function LeadForm() {
             assignedToUserId: l.assignedToUserId,
             territory: l.territory,
             notes: l.notes,
+            nextFollowUpDate: toDateInputValue(l.nextFollowUpDate) || null,
           });
         }
       }
@@ -209,9 +217,14 @@ export default function LeadForm() {
                 <input className="form-control" placeholder="e.g. This Quarter" {...register("timeline")} />
               </div>
 
-              <div className="col-md-6">
+              <div className="col-md-4">
                 <label className="form-label">Territory</label>
                 <input className="form-control" {...register("territory")} />
+              </div>
+
+              <div className="col-md-2">
+                <label className="form-label">Next Follow-Up</label>
+                <input type="date" className="form-control" {...register("nextFollowUpDate")} />
               </div>
 
               <div className="col-md-6">

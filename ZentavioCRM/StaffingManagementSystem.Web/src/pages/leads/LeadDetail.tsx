@@ -147,6 +147,9 @@ export default function LeadDetail() {
   }
 
   const nextStatuses = NEXT_STATUSES[lead.status];
+  const isOpenLead = lead.status !== "Converted" && lead.status !== "Lost" && lead.status !== "Junk";
+  const isFollowUpOverdue =
+    isOpenLead && lead.nextFollowUpDate != null && new Date(lead.nextFollowUpDate) < new Date();
 
   return (
     <div>
@@ -184,6 +187,15 @@ export default function LeadDetail() {
           {lead.convertedCustomerId && (
             <Link to={`/customers/${lead.convertedCustomerId}/edit`}>View customer</Link>
           )}
+        </div>
+      )}
+
+      {isOpenLead && lead.nextFollowUpDate && (
+        <div className={`alert d-flex justify-content-between align-items-center ${isFollowUpOverdue ? "alert-warning" : "alert-info"}`}>
+          <div>
+            <strong>{isFollowUpOverdue ? "Follow-up overdue:" : "Next Follow-Up:"}</strong>{" "}
+            {new Date(lead.nextFollowUpDate).toLocaleDateString()}
+          </div>
         </div>
       )}
 
@@ -231,6 +243,10 @@ export default function LeadDetail() {
               <div className="col-md-6">
                 <div className="text-muted small">Territory</div>
                 <div>{lead.territory ?? "—"}</div>
+              </div>
+              <div className="col-md-6">
+                <div className="text-muted small">Next Follow-Up</div>
+                <div>{lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : "—"}</div>
               </div>
               <div className="col-md-6">
                 <div className="text-muted small">Lead Score</div>

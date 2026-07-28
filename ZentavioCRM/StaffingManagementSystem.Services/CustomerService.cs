@@ -66,6 +66,8 @@ namespace ZentavioCRM.Services
                 PaymentTermsDays = request.PaymentTermsDays,
                 CreditLimit = request.CreditLimit,
                 Rating = request.Rating,
+                Tags = request.Tags,
+                AcquisitionSource = request.AcquisitionSource,
                 AssignedToUserId = request.AssignedToUserId,
                 IsActive = request.IsActive,
                 CreatedAtUtc = DateTime.UtcNow,
@@ -101,6 +103,8 @@ namespace ZentavioCRM.Services
             customer.PaymentTermsDays = request.PaymentTermsDays;
             customer.CreditLimit = request.CreditLimit;
             customer.Rating = request.Rating;
+            customer.Tags = request.Tags;
+            customer.AcquisitionSource = request.AcquisitionSource;
             customer.AssignedToUserId = request.AssignedToUserId;
             customer.IsActive = request.IsActive;
             customer.UpdatedAtUtc = DateTime.UtcNow;
@@ -130,14 +134,15 @@ namespace ZentavioCRM.Services
         [
             "CustomerNumber", "Type", "LegalName", "DisplayName", "Industry", "Website", "Email", "Phone",
             "TaxNumber", "EmployeesCount", "AnnualRevenue", "CurrencyCode", "PaymentTermsDays", "CreditLimit",
-            "Rating", "AssignedToUserName", "IsActive", "CreatedAtUtc",
+            "Rating", "Tags", "AcquisitionSource", "AssignedToUserName", "IsActive", "CreatedAtUtc",
         ];
 
         /// <summary>Columns accepted on import — a subset of the export columns: system-managed fields (CustomerNumber, AssignedToUserName, CreatedAtUtc) are not importable. Contacts/Addresses are not importable via CSV in this milestone — add them afterward on the Customer's edit screen.</summary>
         private static readonly string[] ImportHeaders =
         [
             "Type", "LegalName", "DisplayName", "Industry", "Website", "Email", "Phone", "TaxNumber",
-            "EmployeesCount", "AnnualRevenue", "CurrencyCode", "PaymentTermsDays", "CreditLimit", "Rating", "IsActive",
+            "EmployeesCount", "AnnualRevenue", "CurrencyCode", "PaymentTermsDays", "CreditLimit", "Rating",
+            "Tags", "AcquisitionSource", "IsActive",
         ];
 
         public async Task<string> ExportCsvAsync()
@@ -161,6 +166,8 @@ namespace ZentavioCRM.Services
                 c.PaymentTermsDays?.ToString(),
                 c.CreditLimit?.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 c.Rating,
+                c.Tags,
+                c.AcquisitionSource?.ToString(),
                 c.AssignedToUser?.FullName,
                 c.IsActive.ToString(),
                 c.CreatedAtUtc.ToString("O"),
@@ -265,6 +272,11 @@ namespace ZentavioCRM.Services
                     var isActiveRaw = Get(row, "IsActive");
                     var isActive = isActiveRaw is null || !bool.TryParse(isActiveRaw, out var parsedIsActive) || parsedIsActive;
 
+                    var acquisitionSourceRaw = Get(row, "AcquisitionSource");
+                    LeadSource? acquisitionSource = acquisitionSourceRaw is not null && Enum.TryParse<LeadSource>(acquisitionSourceRaw, true, out var parsedAcquisitionSource)
+                        ? parsedAcquisitionSource
+                        : null;
+
                     var customer = new Customer
                     {
                         CustomerNumber = await _customerRepository.GetNextCustomerNumberAsync(),
@@ -282,6 +294,8 @@ namespace ZentavioCRM.Services
                         PaymentTermsDays = paymentTermsDays,
                         CreditLimit = creditLimit,
                         Rating = Get(row, "Rating"),
+                        Tags = Get(row, "Tags"),
+                        AcquisitionSource = acquisitionSource,
                         IsActive = isActive,
                         CreatedAtUtc = DateTime.UtcNow,
                     };
@@ -342,6 +356,7 @@ namespace ZentavioCRM.Services
             Email = customer.Email,
             Phone = customer.Phone,
             AssignedToUserName = customer.AssignedToUser?.FullName,
+            Tags = customer.Tags,
             IsActive = customer.IsActive,
             CreatedAtUtc = customer.CreatedAtUtc,
         };
@@ -364,6 +379,8 @@ namespace ZentavioCRM.Services
             PaymentTermsDays = customer.PaymentTermsDays,
             CreditLimit = customer.CreditLimit,
             Rating = customer.Rating,
+            Tags = customer.Tags,
+            AcquisitionSource = customer.AcquisitionSource,
             AssignedToUserId = customer.AssignedToUserId,
             AssignedToUserName = customer.AssignedToUser?.FullName,
             IsActive = customer.IsActive,

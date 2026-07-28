@@ -42,6 +42,12 @@ namespace ZentavioCRM.Core.Entities
         /// <summary>Simple qualitative rating, e.g. "Hot", "Warm", "Cold".</summary>
         public string? Rating { get; set; }
 
+        /// <summary>Freeform, comma-separated segmentation labels (e.g. "VIP, At Risk, Hot Account"). No separate Tag table in this milestone — kept as simple as Rating above.</summary>
+        public string? Tags { get; set; }
+
+        /// <summary>How this customer was originally acquired. Auto-populated from the source Lead when converted; set manually for customers created directly.</summary>
+        public LeadSource? AcquisitionSource { get; set; }
+
         public Guid? AssignedToUserId { get; set; }
 
         public User? AssignedToUser { get; set; }

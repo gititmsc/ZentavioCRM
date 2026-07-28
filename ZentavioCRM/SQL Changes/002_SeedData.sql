@@ -4,9 +4,9 @@
 
     Seeds the same rows the EF Core model produces via
     StaffingManagementSystem.Infrastructure/Persistence/Seed/PlatformSeedData.cs:
-    the default Company + Department, all 21 Permissions (including the Opportunities module
-    added after the initial Foundation + Leads milestone), the 4 built-in Roles, their
-    RolePermission grants, and one Admin user.
+    the default Company + Department, all 31 Permissions (including the Opportunities and
+    Quotations/SalesOrders modules added after the initial Foundation + Leads milestone), the
+    4 built-in Roles, their RolePermission grants, and one Admin user.
 
     All IDs match ZentavioCRM.Core.Common.SeedIds exactly, so if you ever do switch
     to EF migrations later, this data and the C# seeder agree and won't collide.
@@ -81,11 +81,21 @@ BEGIN
         ('10000000-0000-0000-0000-000000000012', N'Opportunities.Create',  N'Create',  N'Opportunities'),
         ('10000000-0000-0000-0000-000000000013', N'Opportunities.Edit',    N'Edit',    N'Opportunities'),
         ('10000000-0000-0000-0000-000000000014', N'Opportunities.Delete',  N'Delete',  N'Opportunities'),
-        ('10000000-0000-0000-0000-000000000015', N'Opportunities.Assign',  N'Assign',  N'Opportunities');
+        ('10000000-0000-0000-0000-000000000015', N'Opportunities.Assign',  N'Assign',  N'Opportunities'),
+        ('10000000-0000-0000-0000-000000000016', N'Quotations.View',       N'View',    N'Quotations'),
+        ('10000000-0000-0000-0000-000000000017', N'Quotations.Create',     N'Create',  N'Quotations'),
+        ('10000000-0000-0000-0000-000000000018', N'Quotations.Edit',       N'Edit',    N'Quotations'),
+        ('10000000-0000-0000-0000-000000000019', N'Quotations.Delete',     N'Delete',  N'Quotations'),
+        ('10000000-0000-0000-0000-00000000001a', N'Quotations.Assign',     N'Assign',  N'Quotations'),
+        ('10000000-0000-0000-0000-00000000001b', N'SalesOrders.View',      N'View',    N'SalesOrders'),
+        ('10000000-0000-0000-0000-00000000001c', N'SalesOrders.Create',    N'Create',  N'SalesOrders'),
+        ('10000000-0000-0000-0000-00000000001d', N'SalesOrders.Edit',      N'Edit',    N'SalesOrders'),
+        ('10000000-0000-0000-0000-00000000001e', N'SalesOrders.Delete',    N'Delete',  N'SalesOrders'),
+        ('10000000-0000-0000-0000-00000000001f', N'SalesOrders.Assign',    N'Assign',  N'SalesOrders');
 END
 ELSE
 BEGIN
-    -- Existing database from before the Opportunities module was added — top up just the new rows.
+    -- Existing database from before the Opportunities/Quotations/SalesOrders modules were added — top up just the new rows.
     INSERT INTO dbo.Permissions (Id, Code, Name, Module)
     SELECT v.Id, v.Code, v.Name, v.Module
     FROM (VALUES
@@ -93,7 +103,17 @@ BEGIN
         ('10000000-0000-0000-0000-000000000012', N'Opportunities.Create',  N'Create',  N'Opportunities'),
         ('10000000-0000-0000-0000-000000000013', N'Opportunities.Edit',    N'Edit',    N'Opportunities'),
         ('10000000-0000-0000-0000-000000000014', N'Opportunities.Delete',  N'Delete',  N'Opportunities'),
-        ('10000000-0000-0000-0000-000000000015', N'Opportunities.Assign',  N'Assign',  N'Opportunities')
+        ('10000000-0000-0000-0000-000000000015', N'Opportunities.Assign',  N'Assign',  N'Opportunities'),
+        ('10000000-0000-0000-0000-000000000016', N'Quotations.View',       N'View',    N'Quotations'),
+        ('10000000-0000-0000-0000-000000000017', N'Quotations.Create',     N'Create',  N'Quotations'),
+        ('10000000-0000-0000-0000-000000000018', N'Quotations.Edit',       N'Edit',    N'Quotations'),
+        ('10000000-0000-0000-0000-000000000019', N'Quotations.Delete',     N'Delete',  N'Quotations'),
+        ('10000000-0000-0000-0000-00000000001a', N'Quotations.Assign',     N'Assign',  N'Quotations'),
+        ('10000000-0000-0000-0000-00000000001b', N'SalesOrders.View',      N'View',    N'SalesOrders'),
+        ('10000000-0000-0000-0000-00000000001c', N'SalesOrders.Create',    N'Create',  N'SalesOrders'),
+        ('10000000-0000-0000-0000-00000000001d', N'SalesOrders.Edit',      N'Edit',    N'SalesOrders'),
+        ('10000000-0000-0000-0000-00000000001e', N'SalesOrders.Delete',    N'Delete',  N'SalesOrders'),
+        ('10000000-0000-0000-0000-00000000001f', N'SalesOrders.Assign',    N'Assign',  N'SalesOrders')
     ) AS v(Id, Code, Name, Module)
     WHERE NOT EXISTS (SELECT 1 FROM dbo.Permissions p WHERE p.Id = v.Id);
 END
@@ -133,14 +153,16 @@ INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT @AdminRoleId3, p.Id FROM dbo.Permissions p
 WHERE NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @AdminRoleId3 AND rp.PermissionId = p.Id);
 
--- Sales Manager: full Customers/Leads/Opportunities, plus visibility into Departments/Users.
+-- Sales Manager: full Customers/Leads/Opportunities/Quotations/SalesOrders, plus visibility into Departments/Users.
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT @SalesManagerRoleId3, p.Id FROM dbo.Permissions p
 WHERE p.Code IN (
     N'Departments.View', N'Users.View',
     N'Customers.View', N'Customers.Create', N'Customers.Edit', N'Customers.Delete',
     N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert',
-    N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Delete', N'Opportunities.Assign'
+    N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Delete', N'Opportunities.Assign',
+    N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Delete', N'Quotations.Assign',
+    N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Delete', N'SalesOrders.Assign'
 )
 AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SalesManagerRoleId3 AND rp.PermissionId = p.Id);
 
@@ -150,14 +172,16 @@ SELECT @SalesExecutiveRoleId3, p.Id FROM dbo.Permissions p
 WHERE p.Code IN (
     N'Customers.View', N'Customers.Create', N'Customers.Edit',
     N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Assign', N'Leads.Convert',
-    N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Assign'
+    N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Assign',
+    N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Assign',
+    N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign'
 )
 AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SalesExecutiveRoleId3 AND rp.PermissionId = p.Id);
 
 -- Support Agent: read-only.
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT @SupportAgentRoleId3, p.Id FROM dbo.Permissions p
-WHERE p.Code IN (N'Customers.View', N'Leads.View', N'Opportunities.View')
+WHERE p.Code IN (N'Customers.View', N'Leads.View', N'Opportunities.View', N'Quotations.View', N'SalesOrders.View')
 AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SupportAgentRoleId3 AND rp.PermissionId = p.Id);
 GO
 

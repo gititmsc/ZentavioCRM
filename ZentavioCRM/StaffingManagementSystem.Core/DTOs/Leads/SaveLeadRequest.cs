@@ -35,6 +35,8 @@ namespace ZentavioCRM.Core.DTOs.Leads
         public string? Territory { get; set; }
 
         public string? Notes { get; set; }
+
+        public DateTime? NextFollowUpDate { get; set; }
     }
 
     public class UpdateLeadStatusRequest

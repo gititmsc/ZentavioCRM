@@ -120,5 +120,14 @@ namespace ZentavioCRM.Repositories
 
             return leads;
         }
+
+        public async Task<IReadOnlyList<Lead>> GetDueForFollowUpReminderAsync(Guid userId, DateTime nowUtc)
+            => await _dbContext.Leads
+                .Where(l =>
+                    l.AssignedToUserId == userId &&
+                    !TerminalStatuses.Contains(l.Status) &&
+                    l.FollowUpReminderSentAtUtc == null &&
+                    l.NextFollowUpDate != null && l.NextFollowUpDate <= nowUtc)
+                .ToListAsync();
     }
 }

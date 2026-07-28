@@ -13,7 +13,7 @@
 */
 
 -- ============================================================================
--- Permissions (21 total, grouped by module — matches Core.Common.PermissionCodes)
+-- Permissions (31 total, grouped by module — matches Core.Common.PermissionCodes)
 -- ============================================================================
 INSERT INTO dbo.Permissions (Id, Code, Name, Module) VALUES
     ('10000000-0000-0000-0000-000000000001', N'Departments.View',    N'View',    N'Departments'),
@@ -36,7 +36,17 @@ INSERT INTO dbo.Permissions (Id, Code, Name, Module) VALUES
     ('10000000-0000-0000-0000-000000000012', N'Opportunities.Create',  N'Create',  N'Opportunities'),
     ('10000000-0000-0000-0000-000000000013', N'Opportunities.Edit',    N'Edit',    N'Opportunities'),
     ('10000000-0000-0000-0000-000000000014', N'Opportunities.Delete',  N'Delete',  N'Opportunities'),
-    ('10000000-0000-0000-0000-000000000015', N'Opportunities.Assign',  N'Assign',  N'Opportunities');
+    ('10000000-0000-0000-0000-000000000015', N'Opportunities.Assign',  N'Assign',  N'Opportunities'),
+    ('10000000-0000-0000-0000-000000000016', N'Quotations.View',       N'View',    N'Quotations'),
+    ('10000000-0000-0000-0000-000000000017', N'Quotations.Create',     N'Create',  N'Quotations'),
+    ('10000000-0000-0000-0000-000000000018', N'Quotations.Edit',       N'Edit',    N'Quotations'),
+    ('10000000-0000-0000-0000-000000000019', N'Quotations.Delete',     N'Delete',  N'Quotations'),
+    ('10000000-0000-0000-0000-00000000001a', N'Quotations.Assign',     N'Assign',  N'Quotations'),
+    ('10000000-0000-0000-0000-00000000001b', N'SalesOrders.View',      N'View',    N'SalesOrders'),
+    ('10000000-0000-0000-0000-00000000001c', N'SalesOrders.Create',    N'Create',  N'SalesOrders'),
+    ('10000000-0000-0000-0000-00000000001d', N'SalesOrders.Edit',      N'Edit',    N'SalesOrders'),
+    ('10000000-0000-0000-0000-00000000001e', N'SalesOrders.Delete',    N'Delete',  N'SalesOrders'),
+    ('10000000-0000-0000-0000-00000000001f', N'SalesOrders.Assign',    N'Assign',  N'SalesOrders');
 GO
 
 -- ============================================================================
@@ -56,14 +66,16 @@ GO
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT '20000000-0000-0000-0000-000000000001', Id FROM dbo.Permissions;
 
--- Sales Manager: full Customers/Leads/Opportunities, plus visibility into Departments/Users.
+-- Sales Manager: full Customers/Leads/Opportunities/Quotations/SalesOrders, plus visibility into Departments/Users.
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT '20000000-0000-0000-0000-000000000002', Id FROM dbo.Permissions
 WHERE Code IN (
     N'Departments.View', N'Users.View',
     N'Customers.View', N'Customers.Create', N'Customers.Edit', N'Customers.Delete',
     N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert',
-    N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Delete', N'Opportunities.Assign'
+    N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Delete', N'Opportunities.Assign',
+    N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Delete', N'Quotations.Assign',
+    N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Delete', N'SalesOrders.Assign'
 );
 
 -- Sales Executive: day-to-day CRUD, no deletes.
@@ -72,11 +84,13 @@ SELECT '20000000-0000-0000-0000-000000000003', Id FROM dbo.Permissions
 WHERE Code IN (
     N'Customers.View', N'Customers.Create', N'Customers.Edit',
     N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Assign', N'Leads.Convert',
-    N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Assign'
+    N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Assign',
+    N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Assign',
+    N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign'
 );
 
 -- Support Agent: read-only.
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT '20000000-0000-0000-0000-000000000004', Id FROM dbo.Permissions
-WHERE Code IN (N'Customers.View', N'Leads.View', N'Opportunities.View');
+WHERE Code IN (N'Customers.View', N'Leads.View', N'Opportunities.View', N'Quotations.View', N'SalesOrders.View');
 GO

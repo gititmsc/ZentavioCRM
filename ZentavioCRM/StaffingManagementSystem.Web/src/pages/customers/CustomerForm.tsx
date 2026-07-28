@@ -6,7 +6,10 @@ import {
   type CustomerType,
   type SaveCustomerRequest,
 } from "@/services/customerService";
+import type { LeadSource } from "@/services/leadService";
 import { userService, type ManagedUser } from "@/services/userService";
+import { DocumentsPanel } from "@/components/documents/DocumentsPanel";
+import { HistoryPanel } from "@/components/history/HistoryPanel";
 
 const CUSTOMER_TYPES: CustomerType[] = [
   "Prospect",
@@ -19,6 +22,20 @@ const CUSTOMER_TYPES: CustomerType[] = [
   "Dealer",
   "Franchise",
   "Consultant",
+];
+
+const ACQUISITION_SOURCES: LeadSource[] = [
+  "Website",
+  "LandingPage",
+  "Referral",
+  "Exhibition",
+  "WhatsApp",
+  "Facebook",
+  "LinkedIn",
+  "EmailCampaign",
+  "GoogleAds",
+  "ManualEntry",
+  "ApiIntegration",
 ];
 
 export default function CustomerForm() {
@@ -52,6 +69,8 @@ export default function CustomerForm() {
       paymentTermsDays: null,
       creditLimit: null,
       rating: null,
+      tags: null,
+      acquisitionSource: null,
       assignedToUserId: null,
       isActive: true,
       contacts: [],
@@ -86,6 +105,8 @@ export default function CustomerForm() {
             paymentTermsDays: c.paymentTermsDays,
             creditLimit: c.creditLimit,
             rating: c.rating,
+            tags: c.tags,
+            acquisitionSource: c.acquisitionSource,
             assignedToUserId: c.assignedToUserId,
             isActive: c.isActive,
             contacts: c.contacts.map(({ id: _cid, ...rest }) => rest),
@@ -104,6 +125,7 @@ export default function CustomerForm() {
     const request: SaveCustomerRequest = {
       ...values,
       assignedToUserId: values.assignedToUserId || null,
+      acquisitionSource: values.acquisitionSource || null,
     };
 
     const result = isEditMode && id ? await customerService.update(id, request) : await customerService.create(request);
@@ -229,6 +251,25 @@ export default function CustomerForm() {
                   Active
                 </label>
               </div>
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">
+                Tags <span className="text-muted small">(comma-separated, e.g. VIP, At Risk)</span>
+              </label>
+              <input className="form-control" placeholder="VIP, Hot Account, At Risk" {...register("tags")} />
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">Acquisition Source</label>
+              <select className="form-select" {...register("acquisitionSource")}>
+                <option value="">Unknown / not set</option>
+                {ACQUISITION_SOURCES.map((source) => (
+                  <option key={source} value={source}>
+                    {source}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -396,6 +437,13 @@ export default function CustomerForm() {
           </button>
         </div>
       </form>
+
+      {isEditMode && id && (
+        <>
+          <DocumentsPanel entityType="Customer" entityId={id} />
+          <HistoryPanel entityType="Customer" entityId={id} />
+        </>
+      )}
     </div>
   );
 }

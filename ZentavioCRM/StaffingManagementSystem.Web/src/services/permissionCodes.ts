@@ -29,4 +29,16 @@ export const PermissionCodes = {
   OpportunitiesEdit: "Opportunities.Edit",
   OpportunitiesDelete: "Opportunities.Delete",
   OpportunitiesAssign: "Opportunities.Assign",
+
+  QuotationsView: "Quotations.View",
+  QuotationsCreate: "Quotations.Create",
+  QuotationsEdit: "Quotations.Edit",
+  QuotationsDelete: "Quotations.Delete",
+  QuotationsAssign: "Quotations.Assign",
+
+  SalesOrdersView: "SalesOrders.View",
+  SalesOrdersCreate: "SalesOrders.Create",
+  SalesOrdersEdit: "SalesOrders.Edit",
+  SalesOrdersDelete: "SalesOrders.Delete",
+  SalesOrdersAssign: "SalesOrders.Assign",
 } as const;

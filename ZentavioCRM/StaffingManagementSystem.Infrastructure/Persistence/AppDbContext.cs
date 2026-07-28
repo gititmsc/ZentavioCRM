@@ -40,9 +40,19 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<Activity> Activities => Set<Activity>();
 
+        public DbSet<Quotation> Quotations => Set<Quotation>();
+
+        public DbSet<QuotationLineItem> QuotationLineItems => Set<QuotationLineItem>();
+
+        public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
+
+        public DbSet<SalesOrderLineItem> SalesOrderLineItems => Set<SalesOrderLineItem>();
+
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
         public DbSet<Notification> Notifications => Set<Notification>();
+
+        public DbSet<Document> Documents => Set<Document>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -36,6 +36,16 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
             [PermissionCodes.OpportunitiesEdit] = Guid.Parse("10000000-0000-0000-0000-000000000013"),
             [PermissionCodes.OpportunitiesDelete] = Guid.Parse("10000000-0000-0000-0000-000000000014"),
             [PermissionCodes.OpportunitiesAssign] = Guid.Parse("10000000-0000-0000-0000-000000000015"),
+            [PermissionCodes.QuotationsView] = Guid.Parse("10000000-0000-0000-0000-000000000016"),
+            [PermissionCodes.QuotationsCreate] = Guid.Parse("10000000-0000-0000-0000-000000000017"),
+            [PermissionCodes.QuotationsEdit] = Guid.Parse("10000000-0000-0000-0000-000000000018"),
+            [PermissionCodes.QuotationsDelete] = Guid.Parse("10000000-0000-0000-0000-000000000019"),
+            [PermissionCodes.QuotationsAssign] = Guid.Parse("10000000-0000-0000-0000-00000000001a"),
+            [PermissionCodes.SalesOrdersView] = Guid.Parse("10000000-0000-0000-0000-00000000001b"),
+            [PermissionCodes.SalesOrdersCreate] = Guid.Parse("10000000-0000-0000-0000-00000000001c"),
+            [PermissionCodes.SalesOrdersEdit] = Guid.Parse("10000000-0000-0000-0000-00000000001d"),
+            [PermissionCodes.SalesOrdersDelete] = Guid.Parse("10000000-0000-0000-0000-00000000001e"),
+            [PermissionCodes.SalesOrdersAssign] = Guid.Parse("10000000-0000-0000-0000-00000000001f"),
         };
 
         /// <summary>Fixed point in time used for every seeded "CreatedAtUtc" column so migrations stay deterministic.</summary>
@@ -113,7 +123,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
             // Administrator — every permission in the system.
             grants.AddRange(PermissionCodes.All.Select(code => new RolePermission { RoleId = SeedIds.AdminRoleId, PermissionId = PermissionIds[code] }));
 
-            // Sales Manager — full Customers/Leads, plus visibility into Departments/Users.
+            // Sales Manager — full Customers/Leads/Opportunities/Quotations/SalesOrders, plus visibility into Departments/Users.
             string[] salesManagerCodes =
             [
                 PermissionCodes.DepartmentsView,
@@ -121,6 +131,8 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
                 PermissionCodes.CustomersView, PermissionCodes.CustomersCreate, PermissionCodes.CustomersEdit, PermissionCodes.CustomersDelete,
                 PermissionCodes.LeadsView, PermissionCodes.LeadsCreate, PermissionCodes.LeadsEdit, PermissionCodes.LeadsDelete, PermissionCodes.LeadsAssign, PermissionCodes.LeadsConvert,
                 PermissionCodes.OpportunitiesView, PermissionCodes.OpportunitiesCreate, PermissionCodes.OpportunitiesEdit, PermissionCodes.OpportunitiesDelete, PermissionCodes.OpportunitiesAssign,
+                PermissionCodes.QuotationsView, PermissionCodes.QuotationsCreate, PermissionCodes.QuotationsEdit, PermissionCodes.QuotationsDelete, PermissionCodes.QuotationsAssign,
+                PermissionCodes.SalesOrdersView, PermissionCodes.SalesOrdersCreate, PermissionCodes.SalesOrdersEdit, PermissionCodes.SalesOrdersDelete, PermissionCodes.SalesOrdersAssign,
             ];
             grants.AddRange(salesManagerCodes.Select(code => new RolePermission { RoleId = SeedIds.SalesManagerRoleId, PermissionId = PermissionIds[code] }));
 
@@ -130,11 +142,17 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
                 PermissionCodes.CustomersView, PermissionCodes.CustomersCreate, PermissionCodes.CustomersEdit,
                 PermissionCodes.LeadsView, PermissionCodes.LeadsCreate, PermissionCodes.LeadsEdit, PermissionCodes.LeadsAssign, PermissionCodes.LeadsConvert,
                 PermissionCodes.OpportunitiesView, PermissionCodes.OpportunitiesCreate, PermissionCodes.OpportunitiesEdit, PermissionCodes.OpportunitiesAssign,
+                PermissionCodes.QuotationsView, PermissionCodes.QuotationsCreate, PermissionCodes.QuotationsEdit, PermissionCodes.QuotationsAssign,
+                PermissionCodes.SalesOrdersView, PermissionCodes.SalesOrdersCreate, PermissionCodes.SalesOrdersEdit, PermissionCodes.SalesOrdersAssign,
             ];
             grants.AddRange(salesExecutiveCodes.Select(code => new RolePermission { RoleId = SeedIds.SalesExecutiveRoleId, PermissionId = PermissionIds[code] }));
 
             // Support Agent — read-only.
-            string[] supportAgentCodes = [PermissionCodes.CustomersView, PermissionCodes.LeadsView, PermissionCodes.OpportunitiesView];
+            string[] supportAgentCodes =
+            [
+                PermissionCodes.CustomersView, PermissionCodes.LeadsView, PermissionCodes.OpportunitiesView,
+                PermissionCodes.QuotationsView, PermissionCodes.SalesOrdersView,
+            ];
             grants.AddRange(supportAgentCodes.Select(code => new RolePermission { RoleId = SeedIds.SupportAgentRoleId, PermissionId = PermissionIds[code] }));
 
             modelBuilder.Entity<RolePermission>().HasData(grants);

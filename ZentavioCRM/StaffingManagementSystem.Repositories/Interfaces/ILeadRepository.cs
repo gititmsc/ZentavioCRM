@@ -29,5 +29,8 @@ namespace ZentavioCRM.Repositories.Interfaces
 
         /// <summary>Every lead, no paging — used for CSV export. SMB-scale data volumes.</summary>
         Task<IReadOnlyList<Lead>> GetAllAsync();
+
+        /// <summary>Open leads assigned to the user whose NextFollowUpDate has passed and haven't had a reminder sent yet.</summary>
+        Task<IReadOnlyList<Lead>> GetDueForFollowUpReminderAsync(Guid userId, DateTime nowUtc);
     }
 }

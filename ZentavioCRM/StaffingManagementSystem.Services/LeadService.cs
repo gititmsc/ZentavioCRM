@@ -79,6 +79,7 @@ namespace ZentavioCRM.Services
                 Territory = request.Territory,
                 Status = request.AssignedToUserId is null ? LeadStatus.New : LeadStatus.Assigned,
                 Notes = request.Notes,
+                NextFollowUpDate = request.NextFollowUpDate,
                 CreatedByUserId = currentUserId,
                 CreatedAtUtc = DateTime.UtcNow,
             };
@@ -159,6 +160,15 @@ namespace ZentavioCRM.Services
             lead.ExpectedValue = request.ExpectedValue;
             lead.Territory = request.Territory;
             lead.Notes = request.Notes;
+
+            if (lead.NextFollowUpDate != request.NextFollowUpDate)
+            {
+                // A changed (or newly set) follow-up date means any previously-sent reminder no
+                // longer applies — clear it so GetDueForFollowUpReminderAsync can fire again.
+                lead.FollowUpReminderSentAtUtc = null;
+            }
+            lead.NextFollowUpDate = request.NextFollowUpDate;
+
             lead.UpdatedAtUtc = DateTime.UtcNow;
             lead.LeadScore = ComputeLeadScore(lead);
 
@@ -547,6 +557,7 @@ namespace ZentavioCRM.Services
                 Industry = lead.Industry,
                 Email = lead.Email,
                 Phone = lead.Mobile,
+                AcquisitionSource = lead.Source,
                 AssignedToUserId = assignedToUserId,
                 IsActive = true,
                 CreatedAtUtc = DateTime.UtcNow,
@@ -603,6 +614,7 @@ namespace ZentavioCRM.Services
             LeadScore = lead.LeadScore,
             AiScore = lead.AiScore,
             Notes = lead.Notes,
+            NextFollowUpDate = lead.NextFollowUpDate,
             LostReason = lead.LostReason,
             ConvertedCustomerId = lead.ConvertedCustomerId,
             ConvertedAtUtc = lead.ConvertedAtUtc,

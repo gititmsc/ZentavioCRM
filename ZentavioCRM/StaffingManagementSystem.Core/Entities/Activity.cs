@@ -24,6 +24,9 @@ namespace ZentavioCRM.Core.Entities
 
         public DateTime? CompletedAtUtc { get; set; }
 
+        /// <summary>Set once a due-date reminder notification has been sent for this activity, so it isn't re-sent on every poll.</summary>
+        public DateTime? ReminderSentAtUtc { get; set; }
+
         public Guid? AssignedToUserId { get; set; }
 
         public User? AssignedToUser { get; set; }

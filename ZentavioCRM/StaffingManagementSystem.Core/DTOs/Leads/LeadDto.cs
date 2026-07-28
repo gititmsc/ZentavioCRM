@@ -67,6 +67,8 @@ namespace ZentavioCRM.Core.DTOs.Leads
 
         public string? Notes { get; set; }
 
+        public DateTime? NextFollowUpDate { get; set; }
+
         public string? LostReason { get; set; }
 
         public Guid? ConvertedCustomerId { get; set; }

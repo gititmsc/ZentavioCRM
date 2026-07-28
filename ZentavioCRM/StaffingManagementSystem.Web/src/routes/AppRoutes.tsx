@@ -15,6 +15,11 @@ import LeadDetail from "@/pages/leads/LeadDetail";
 import OpportunitiesList from "@/pages/opportunities/OpportunitiesList";
 import OpportunityForm from "@/pages/opportunities/OpportunityForm";
 import OpportunityDetail from "@/pages/opportunities/OpportunityDetail";
+import QuotationsList from "@/pages/quotations/QuotationsList";
+import QuotationForm from "@/pages/quotations/QuotationForm";
+import QuotationDetail from "@/pages/quotations/QuotationDetail";
+import SalesOrdersList from "@/pages/salesorders/SalesOrdersList";
+import SalesOrderDetail from "@/pages/salesorders/SalesOrderDetail";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { MainLayout } from "@/layouts/MainLayout";
 
@@ -58,6 +63,14 @@ export function AppRoutes() {
         <Route path="/opportunities/new" element={<OpportunityForm />} />
         <Route path="/opportunities/:id" element={<OpportunityDetail />} />
         <Route path="/opportunities/:id/edit" element={<OpportunityForm />} />
+
+        <Route path="/quotations" element={<QuotationsList />} />
+        <Route path="/quotations/new" element={<QuotationForm />} />
+        <Route path="/quotations/:id" element={<QuotationDetail />} />
+        <Route path="/quotations/:id/edit" element={<QuotationForm />} />
+
+        <Route path="/sales-orders" element={<SalesOrdersList />} />
+        <Route path="/sales-orders/:id" element={<SalesOrderDetail />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

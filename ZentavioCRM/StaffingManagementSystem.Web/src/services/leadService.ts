@@ -71,6 +71,7 @@ export interface Lead {
   leadScore: number | null;
   aiScore: number | null;
   notes: string | null;
+  nextFollowUpDate: string | null;
   lostReason: string | null;
   convertedCustomerId: string | null;
   convertedAtUtc: string | null;
@@ -92,6 +93,7 @@ export interface SaveLeadRequest {
   assignedToUserId: string | null;
   territory: string | null;
   notes: string | null;
+  nextFollowUpDate: string | null;
 }
 
 export interface LeadSearchParams {

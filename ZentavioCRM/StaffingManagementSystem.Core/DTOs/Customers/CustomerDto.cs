@@ -21,6 +21,8 @@ namespace ZentavioCRM.Core.DTOs.Customers
 
         public string? AssignedToUserName { get; set; }
 
+        public string? Tags { get; set; }
+
         public bool IsActive { get; set; }
 
         public DateTime CreatedAtUtc { get; set; }
@@ -60,6 +62,10 @@ namespace ZentavioCRM.Core.DTOs.Customers
         public decimal? CreditLimit { get; set; }
 
         public string? Rating { get; set; }
+
+        public string? Tags { get; set; }
+
+        public LeadSource? AcquisitionSource { get; set; }
 
         public Guid? AssignedToUserId { get; set; }
 
@@ -103,6 +109,10 @@ namespace ZentavioCRM.Core.DTOs.Customers
         public decimal? CreditLimit { get; set; }
 
         public string? Rating { get; set; }
+
+        public string? Tags { get; set; }
+
+        public LeadSource? AcquisitionSource { get; set; }
 
         public Guid? AssignedToUserId { get; set; }
 

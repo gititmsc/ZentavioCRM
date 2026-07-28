@@ -3,7 +3,7 @@
  */
 import { apiClient } from "@/services/apiClient";
 import { callApi } from "@/services/apiHelpers";
-import type { PagedResult } from "@/services/leadService";
+import type { LeadSource, PagedResult } from "@/services/leadService";
 import type { ImportResult } from "@/services/importTypes";
 
 export type CustomerType =
@@ -29,6 +29,7 @@ export interface CustomerListItem {
   email: string | null;
   phone: string | null;
   assignedToUserName: string | null;
+  tags: string | null;
   isActive: boolean;
   createdAtUtc: string;
 }
@@ -77,6 +78,8 @@ export interface Customer {
   paymentTermsDays: number | null;
   creditLimit: number | null;
   rating: string | null;
+  tags: string | null;
+  acquisitionSource: LeadSource | null;
   assignedToUserId: string | null;
   assignedToUserName: string | null;
   isActive: boolean;
@@ -100,6 +103,8 @@ export interface SaveCustomerRequest {
   paymentTermsDays: number | null;
   creditLimit: number | null;
   rating: string | null;
+  tags: string | null;
+  acquisitionSource: LeadSource | null;
   assignedToUserId: string | null;
   isActive: boolean;
   contacts: Omit<ContactPerson, "id">[];
