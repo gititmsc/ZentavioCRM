@@ -17,6 +17,8 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
         {
             [PermissionCodes.DepartmentsView] = Guid.Parse("10000000-0000-0000-0000-000000000001"),
             [PermissionCodes.DepartmentsManage] = Guid.Parse("10000000-0000-0000-0000-000000000002"),
+            [PermissionCodes.TerritoriesView] = Guid.Parse("10000000-0000-0000-0000-000000000020"),
+            [PermissionCodes.TerritoriesManage] = Guid.Parse("10000000-0000-0000-0000-000000000021"),
             [PermissionCodes.UsersView] = Guid.Parse("10000000-0000-0000-0000-000000000003"),
             [PermissionCodes.UsersManage] = Guid.Parse("10000000-0000-0000-0000-000000000004"),
             [PermissionCodes.RolesView] = Guid.Parse("10000000-0000-0000-0000-000000000005"),
