@@ -15,8 +15,21 @@ namespace ZentavioCRM.Services
 
         private static readonly HashSet<OpportunityStage> TerminalStages = [OpportunityStage.ClosedWon, OpportunityStage.ClosedLost];
 
+        /// <summary>Allowed forward transitions — mirrors the linear pipeline the UI presents (Qualification →
+        /// Discovery → Proposal → Negotiation → VerbalCommit), with a direct jump to ClosedWon/ClosedLost
+        /// available from any non-terminal stage. Stages aren't skippable via a direct API call either.</summary>
+        private static readonly Dictionary<OpportunityStage, HashSet<OpportunityStage>> AllowedStageTransitions = new()
+        {
+            [OpportunityStage.Qualification] = [OpportunityStage.Discovery, OpportunityStage.ClosedWon, OpportunityStage.ClosedLost],
+            [OpportunityStage.Discovery] = [OpportunityStage.Proposal, OpportunityStage.ClosedWon, OpportunityStage.ClosedLost],
+            [OpportunityStage.Proposal] = [OpportunityStage.Negotiation, OpportunityStage.ClosedWon, OpportunityStage.ClosedLost],
+            [OpportunityStage.Negotiation] = [OpportunityStage.VerbalCommit, OpportunityStage.ClosedWon, OpportunityStage.ClosedLost],
+            [OpportunityStage.VerbalCommit] = [OpportunityStage.ClosedWon, OpportunityStage.ClosedLost],
+        };
+
         private readonly IOpportunityRepository _opportunityRepository;
         private readonly ICustomerRepository _customerRepository;
+        private readonly IQuotationRepository _quotationRepository;
         private readonly IAuditLogService _auditLogService;
         private readonly INotificationService _notificationService;
         private readonly IAccessScopeService _accessScopeService;
@@ -24,12 +37,14 @@ namespace ZentavioCRM.Services
         public OpportunityService(
             IOpportunityRepository opportunityRepository,
             ICustomerRepository customerRepository,
+            IQuotationRepository quotationRepository,
             IAuditLogService auditLogService,
             INotificationService notificationService,
             IAccessScopeService accessScopeService)
         {
             _opportunityRepository = opportunityRepository;
             _customerRepository = customerRepository;
+            _quotationRepository = quotationRepository;
             _auditLogService = auditLogService;
             _notificationService = notificationService;
             _accessScopeService = accessScopeService;
@@ -199,6 +214,11 @@ namespace ZentavioCRM.Services
                     $"This opportunity is already {opportunity.Stage} and its stage cannot be changed further.");
             }
 
+            if (!AllowedStageTransitions.TryGetValue(opportunity.Stage, out var allowedStages) || !allowedStages.Contains(request.Stage))
+            {
+                return ApiResponse<OpportunityDto>.FailureResponse($"Cannot move an opportunity from {opportunity.Stage} to {request.Stage}.");
+            }
+
             if (request.Stage == OpportunityStage.ClosedLost && string.IsNullOrWhiteSpace(request.Reason))
             {
                 return ApiResponse<OpportunityDto>.FailureResponse(
@@ -280,6 +300,12 @@ namespace ZentavioCRM.Services
             if (!await CanAccessAsync(currentUserId, opportunity))
             {
                 return ApiResponse<bool>.FailureResponse("Opportunity not found.");
+            }
+
+            if (await _quotationRepository.HasAnyForOpportunityAsync(id))
+            {
+                return ApiResponse<bool>.FailureResponse(
+                    "Cannot delete — this opportunity has one or more quotations. Delete those quotations first (a Draft one can be deleted directly; others must be Rejected or left to Expire).");
             }
 
             await _opportunityRepository.DeleteAsync(opportunity);

@@ -46,7 +46,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
             [PermissionCodes.SalesOrdersView] = Guid.Parse("10000000-0000-0000-0000-00000000001b"),
             [PermissionCodes.SalesOrdersCreate] = Guid.Parse("10000000-0000-0000-0000-00000000001c"),
             [PermissionCodes.SalesOrdersEdit] = Guid.Parse("10000000-0000-0000-0000-00000000001d"),
-            [PermissionCodes.SalesOrdersDelete] = Guid.Parse("10000000-0000-0000-0000-00000000001e"),
+            // 10000000-0000-0000-0000-00000000001e was SalesOrders.Delete — retired, no delete feature exists for Sales Orders.
             [PermissionCodes.SalesOrdersAssign] = Guid.Parse("10000000-0000-0000-0000-00000000001f"),
         };
 
@@ -134,7 +134,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
                 PermissionCodes.LeadsView, PermissionCodes.LeadsCreate, PermissionCodes.LeadsEdit, PermissionCodes.LeadsDelete, PermissionCodes.LeadsAssign, PermissionCodes.LeadsConvert,
                 PermissionCodes.OpportunitiesView, PermissionCodes.OpportunitiesCreate, PermissionCodes.OpportunitiesEdit, PermissionCodes.OpportunitiesDelete, PermissionCodes.OpportunitiesAssign,
                 PermissionCodes.QuotationsView, PermissionCodes.QuotationsCreate, PermissionCodes.QuotationsEdit, PermissionCodes.QuotationsDelete, PermissionCodes.QuotationsAssign,
-                PermissionCodes.SalesOrdersView, PermissionCodes.SalesOrdersCreate, PermissionCodes.SalesOrdersEdit, PermissionCodes.SalesOrdersDelete, PermissionCodes.SalesOrdersAssign,
+                PermissionCodes.SalesOrdersView, PermissionCodes.SalesOrdersCreate, PermissionCodes.SalesOrdersEdit, PermissionCodes.SalesOrdersAssign,
             ];
             grants.AddRange(salesManagerCodes.Select(code => new RolePermission { RoleId = SeedIds.SalesManagerRoleId, PermissionId = PermissionIds[code] }));
 

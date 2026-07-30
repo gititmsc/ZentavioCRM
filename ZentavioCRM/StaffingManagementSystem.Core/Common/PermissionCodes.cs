@@ -49,8 +49,11 @@ namespace ZentavioCRM.Core.Common
         public const string SalesOrdersView = "SalesOrders.View";
         public const string SalesOrdersCreate = "SalesOrders.Create";
         public const string SalesOrdersEdit = "SalesOrders.Edit";
-        public const string SalesOrdersDelete = "SalesOrders.Delete";
         public const string SalesOrdersAssign = "SalesOrders.Assign";
+        // No SalesOrdersDelete: there is no delete feature for Sales Orders (they're confirmed,
+        // potentially-fulfilled orders — Cancel is the "this order is void" action instead). A
+        // dead SalesOrders.Delete permission previously existed here with no endpoint behind it;
+        // removed rather than built out, since deleting a Sales Order isn't a desired capability.
 
         /// <summary>All codes, keyed by module, used by the seeder and the admin role grant.</summary>
         public static readonly IReadOnlyDictionary<string, string[]> ByModule = new Dictionary<string, string[]>
@@ -63,7 +66,7 @@ namespace ZentavioCRM.Core.Common
             ["Leads"] = [LeadsView, LeadsCreate, LeadsEdit, LeadsDelete, LeadsAssign, LeadsConvert],
             ["Opportunities"] = [OpportunitiesView, OpportunitiesCreate, OpportunitiesEdit, OpportunitiesDelete, OpportunitiesAssign],
             ["Quotations"] = [QuotationsView, QuotationsCreate, QuotationsEdit, QuotationsDelete, QuotationsAssign],
-            ["SalesOrders"] = [SalesOrdersView, SalesOrdersCreate, SalesOrdersEdit, SalesOrdersDelete, SalesOrdersAssign],
+            ["SalesOrders"] = [SalesOrdersView, SalesOrdersCreate, SalesOrdersEdit, SalesOrdersAssign],
         };
 
         public static IEnumerable<string> All => ByModule.Values.SelectMany(codes => codes);

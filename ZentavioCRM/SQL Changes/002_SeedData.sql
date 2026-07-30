@@ -4,7 +4,7 @@
 
     Seeds the same rows the EF Core model produces via
     StaffingManagementSystem.Infrastructure/Persistence/Seed/PlatformSeedData.cs:
-    the default Company + Department, all 31 Permissions (including the Opportunities and
+    the default Company + Department, all 33 Permissions (including the Opportunities and
     Quotations/SalesOrders modules added after the initial Foundation + Leads milestone), the
     4 built-in Roles, their RolePermission grants, and one Admin user.
 
@@ -56,7 +56,7 @@ END
 GO
 
 -- ============================================================================
--- Permissions (21 total, grouped by module — matches Core.Common.PermissionCodes)
+-- Permissions (33 total, grouped by module — matches Core.Common.PermissionCodes)
 -- ============================================================================
 IF NOT EXISTS (SELECT 1 FROM dbo.Permissions WHERE Id = '10000000-0000-0000-0000-000000000001')
 BEGIN
@@ -90,7 +90,6 @@ BEGIN
         ('10000000-0000-0000-0000-00000000001b', N'SalesOrders.View',      N'View',    N'SalesOrders'),
         ('10000000-0000-0000-0000-00000000001c', N'SalesOrders.Create',    N'Create',  N'SalesOrders'),
         ('10000000-0000-0000-0000-00000000001d', N'SalesOrders.Edit',      N'Edit',    N'SalesOrders'),
-        ('10000000-0000-0000-0000-00000000001e', N'SalesOrders.Delete',    N'Delete',  N'SalesOrders'),
         ('10000000-0000-0000-0000-00000000001f', N'SalesOrders.Assign',    N'Assign',  N'SalesOrders');
 END
 ELSE
@@ -112,10 +111,22 @@ BEGIN
         ('10000000-0000-0000-0000-00000000001b', N'SalesOrders.View',      N'View',    N'SalesOrders'),
         ('10000000-0000-0000-0000-00000000001c', N'SalesOrders.Create',    N'Create',  N'SalesOrders'),
         ('10000000-0000-0000-0000-00000000001d', N'SalesOrders.Edit',      N'Edit',    N'SalesOrders'),
-        ('10000000-0000-0000-0000-00000000001e', N'SalesOrders.Delete',    N'Delete',  N'SalesOrders'),
         ('10000000-0000-0000-0000-00000000001f', N'SalesOrders.Assign',    N'Assign',  N'SalesOrders')
     ) AS v(Id, Code, Name, Module)
     WHERE NOT EXISTS (SELECT 1 FROM dbo.Permissions p WHERE p.Id = v.Id);
+END
+GO
+
+-- ============================================================================
+-- Retire SalesOrders.Delete — was seeded on earlier runs of this script, but no delete
+-- feature ever existed for Sales Orders (they're confirmed, potentially-fulfilled orders;
+-- Cancel is the "this order is void" action instead). Clean up any already-seeded row and
+-- its role grants so a stale, non-functional permission doesn't linger on existing databases.
+-- ============================================================================
+IF EXISTS (SELECT 1 FROM dbo.Permissions WHERE Id = '10000000-0000-0000-0000-00000000001e')
+BEGIN
+    DELETE FROM dbo.RolePermissions WHERE PermissionId = '10000000-0000-0000-0000-00000000001e';
+    DELETE FROM dbo.Permissions WHERE Id = '10000000-0000-0000-0000-00000000001e';
 END
 GO
 
@@ -162,7 +173,7 @@ WHERE p.Code IN (
     N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert',
     N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Delete', N'Opportunities.Assign',
     N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Delete', N'Quotations.Assign',
-    N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Delete', N'SalesOrders.Assign'
+    N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign'
 )
 AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SalesManagerRoleId3 AND rp.PermissionId = p.Id);
 

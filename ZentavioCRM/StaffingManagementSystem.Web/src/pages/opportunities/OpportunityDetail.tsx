@@ -64,10 +64,12 @@ export default function OpportunityDetail() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const canEdit = hasPermission(PermissionCodes.OpportunitiesEdit);
   const canAssign = hasPermission(PermissionCodes.OpportunitiesAssign);
   const canCreateQuotation = hasPermission(PermissionCodes.QuotationsCreate);
+  const canDelete = hasPermission(PermissionCodes.OpportunitiesDelete);
 
   const load = async () => {
     if (!id) return;
@@ -124,6 +126,22 @@ export default function OpportunityDetail() {
     load();
   };
 
+  const handleDelete = async () => {
+    if (!id) return;
+    if (!window.confirm(`Delete opportunity ${opportunity?.opportunityNumber ?? ""}? This cannot be undone.`)) return;
+
+    setActionError(null);
+    setIsDeleting(true);
+    const result = await opportunityService.remove(id);
+    setIsDeleting(false);
+
+    if (!result.success) {
+      setActionError(result.message || "Unable to delete opportunity.");
+      return;
+    }
+    navigate("/opportunities", { replace: true });
+  };
+
   if (isLoading) {
     return <div className="text-muted">Loading...</div>;
   }
@@ -147,6 +165,12 @@ export default function OpportunityDetail() {
             <Link to={`/opportunities/${opportunity.id}/edit`} className="btn btn-outline-secondary">
               Edit
             </Link>
+          )}
+          {canDelete && (
+            <button type="button" className="btn btn-outline-danger" disabled={isDeleting} onClick={handleDelete}>
+              <i className="bi bi-trash me-1" aria-hidden="true" />
+              {isDeleting ? "Deleting..." : "Delete"}
+            </button>
           )}
         </div>
       </div>

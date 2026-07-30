@@ -568,9 +568,9 @@
 
       <h3>5.2 Stage flow</h3>
       <p>Qualification &rarr; Discovery &rarr; Proposal &rarr; Negotiation &rarr; Verbal Commit &rarr; (Closed Won or Closed Lost).</p>
-      <div class="callout qa">
-        <span class="callout-title">QA Focus &mdash; stage transitions</span>
-        As with Leads, the UI presents a linear pipeline, but the server does not enforce that order &mdash; only that a Closed Won/Closed Lost opportunity cannot change again, and that Closed Lost requires a reason. A direct API call can jump from Qualification straight to Negotiation, skipping stages. Good candidate for a negative test case.
+      <div class="callout rule">
+        <span class="callout-title">Behavior</span>
+        Stage transitions are enforced server-side to match this linear order &mdash; the same rules the UI presents are also checked on every direct API call, so a stage can't be skipped (e.g. Qualification straight to Negotiation) except for the deliberate direct jump to Closed Won/Closed Lost, which is allowed from any non-terminal stage. Once Closed Won/Closed Lost, no further change is possible, and Closed Lost requires a reason.
       </div>
       <p>Reaching Closed Won or Closed Lost notifies both the assignee and the creator.</p>
 
@@ -579,11 +579,8 @@
         <li><strong>Create an Opportunity</strong> directly, or via <strong>Convert to Opportunity</strong> from a Lead.</li>
         <li><strong>Assign</strong> &mdash; <span class="perm-pill">Opportunities.Assign</span>; blocked once the opportunity is closed.</li>
         <li><strong>Create Quotation</strong> button on the Opportunity detail page (requires <span class="perm-pill">Quotations.Create</span>) jumps straight to a pre-linked new Quotation.</li>
+        <li><strong>Delete an Opportunity</strong> &mdash; <span class="perm-pill">Opportunities.Delete</span>, available on the detail screen with a confirmation prompt. Blocked with a clear message if the opportunity has any quotations &mdash; delete those first.</li>
       </ol>
-      <div class="callout gap">
-        <span class="callout-title">Known Gap</span>
-        No Delete button in the UI despite a working API endpoint. Deleting an Opportunity that already has a Quotation will fail at the database level with a generic error rather than a friendly message, because the service does not pre-check for dependent Quotations.
-      </div>
     </section>
 
     <!-- ============================================================ -->
@@ -625,10 +622,7 @@
         <li><strong>Cancel</strong> &mdash; available any time before the order is fully delivered.</li>
         <li><strong>Assign</strong>, and <strong>Update</strong> notes/expected delivery date (blocked once cancelled).</li>
       </ol>
-      <div class="callout gap">
-        <span class="callout-title">Known Gap</span>
-        A <span class="perm-pill">SalesOrders.Delete</span> permission exists and can be granted to a Role, but there is no delete endpoint or button anywhere &mdash; granting it currently has no effect.
-      </div>
+      <p>Sales Orders have no delete feature by design &mdash; they represent confirmed, potentially-fulfilled orders. <strong>Cancel</strong> is the "this order is void" action instead.</p>
     </section>
 
     <!-- ============================================================ -->
@@ -815,9 +809,9 @@
         <tr><td>Leads</td><td><span class="perm-pill">Leads.View</span> <span class="perm-pill">Leads.Create</span> <span class="perm-pill">Leads.Edit</span> <span class="perm-pill">Leads.Delete</span> <span class="perm-pill">Leads.Assign</span> <span class="perm-pill">Leads.Convert</span></td></tr>
         <tr><td>Opportunities</td><td><span class="perm-pill">Opportunities.View</span> <span class="perm-pill">Opportunities.Create</span> <span class="perm-pill">Opportunities.Edit</span> <span class="perm-pill">Opportunities.Delete</span> <span class="perm-pill">Opportunities.Assign</span></td></tr>
         <tr><td>Quotations</td><td><span class="perm-pill">Quotations.View</span> <span class="perm-pill">Quotations.Create</span> <span class="perm-pill">Quotations.Edit</span> <span class="perm-pill">Quotations.Delete</span> <span class="perm-pill">Quotations.Assign</span></td></tr>
-        <tr><td>Sales Orders</td><td><span class="perm-pill">SalesOrders.View</span> <span class="perm-pill">SalesOrders.Create</span> <span class="perm-pill">SalesOrders.Edit</span> <span class="perm-pill">SalesOrders.Assign</span> <span class="perm-pill">SalesOrders.Delete</span>**</td></tr>
+        <tr><td>Sales Orders</td><td><span class="perm-pill">SalesOrders.View</span> <span class="perm-pill">SalesOrders.Create</span> <span class="perm-pill">SalesOrders.Edit</span> <span class="perm-pill">SalesOrders.Assign</span></td></tr>
       </table>
-      <p style="font-size:0.82rem;color:var(--itm-muted);">* Not actually enforced server-side today &mdash; any signed-in user can list/view users regardless of this permission, since assignment dropdowns throughout the app need the user directory. &nbsp; ** Exists as a grantable permission but has no corresponding feature (see section 7).</p>
+      <p style="font-size:0.82rem;color:var(--itm-muted);">* Not actually enforced server-side today &mdash; any signed-in user can list/view users regardless of this permission, since assignment dropdowns throughout the app need the user directory. There is intentionally no SalesOrders.Delete &mdash; see section 7.</p>
       <p>Modules with <strong>no</strong> dedicated permission code &mdash; open to any signed-in user regardless of role: Dashboard, My Profile / Delegation, Activities, Documents, Audit History/Notifications.</p>
     </section>
 
@@ -844,11 +838,11 @@
       <ul>
         <li>Access tokens expire after 15 minutes with no refresh and no "please log in again" message &mdash; the app just starts failing silently.</li>
         <li>Forgot Password is visible but non-functional; there is no password reset/change flow anywhere post-creation.</li>
-        <li>Lead status and Opportunity stage transitions are enforced loosely on the server (only terminal-state and reason-required rules) even though the UI presents a stricter linear flow &mdash; test both the UI paths and out-of-sequence transitions directly.</li>
+        <li>Lead status transitions are enforced loosely on the server (only terminal-state and reason-required rules) even though the UI presents a stricter flow &mdash; test both the UI paths and out-of-sequence transitions directly. (Opportunity stage transitions, by contrast, are now fully enforced server-side to match the UI's linear pipeline.)</li>
         <li>Visibility Scope (Own/Team/All) applies only to Leads, Customers, Opportunities, and the Dashboard's summary counts &mdash; not to Quotations or Sales Orders.</li>
         <li>Out-of-scope records return a generic "not found," never "forbidden" &mdash; don't conflate the two when triaging.</li>
-        <li>Deleting a Customer with existing Opportunities, or an Opportunity with existing Quotations, or a Quotation with an existing Sales Order, is expected to fail ungracefully (a raw database error) rather than a friendly validation message, since those delete operations don't pre-check dependents.</li>
-        <li>Customers, Opportunities and Quotations each have a working Delete API but no Delete button in the UI (Leads now has one, on the detail screen). Sales Orders have a Delete permission with no feature behind it at all.</li>
+        <li>Deleting a Customer with existing Opportunities, or a Quotation with an existing Sales Order, is expected to fail ungracefully (a raw database error) rather than a friendly validation message, since those two delete operations don't pre-check dependents. (Deleting an Opportunity with existing Quotations is now a friendly, pre-checked error instead.)</li>
+        <li>Customers and Quotations each have a working Delete API but no Delete button in the UI (Leads and Opportunities now have one, on their detail screens). Sales Orders have no delete feature at all, by design.</li>
         <li>Editing a Customer or an Opportunity fully replaces their child collections (Contacts/Addresses, or Line Items/Buying Committee) &mdash; removing a row and saving is a permanent delete of that row.</li>
         <li>Record numbers (LEAD-, CUST-, OPP-, QUO-, SO-) are based on current row counts, not a guaranteed sequence &mdash; deleting and recreating records can produce number collisions.</li>
         <li>Reminders (due activities, follow-ups, birthdays, anniversaries) only get generated when a relevant user's browser polls the app (roughly every 30 seconds while logged in) &mdash; there is no background scheduler, so nothing fires while no relevant user is online.</li>

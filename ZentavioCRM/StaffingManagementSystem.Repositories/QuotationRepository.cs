@@ -83,6 +83,9 @@ namespace ZentavioCRM.Repositories
         public Task<bool> HasSalesOrderAsync(Guid quotationId)
             => _dbContext.SalesOrders.AnyAsync(so => so.QuotationId == quotationId);
 
+        public Task<bool> HasAnyForOpportunityAsync(Guid opportunityId)
+            => _dbContext.Quotations.AnyAsync(q => q.OpportunityId == opportunityId);
+
         public async Task AddAsync(Quotation quotation)
         {
             _dbContext.Quotations.Add(quotation);
