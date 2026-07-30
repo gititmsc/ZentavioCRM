@@ -34,6 +34,8 @@ export default function LeadDetail() {
   const canEdit = hasPermission(PermissionCodes.LeadsEdit);
   const canAssign = hasPermission(PermissionCodes.LeadsAssign);
   const canConvert = hasPermission(PermissionCodes.LeadsConvert);
+  const canDelete = hasPermission(PermissionCodes.LeadsDelete);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -98,6 +100,22 @@ export default function LeadDetail() {
     navigate(`/customers/${result.data.customerId}/edit`);
   };
 
+  const handleDelete = async () => {
+    if (!id) return;
+    if (!window.confirm(`Delete lead ${lead?.leadNumber ?? ""}? This cannot be undone.`)) return;
+
+    setActionError(null);
+    setIsDeleting(true);
+    const result = await leadService.remove(id);
+    setIsDeleting(false);
+
+    if (!result.success) {
+      setActionError(result.message || "Unable to delete lead.");
+      return;
+    }
+    navigate("/leads", { replace: true });
+  };
+
   const handleConvertToOpportunity = async () => {
     if (!id) return;
     if (!window.confirm("Convert this lead to an opportunity? This cannot be undone.")) return;
@@ -148,6 +166,12 @@ export default function LeadDetail() {
                 Convert to Opportunity
               </button>
             </>
+          )}
+          {canDelete && (
+            <button type="button" className="btn btn-outline-danger" disabled={isDeleting} onClick={handleDelete}>
+              <i className="bi bi-trash me-1" aria-hidden="true" />
+              {isDeleting ? "Deleting..." : "Delete"}
+            </button>
           )}
         </div>
       </div>

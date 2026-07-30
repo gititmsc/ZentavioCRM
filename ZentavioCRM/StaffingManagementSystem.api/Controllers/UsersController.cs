@@ -94,25 +94,25 @@ namespace ZentavioCRM.Api.Controllers
                 return BadRequest(ApiResponse<UserDto>.FailureResponse("No file was uploaded."));
             }
 
-            if (!AllowedPhotoContentTypes.Contains(file.ContentType))
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            var content = stream.ToArray();
+
+            // Validate — and derive the stored Content-Type from — the file's own bytes, not the
+            // client-supplied file.ContentType header. That header reflects the file's EXTENSION in
+            // most browsers, not its actual content, so a file renamed from ".html" to ".png" would
+            // still arrive here claiming "image/png". Accepted formats: PNG, JPEG, GIF.
+            var detectedContentType = ImageSignature.Detect(content);
+            if (detectedContentType is null)
             {
                 return BadRequest(ApiResponse<UserDto>.FailureResponse(
                     "Unsupported file type.",
-                    ["Profile photos must be PNG, JPEG, GIF, or WebP images."]));
+                    ["Profile photos must be a genuine PNG, JPEG, or GIF image."]));
             }
 
-            using var stream = new MemoryStream();
-            await file.CopyToAsync(stream);
-
-            var result = await _userService.UploadPhotoAsync(id, file.ContentType, stream.ToArray());
+            var result = await _userService.UploadPhotoAsync(id, detectedContentType, content);
             return result.Success ? Ok(result) : BadRequest(result);
         }
-
-        // Server-side whitelist — an uploaded photo's Content-Type is client-supplied and otherwise
-        // stored/served back verbatim, so without this check a crafted upload (e.g. "text/html")
-        // could be served inline by a browser hitting the download endpoint directly.
-        private static readonly HashSet<string> AllowedPhotoContentTypes =
-            new(StringComparer.OrdinalIgnoreCase) { "image/png", "image/jpeg", "image/gif", "image/webp" };
 
         [HttpDelete("{id:guid}/photo")]
         public async Task<IActionResult> DeletePhoto(Guid id)

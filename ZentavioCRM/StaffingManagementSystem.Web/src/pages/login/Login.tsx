@@ -199,19 +199,6 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="login-divider">OR</div>
-
-          <div className="login-sso">
-            <button type="button" className="login-sso__btn" disabled aria-disabled="true">
-              <i className="bi bi-microsoft" aria-hidden="true" />
-              Microsoft
-            </button>
-            <button type="button" className="login-sso__btn" disabled aria-disabled="true">
-              <i className="bi bi-google" aria-hidden="true" />
-              Google
-            </button>
-          </div>
-
           <a href="/user-manual.html" target="_blank" rel="noopener noreferrer" className="login-manual-link">
             <i className="bi bi-book-half" aria-hidden="true" />
             User Manual

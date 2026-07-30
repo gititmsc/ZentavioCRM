@@ -434,14 +434,14 @@
       </div>
       <div class="callout gap">
         <span class="callout-title">Known Gap &mdash; Forgot Password / SSO</span>
-        The <em>Forgot Password?</em> link and the Microsoft/Google sign-in buttons are shown on the login screen but are <strong>not functional yet</strong>. There is also no password-reset or password-change feature anywhere in the app once an account is created &mdash; contact your administrator if you need your password changed.
+        The <em>Forgot Password?</em> link is shown on the login screen but is <strong>not functional yet</strong>. There is also no password-reset or password-change feature anywhere in the app once an account is created &mdash; contact your administrator if you need your password changed.
       </div>
 
       <h3>2.2 The Dashboard</h3>
       <p>The Dashboard (<code>/dashboard</code>) is the landing page after login and is visible to every signed-in user regardless of permissions. It shows: Open Leads, Active Customers, Leads Converted This Month, total Pipeline Value, Open Opportunities, Win Rate percentage, and a Pipeline by Stage breakdown (count and value per Opportunity stage).</p>
-      <div class="callout qa">
-        <span class="callout-title">QA Focus</span>
-        Dashboard counts are calculated <strong>globally</strong> across the whole company &mdash; they are <em>not</em> filtered by the viewing user's Visibility Scope. A user restricted to "Own" records will still see company-wide totals on the Dashboard, which may look inconsistent with what they can actually open in Leads/Customers/Opportunities. Worth confirming this is the intended behavior during UAT.
+      <div class="callout rule">
+        <span class="callout-title">Behavior</span>
+        Dashboard counts respect the viewer's Visibility Scope, the same as the Leads/Customers/Opportunities list screens. A user restricted to "Own" or "Team" sees totals limited to the records they're allowed to see, not company-wide figures &mdash; so the numbers here always match what that user can actually open elsewhere in the app.
       </div>
 
       <h3>2.3 Navigation</h3>
@@ -470,14 +470,14 @@
       <h3>3.1 Profile Photo</h3>
       <ol class="steps">
         <li>Open <strong>My Profile</strong> and click <strong>Upload Photo</strong> (or <strong>Change Photo</strong> if you already have one).</li>
-        <li>Choose an image file. Accepted types: PNG, JPEG, GIF, WEBP, up to 5 MB.</li>
+        <li>Choose an image file. Accepted types: PNG, JPEG, GIF, up to 5 MB.</li>
         <li>The photo appears immediately across the app (top bar, Users list, avatars anywhere your name appears).</li>
         <li>Use <strong>Remove</strong> to delete your photo and fall back to your initials.</li>
       </ol>
       <p>You can manage your own photo at any time. An administrator holding the <span class="perm-pill">Users.Manage</span> permission can also add/remove a photo for any other user from that user's edit screen.</p>
-      <div class="callout qa">
-        <span class="callout-title">QA Focus</span>
-        The file-type restriction is enforced on the server, not just the file picker &mdash; try uploading a renamed non-image file (e.g. a <code>.html</code> file saved with a <code>.png</code> extension) to confirm the server rejects it by actual content type, not just filename.
+      <div class="callout rule">
+        <span class="callout-title">Behavior</span>
+        The file-type restriction is enforced on the server against the file's actual bytes (its signature), not the filename or the browser-supplied Content-Type. A renamed non-image file (e.g. a <code>.html</code> file saved with a <code>.png</code> extension) is rejected even though the browser would otherwise report it as <code>image/png</code>.
       </div>
 
       <h3>3.2 Out-of-Office / Delegation</h3>
@@ -539,11 +539,8 @@
         <li><strong>Assign a Lead</strong> &mdash; <span class="perm-pill">Leads.Assign</span>. Sets the owner and automatically advances status from New to Assigned; the new owner gets a notification.</li>
         <li><strong>Convert to Customer</strong> &mdash; <span class="perm-pill">Leads.Convert</span>. Creates a new Customer record from the lead's company details and marks the lead Converted.</li>
         <li><strong>Convert to Opportunity</strong> &mdash; <span class="perm-pill">Leads.Convert</span>. Creates (or reuses, if already converted) the Customer <em>and</em> a new Opportunity in one step, carrying across the expected value.</li>
+        <li><strong>Delete a Lead</strong> &mdash; <span class="perm-pill">Leads.Delete</span>. Available on the Lead detail screen, with a confirmation prompt. This permanently removes the lead (it is not a soft-delete).</li>
       </ol>
-      <div class="callout gap">
-        <span class="callout-title">Known Gap</span>
-        There is a working Delete endpoint for Leads (<span class="perm-pill">Leads.Delete</span>) but no Delete button anywhere in the current UI.
-      </div>
     </section>
 
     <!-- ============================================================ -->
@@ -846,13 +843,12 @@
       <p>A single checklist gathering every orange/red callout in this manual, for quick reference during test planning.</p>
       <ul>
         <li>Access tokens expire after 15 minutes with no refresh and no "please log in again" message &mdash; the app just starts failing silently.</li>
-        <li>Forgot Password and Microsoft/Google sign-in are visible but non-functional; there is no password reset/change flow anywhere post-creation.</li>
-        <li>Dashboard totals are global, not filtered by the viewer's Visibility Scope.</li>
+        <li>Forgot Password is visible but non-functional; there is no password reset/change flow anywhere post-creation.</li>
         <li>Lead status and Opportunity stage transitions are enforced loosely on the server (only terminal-state and reason-required rules) even though the UI presents a stricter linear flow &mdash; test both the UI paths and out-of-sequence transitions directly.</li>
-        <li>Visibility Scope (Own/Team/All) applies only to Leads, Customers, and Opportunities &mdash; not to Quotations or Sales Orders.</li>
+        <li>Visibility Scope (Own/Team/All) applies only to Leads, Customers, Opportunities, and the Dashboard's summary counts &mdash; not to Quotations or Sales Orders.</li>
         <li>Out-of-scope records return a generic "not found," never "forbidden" &mdash; don't conflate the two when triaging.</li>
         <li>Deleting a Customer with existing Opportunities, or an Opportunity with existing Quotations, or a Quotation with an existing Sales Order, is expected to fail ungracefully (a raw database error) rather than a friendly validation message, since those delete operations don't pre-check dependents.</li>
-        <li>Leads, Customers, Opportunities and Quotations each have a working Delete API but no Delete button in the UI. Sales Orders have a Delete permission with no feature behind it at all.</li>
+        <li>Customers, Opportunities and Quotations each have a working Delete API but no Delete button in the UI (Leads now has one, on the detail screen). Sales Orders have a Delete permission with no feature behind it at all.</li>
         <li>Editing a Customer or an Opportunity fully replaces their child collections (Contacts/Addresses, or Line Items/Buying Committee) &mdash; removing a row and saving is a permanent delete of that row.</li>
         <li>Record numbers (LEAD-, CUST-, OPP-, QUO-, SO-) are based on current row counts, not a guaranteed sequence &mdash; deleting and recreating records can produce number collisions.</li>
         <li>Reminders (due activities, follow-ups, birthdays, anniversaries) only get generated when a relevant user's browser polls the app (roughly every 30 seconds while logged in) &mdash; there is no background scheduler, so nothing fires while no relevant user is online.</li>

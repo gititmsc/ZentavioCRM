@@ -1,5 +1,6 @@
 using ZentavioCRM.Core.DTOs.Dashboard;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Security;
 using ZentavioCRM.Repositories.Interfaces;
 using ZentavioCRM.Services.Interfaces;
 
@@ -13,29 +14,36 @@ namespace ZentavioCRM.Services
         private readonly ILeadRepository _leadRepository;
         private readonly ICustomerRepository _customerRepository;
         private readonly IOpportunityRepository _opportunityRepository;
+        private readonly IAccessScopeService _accessScopeService;
 
         public DashboardService(
             ILeadRepository leadRepository,
             ICustomerRepository customerRepository,
-            IOpportunityRepository opportunityRepository)
+            IOpportunityRepository opportunityRepository,
+            IAccessScopeService accessScopeService)
         {
             _leadRepository = leadRepository;
             _customerRepository = customerRepository;
             _opportunityRepository = opportunityRepository;
+            _accessScopeService = accessScopeService;
         }
 
-        public async Task<SalesDashboardSummaryDto> GetSalesSummaryAsync()
+        public async Task<SalesDashboardSummaryDto> GetSalesSummaryAsync(Guid? currentUserId = null)
         {
             var now = DateTime.UtcNow;
             var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var nextMonthStart = monthStart.AddMonths(1);
 
-            var openLeadsCount = await _leadRepository.CountOpenAsync();
-            var convertedThisMonthCount = await _leadRepository.CountConvertedBetweenAsync(monthStart, nextMonthStart);
+            // Same scope every viewer already gets on the Leads/Customers/Opportunities list screens,
+            // so an "Own"/"Team"-scoped user's totals here match what they can actually open there.
+            AccessScope? accessScope = currentUserId is null ? null : await _accessScopeService.GetForUserAsync(currentUserId.Value);
 
-            var (_, activeCustomersCount) = await _customerRepository.SearchAsync(null, null, true, 1, 1);
+            var openLeadsCount = await _leadRepository.CountOpenAsync(accessScope);
+            var convertedThisMonthCount = await _leadRepository.CountConvertedBetweenAsync(monthStart, nextMonthStart, accessScope);
 
-            var opportunities = await _opportunityRepository.GetAllForDashboardAsync();
+            var (_, activeCustomersCount) = await _customerRepository.SearchAsync(null, null, true, 1, 1, accessScope);
+
+            var opportunities = await _opportunityRepository.GetAllForDashboardAsync(accessScope);
 
             var openOpportunities = opportunities.Where(o => !TerminalStages.Contains(o.Stage)).ToList();
             var pipelineValue = openOpportunities.Sum(o => o.Value ?? 0m);

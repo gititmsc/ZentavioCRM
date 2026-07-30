@@ -207,7 +207,7 @@ export default function UserForm() {
                 <input
                   ref={photoInputRef}
                   type="file"
-                  accept="image/png,image/jpeg,image/gif,image/webp"
+                  accept="image/png,image/jpeg,image/gif"
                   className="d-none"
                   onChange={handlePhotoChange}
                 />

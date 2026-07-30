@@ -57,25 +57,7 @@ namespace ZentavioCRM.Repositories
                 query = query.Where(o => o.AssignedToUserId == assignedToUserId);
             }
 
-            if (accessScope is not null && accessScope.Scope != VisibilityScope.All)
-            {
-                var currentUserId = accessScope.UserId;
-                // .ToHashSet() materializes to a concrete HashSet<Guid> (ICollection<Guid>) — EF Core's
-                // Contains -> SQL IN translation is resolved from the compile-time type, and the source
-                // properties are declared as IReadOnlySet<Guid>, which isn't covered by that translation.
-                var teamIds = accessScope.TeamUserIds.ToHashSet();
-                var delegatedIds = accessScope.DelegatedFromUserIds.ToHashSet();
-
-                query = accessScope.Scope == VisibilityScope.Team
-                    ? query.Where(o =>
-                        (o.AssignedToUserId != null && teamIds.Contains(o.AssignedToUserId.Value)) ||
-                        (o.AssignedToUserId == null && o.CreatedByUserId != null && teamIds.Contains(o.CreatedByUserId.Value)) ||
-                        (o.AssignedToUserId != null && delegatedIds.Contains(o.AssignedToUserId.Value)))
-                    : query.Where(o =>
-                        o.AssignedToUserId == currentUserId ||
-                        (o.AssignedToUserId == null && o.CreatedByUserId == currentUserId) ||
-                        (o.AssignedToUserId != null && delegatedIds.Contains(o.AssignedToUserId.Value)));
-            }
+            query = ApplyAccessScope(query, accessScope);
 
             var totalCount = await query.CountAsync();
 
@@ -86,6 +68,32 @@ namespace ZentavioCRM.Repositories
                 .ToListAsync();
 
             return (items, totalCount);
+        }
+
+        /// <summary>Shared Own/Team/All + delegation filter, reused by SearchAsync and GetAllForDashboardAsync.</summary>
+        private static IQueryable<Opportunity> ApplyAccessScope(IQueryable<Opportunity> query, AccessScope? accessScope)
+        {
+            if (accessScope is null || accessScope.Scope == VisibilityScope.All)
+            {
+                return query;
+            }
+
+            var currentUserId = accessScope.UserId;
+            // .ToHashSet() materializes to a concrete HashSet<Guid> (ICollection<Guid>) — EF Core's
+            // Contains -> SQL IN translation is resolved from the compile-time type, and the source
+            // properties are declared as IReadOnlySet<Guid>, which isn't covered by that translation.
+            var teamIds = accessScope.TeamUserIds.ToHashSet();
+            var delegatedIds = accessScope.DelegatedFromUserIds.ToHashSet();
+
+            return accessScope.Scope == VisibilityScope.Team
+                ? query.Where(o =>
+                    (o.AssignedToUserId != null && teamIds.Contains(o.AssignedToUserId.Value)) ||
+                    (o.AssignedToUserId == null && o.CreatedByUserId != null && teamIds.Contains(o.CreatedByUserId.Value)) ||
+                    (o.AssignedToUserId != null && delegatedIds.Contains(o.AssignedToUserId.Value)))
+                : query.Where(o =>
+                    o.AssignedToUserId == currentUserId ||
+                    (o.AssignedToUserId == null && o.CreatedByUserId == currentUserId) ||
+                    (o.AssignedToUserId != null && delegatedIds.Contains(o.AssignedToUserId.Value)));
         }
 
         public async Task<string> GetNextOpportunityNumberAsync()
@@ -112,10 +120,14 @@ namespace ZentavioCRM.Repositories
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<IReadOnlyList<Opportunity>> GetAllForDashboardAsync()
+        public async Task<IReadOnlyList<Opportunity>> GetAllForDashboardAsync(AccessScope? accessScope = null)
         {
-            var opportunities = await _dbContext.Opportunities
-                .AsNoTracking()
+            // Access-scope filtering must happen before the Select() below, since that projection
+            // deliberately drops AssignedToUserId/CreatedByUserId (only Stage/Value are needed by the
+            // dashboard) — filtering after the projection would have nothing left to filter on.
+            var query = ApplyAccessScope(_dbContext.Opportunities.AsNoTracking(), accessScope);
+
+            var opportunities = await query
                 .Select(o => new Opportunity { Stage = o.Stage, Value = o.Value })
                 .ToListAsync();
 

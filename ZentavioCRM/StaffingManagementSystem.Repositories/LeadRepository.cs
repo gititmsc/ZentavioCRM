@@ -45,25 +45,7 @@ namespace ZentavioCRM.Repositories
                 query = query.Where(l => l.AssignedToUserId == assignedToUserId);
             }
 
-            if (accessScope is not null && accessScope.Scope != VisibilityScope.All)
-            {
-                var currentUserId = accessScope.UserId;
-                // .ToHashSet() materializes to a concrete HashSet<Guid> (ICollection<Guid>) — EF Core's
-                // Contains -> SQL IN translation is resolved from the compile-time type, and the source
-                // properties are declared as IReadOnlySet<Guid>, which isn't covered by that translation.
-                var teamIds = accessScope.TeamUserIds.ToHashSet();
-                var delegatedIds = accessScope.DelegatedFromUserIds.ToHashSet();
-
-                query = accessScope.Scope == VisibilityScope.Team
-                    ? query.Where(l =>
-                        (l.AssignedToUserId != null && teamIds.Contains(l.AssignedToUserId.Value)) ||
-                        (l.AssignedToUserId == null && l.CreatedByUserId != null && teamIds.Contains(l.CreatedByUserId.Value)) ||
-                        (l.AssignedToUserId != null && delegatedIds.Contains(l.AssignedToUserId.Value)))
-                    : query.Where(l =>
-                        l.AssignedToUserId == currentUserId ||
-                        (l.AssignedToUserId == null && l.CreatedByUserId == currentUserId) ||
-                        (l.AssignedToUserId != null && delegatedIds.Contains(l.AssignedToUserId.Value)));
-            }
+            query = ApplyAccessScope(query, accessScope);
 
             var totalCount = await query.CountAsync();
 
@@ -74,6 +56,32 @@ namespace ZentavioCRM.Repositories
                 .ToListAsync();
 
             return (items, totalCount);
+        }
+
+        /// <summary>Shared Own/Team/All + delegation filter, reused by SearchAsync and the dashboard count methods below.</summary>
+        private static IQueryable<Lead> ApplyAccessScope(IQueryable<Lead> query, AccessScope? accessScope)
+        {
+            if (accessScope is null || accessScope.Scope == VisibilityScope.All)
+            {
+                return query;
+            }
+
+            var currentUserId = accessScope.UserId;
+            // .ToHashSet() materializes to a concrete HashSet<Guid> (ICollection<Guid>) — EF Core's
+            // Contains -> SQL IN translation is resolved from the compile-time type, and the source
+            // properties are declared as IReadOnlySet<Guid>, which isn't covered by that translation.
+            var teamIds = accessScope.TeamUserIds.ToHashSet();
+            var delegatedIds = accessScope.DelegatedFromUserIds.ToHashSet();
+
+            return accessScope.Scope == VisibilityScope.Team
+                ? query.Where(l =>
+                    (l.AssignedToUserId != null && teamIds.Contains(l.AssignedToUserId.Value)) ||
+                    (l.AssignedToUserId == null && l.CreatedByUserId != null && teamIds.Contains(l.CreatedByUserId.Value)) ||
+                    (l.AssignedToUserId != null && delegatedIds.Contains(l.AssignedToUserId.Value)))
+                : query.Where(l =>
+                    l.AssignedToUserId == currentUserId ||
+                    (l.AssignedToUserId == null && l.CreatedByUserId == currentUserId) ||
+                    (l.AssignedToUserId != null && delegatedIds.Contains(l.AssignedToUserId.Value)));
         }
 
         public async Task<string> GetNextLeadNumberAsync()
@@ -102,15 +110,23 @@ namespace ZentavioCRM.Repositories
 
         private static readonly LeadStatus[] TerminalStatuses = [LeadStatus.Converted, LeadStatus.Lost, LeadStatus.Junk];
 
-        public Task<int> CountOpenAsync()
-            => _dbContext.Leads.CountAsync(l => !TerminalStatuses.Contains(l.Status));
+        public Task<int> CountOpenAsync(AccessScope? accessScope = null)
+        {
+            var query = _dbContext.Leads.Where(l => !TerminalStatuses.Contains(l.Status));
+            query = ApplyAccessScope(query, accessScope);
+            return query.CountAsync();
+        }
 
-        public Task<int> CountConvertedBetweenAsync(DateTime fromUtc, DateTime toUtcExclusive)
-            => _dbContext.Leads.CountAsync(l =>
+        public Task<int> CountConvertedBetweenAsync(DateTime fromUtc, DateTime toUtcExclusive, AccessScope? accessScope = null)
+        {
+            var query = _dbContext.Leads.Where(l =>
                 l.Status == LeadStatus.Converted &&
                 l.ConvertedAtUtc != null &&
                 l.ConvertedAtUtc >= fromUtc &&
                 l.ConvertedAtUtc < toUtcExclusive);
+            query = ApplyAccessScope(query, accessScope);
+            return query.CountAsync();
+        }
 
         public async Task<IReadOnlyList<Lead>> FindPotentialDuplicatesAsync(string? email, string? mobile, Guid? excludeLeadId)
         {
