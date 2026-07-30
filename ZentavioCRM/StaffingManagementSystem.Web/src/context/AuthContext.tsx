@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: user !== null,
       setSession: (nextUser: AuthUser) => setUser(nextUser),
       logout: () => {
-        authService.logout();
+        void authService.logout();
         setUser(null);
       },
       hasPermission: (code: string) => user?.permissions?.includes(code) ?? false,

@@ -1,4 +1,5 @@
 using ZentavioCRM.Core.Common;
+using ZentavioCRM.Core.DTOs.Auth;
 using ZentavioCRM.Core.DTOs.Users;
 
 namespace ZentavioCRM.Services.Interfaces
@@ -19,5 +20,20 @@ namespace ZentavioCRM.Services.Interfaces
         Task<(byte[] Content, string ContentType)?> DownloadPhotoAsync(Guid id);
 
         Task<ApiResponse<bool>> DeletePhotoAsync(Guid id);
+
+        /// <summary>
+        /// Self-service password change. Verifies <paramref name="request"/>'s CurrentPassword,
+        /// then revokes every existing refresh token for this user and issues a fresh token pair —
+        /// so the session that made this change continues seamlessly while every other
+        /// device/session is signed out.
+        /// </summary>
+        Task<ApiResponse<LoginResponseDto>> ChangePasswordAsync(Guid userId, ChangePasswordRequest request);
+
+        /// <summary>
+        /// Admin-initiated password reset for another user — no current-password proof required.
+        /// Revokes every refresh token for that user (including any session they're currently in),
+        /// since this represents someone else acting on the account.
+        /// </summary>
+        Task<ApiResponse<bool>> AdminResetPasswordAsync(Guid userId, AdminResetPasswordRequest request);
     }
 }

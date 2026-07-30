@@ -60,6 +60,10 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<Document> Documents => Set<Document>();
 
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+        public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

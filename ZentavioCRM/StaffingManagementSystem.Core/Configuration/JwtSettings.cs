@@ -16,5 +16,8 @@ namespace ZentavioCRM.Core.Configuration
         public int AccessTokenExpiryMinutes { get; set; } = 15;
 
         public int RefreshTokenExpiryDays { get; set; } = 7;
+
+        /// <summary>How long a "Forgot Password?" email link stays usable before it expires.</summary>
+        public int PasswordResetTokenExpiryMinutes { get; set; } = 60;
     }
 }

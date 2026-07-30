@@ -1,4 +1,5 @@
 using ZentavioCRM.Core.Common;
+using ZentavioCRM.Core.DTOs.Auth;
 using ZentavioCRM.Core.DTOs.Users;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Interfaces;
@@ -13,12 +14,21 @@ namespace ZentavioCRM.Services
         private readonly IUserRepository _userRepository;
         private readonly IRoleRepository _roleRepository;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IRefreshTokenRepository _refreshTokenRepository;
+        private readonly IAuthService _authService;
 
-        public UserService(IUserRepository userRepository, IRoleRepository roleRepository, IPasswordHasher passwordHasher)
+        public UserService(
+            IUserRepository userRepository,
+            IRoleRepository roleRepository,
+            IPasswordHasher passwordHasher,
+            IRefreshTokenRepository refreshTokenRepository,
+            IAuthService authService)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _passwordHasher = passwordHasher;
+            _refreshTokenRepository = refreshTokenRepository;
+            _authService = authService;
         }
 
         public async Task<IReadOnlyList<UserDto>> GetAllAsync()
@@ -155,6 +165,59 @@ namespace ZentavioCRM.Services
             await _userRepository.UpdateAsync(user);
 
             return ApiResponse<bool>.SuccessResponse(true, "Profile photo removed.");
+        }
+
+        public async Task<ApiResponse<LoginResponseDto>> ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user is null)
+            {
+                return ApiResponse<LoginResponseDto>.FailureResponse("User not found.");
+            }
+
+            if (!_passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
+            {
+                return ApiResponse<LoginResponseDto>.FailureResponse(
+                    "Current password is incorrect.",
+                    ["Current password is incorrect."]);
+            }
+
+            user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
+            user.UpdatedAtUtc = DateTime.UtcNow;
+            await _userRepository.UpdateAsync(user);
+
+            // Revoke every existing refresh token (all devices, including this one) first, then
+            // issue a fresh pair — so this session continues seamlessly while every other
+            // device/session is signed out, since the old password may have been compromised.
+            await _refreshTokenRepository.RevokeAllForUserAsync(userId);
+
+            var sessionResult = await _authService.IssueSessionAsync(userId);
+            if (!sessionResult.Success || sessionResult.Data is null)
+            {
+                return ApiResponse<LoginResponseDto>.FailureResponse(
+                    "Password changed, but your session could not be refreshed. Please log in again.");
+            }
+
+            return ApiResponse<LoginResponseDto>.SuccessResponse(sessionResult.Data, "Password changed.");
+        }
+
+        public async Task<ApiResponse<bool>> AdminResetPasswordAsync(Guid userId, AdminResetPasswordRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user is null)
+            {
+                return ApiResponse<bool>.FailureResponse("User not found.");
+            }
+
+            user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
+            user.UpdatedAtUtc = DateTime.UtcNow;
+            await _userRepository.UpdateAsync(user);
+
+            // Someone other than this user made the change — end every existing session on the
+            // account, including whatever device they're currently signed in on.
+            await _refreshTokenRepository.RevokeAllForUserAsync(userId);
+
+            return ApiResponse<bool>.SuccessResponse(true, "Password reset.");
         }
 
         private static UserDto Map(User user) => new()

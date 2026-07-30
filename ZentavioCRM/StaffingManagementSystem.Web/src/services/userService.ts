@@ -79,4 +79,34 @@ const uploadPhoto = (id: string, file: File) => {
 
 const deletePhoto = (id: string) => callApi<boolean>(apiClient.delete(`/api/users/${id}/photo`));
 
-export const userService = { getAll, getById, create, update, getPhotoBlobUrl, uploadPhoto, deletePhoto };
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+/** Mirrors LoginResponseDto — a fresh token pair so the caller's own session keeps working after their old refresh tokens are revoked. */
+export interface ChangePasswordResult {
+  token: string;
+  expiresAtUtc: string;
+  refreshToken: string;
+  refreshTokenExpiresAtUtc: string;
+}
+
+const changePassword = (id: string, request: ChangePasswordRequest) =>
+  callApi<ChangePasswordResult>(apiClient.post(`/api/users/${id}/change-password`, request));
+
+/** Admin-initiated reset for another user — requires Users.Manage. No current-password proof. */
+const resetPassword = (id: string, newPassword: string) =>
+  callApi<boolean>(apiClient.post(`/api/users/${id}/reset-password`, { newPassword }));
+
+export const userService = {
+  getAll,
+  getById,
+  create,
+  update,
+  getPhotoBlobUrl,
+  uploadPhoto,
+  deletePhoto,
+  changePassword,
+  resetPassword,
+};

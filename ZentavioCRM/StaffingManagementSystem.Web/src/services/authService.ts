@@ -4,6 +4,14 @@
  */
 import { AxiosError } from "axios";
 import { apiClient } from "@/services/apiClient";
+import {
+  TOKEN_STORAGE_KEY,
+  REFRESH_TOKEN_STORAGE_KEY,
+  USER_STORAGE_KEY,
+  getToken,
+  getRefreshToken,
+  clearSession,
+} from "@/services/authStorage";
 
 export interface LoginRequest {
   email: string;
@@ -21,6 +29,7 @@ export interface AuthUser {
 
 export interface AuthResult {
   token: string;
+  refreshToken: string;
   user: AuthUser;
 }
 
@@ -35,6 +44,8 @@ export interface ApiResponse<T> {
 interface LoginResponseData {
   token: string;
   expiresAtUtc: string;
+  refreshToken: string;
+  refreshTokenExpiresAtUtc: string;
   user: {
     id: string;
     fullName: string;
@@ -43,9 +54,6 @@ interface LoginResponseData {
     permissions: string[];
   };
 }
-
-const TOKEN_STORAGE_KEY = "sms_auth_token";
-const USER_STORAGE_KEY = "sms_auth_user";
 
 /** Attempts to sign the user in via the Staffing Management System API. */
 async function login(request: LoginRequest): Promise<ApiResponse<AuthResult>> {
@@ -69,6 +77,7 @@ async function login(request: LoginRequest): Promise<ApiResponse<AuthResult>> {
       message: response.data.message,
       data: {
         token: response.data.data.token,
+        refreshToken: response.data.data.refreshToken,
         user: response.data.data.user,
       },
     };
@@ -87,11 +96,8 @@ async function login(request: LoginRequest): Promise<ApiResponse<AuthResult>> {
 function persistSession(result: AuthResult, rememberMe: boolean): void {
   const storage = rememberMe ? window.localStorage : window.sessionStorage;
   storage.setItem(TOKEN_STORAGE_KEY, result.token);
+  storage.setItem(REFRESH_TOKEN_STORAGE_KEY, result.refreshToken);
   storage.setItem(USER_STORAGE_KEY, JSON.stringify(result.user));
-}
-
-function getToken(): string | null {
-  return window.localStorage.getItem(TOKEN_STORAGE_KEY) ?? window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
 }
 
 function getStoredUser(): AuthUser | null {
@@ -99,11 +105,23 @@ function getStoredUser(): AuthUser | null {
   return raw ? (JSON.parse(raw) as AuthUser) : null;
 }
 
-function logout(): void {
-  window.localStorage.removeItem(TOKEN_STORAGE_KEY);
-  window.localStorage.removeItem(USER_STORAGE_KEY);
-  window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-  window.sessionStorage.removeItem(USER_STORAGE_KEY);
+/**
+ * Best-effort server-side logout (revokes the refresh token) followed by clearing the local
+ * session. The local session is always cleared even if the API call fails/never returns, so the
+ * user is never stuck "logged in" on the client just because the server was unreachable.
+ */
+async function logout(): Promise<void> {
+  const refreshToken = getRefreshToken();
+
+  if (refreshToken) {
+    try {
+      await apiClient.post("/api/auth/logout", { refreshToken });
+    } catch {
+      // Ignored — the user is signing out regardless of whether the server confirms it.
+    }
+  }
+
+  clearSession();
 }
 
 export const authService = {

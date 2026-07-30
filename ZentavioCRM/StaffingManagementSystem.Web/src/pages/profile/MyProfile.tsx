@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { UserAvatar } from "@/components/users/UserAvatar";
 import { userService, type ManagedUser } from "@/services/userService";
 import { delegationService, type UserDelegation, type SaveUserDelegationRequest } from "@/services/delegationService";
+import { persistRefreshedTokens } from "@/services/authStorage";
 
 /** yyyy-MM-dd for a native <input type="date">. */
 function toDateInputValue(value: string): string {
@@ -15,6 +16,12 @@ interface DelegationFormValues {
   startDate: string;
   endDate: string;
   notes: string;
+}
+
+interface ChangePasswordFormValues {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 export default function MyProfile() {
@@ -39,6 +46,43 @@ export default function MyProfile() {
   } = useForm<DelegationFormValues>({
     defaultValues: { delegateUserId: "", startDate: "", endDate: "", notes: "" },
   });
+
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+
+  const {
+    register: registerPassword,
+    handleSubmit: handlePasswordSubmit,
+    watch: watchPassword,
+    reset: resetPasswordForm,
+    formState: { errors: passwordErrors, isSubmitting: isChangingPassword },
+  } = useForm<ChangePasswordFormValues>({
+    defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
+  });
+
+  const onChangePassword = async (values: ChangePasswordFormValues) => {
+    if (!user) return;
+
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    const result = await userService.changePassword(user.id, {
+      currentPassword: values.currentPassword,
+      newPassword: values.newPassword,
+    });
+
+    if (!result.success || !result.data) {
+      setPasswordError(result.message || "Unable to change password.");
+      return;
+    }
+
+    // Old refresh tokens (all devices, including this one) were just revoked server-side — persist
+    // the fresh pair immediately so this session's next silent refresh doesn't fail.
+    persistRefreshedTokens(result.data.token, result.data.refreshToken);
+
+    setPasswordSuccess("Your password has been changed.");
+    resetPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  };
 
   const loadDelegations = async () => {
     const result = await delegationService.getMine();
@@ -168,6 +212,66 @@ export default function MyProfile() {
               />
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="card shadow-sm border-0 mb-4" style={{ maxWidth: 780 }}>
+        <div className="card-body">
+          <h2 className="h6 fw-semibold mb-3">Change Password</h2>
+
+          {passwordError && <div className="alert alert-danger py-2">{passwordError}</div>}
+          {passwordSuccess && <div className="alert alert-success py-2">{passwordSuccess}</div>}
+
+          <form onSubmit={handlePasswordSubmit(onChangePassword)} noValidate className="row g-3">
+            <div className="col-md-4">
+              <label className="form-label">Current Password</label>
+              <input
+                type="password"
+                autoComplete="current-password"
+                className={`form-control ${passwordErrors.currentPassword ? "is-invalid" : ""}`}
+                {...registerPassword("currentPassword", { required: "Current password is required." })}
+              />
+              {passwordErrors.currentPassword && (
+                <div className="invalid-feedback">{passwordErrors.currentPassword.message}</div>
+              )}
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">New Password</label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                className={`form-control ${passwordErrors.newPassword ? "is-invalid" : ""}`}
+                {...registerPassword("newPassword", {
+                  required: "New password is required.",
+                  minLength: { value: 8, message: "Password must be at least 8 characters." },
+                })}
+              />
+              {passwordErrors.newPassword && <div className="invalid-feedback">{passwordErrors.newPassword.message}</div>}
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">Confirm New Password</label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                className={`form-control ${passwordErrors.confirmPassword ? "is-invalid" : ""}`}
+                {...registerPassword("confirmPassword", {
+                  required: "Please confirm your new password.",
+                  validate: (value) => value === watchPassword("newPassword") || "Passwords do not match.",
+                })}
+              />
+              {passwordErrors.confirmPassword && (
+                <div className="invalid-feedback">{passwordErrors.confirmPassword.message}</div>
+              )}
+            </div>
+
+            <div className="col-12">
+              <button type="submit" className="btn btn-sm btn-primary" disabled={isChangingPassword}>
+                {isChangingPassword ? "Changing..." : "Change Password"}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 

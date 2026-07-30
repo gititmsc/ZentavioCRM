@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ITMLogo } from "@/components/brand/ITMLogo";
 import { useAuth } from "@/context/AuthContext";
 import { authService } from "@/services/authService";
@@ -35,8 +35,11 @@ const FEATURES = [
 export default function Login() {
   const navigate = useNavigate();
   const { setSession } = useAuth();
+  const [searchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(
+    searchParams.get("reason") === "expired" ? "Your session has expired. Please log in again." : null
+  );
 
   const {
     register,
@@ -188,9 +191,9 @@ export default function Login() {
                 <input id="rememberMe" type="checkbox" {...register("rememberMe")} />
                 Remember Me
               </label>
-              <a className="login-forgot" href="/forgot-password">
+              <Link className="login-forgot" to="/forgot-password">
                 Forgot Password?
-              </a>
+              </Link>
             </div>
 
             <button type="submit" className="login-submit" disabled={isSubmitting} aria-busy={isSubmitting}>

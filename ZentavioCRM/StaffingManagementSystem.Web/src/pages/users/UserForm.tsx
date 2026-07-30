@@ -8,16 +8,22 @@ import { territoryService, type Territory } from "@/services/territoryService";
 import { UserAvatar } from "@/components/users/UserAvatar";
 import { emailPatternRule } from "@/utils/validation";
 import { useAuth } from "@/context/AuthContext";
+import { PermissionCodes } from "@/services/permissionCodes";
 
 // isActive only applies in edit mode (new users are always created active); kept on one
 // form type so the same fields/inputs work for both create and edit.
 type FormValues = CreateUserRequest & { isActive: boolean };
 
+interface ResetPasswordFormValues {
+  newPassword: string;
+}
+
 export default function UserForm() {
   const { id } = useParams<{ id: string }>();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
-  const { user: currentUser, bumpAvatarVersion } = useAuth();
+  const { user: currentUser, bumpAvatarVersion, hasPermission } = useAuth();
+  const canManage = hasPermission(PermissionCodes.UsersManage);
 
   const [roles, setRoles] = useState<Role[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -110,6 +116,32 @@ export default function UserForm() {
     setHasProfilePhoto(true);
     setPhotoVersion((v) => v + 1);
     if (currentUser && id === currentUser.id) bumpAvatarVersion();
+  };
+
+  const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
+  const [resetPasswordSuccess, setResetPasswordSuccess] = useState<string | null>(null);
+
+  const {
+    register: registerResetPassword,
+    handleSubmit: handleResetPasswordSubmit,
+    reset: resetResetPasswordForm,
+    formState: { errors: resetPasswordErrors, isSubmitting: isResettingPassword },
+  } = useForm<ResetPasswordFormValues>({ defaultValues: { newPassword: "" } });
+
+  const onAdminResetPassword = async (values: ResetPasswordFormValues) => {
+    if (!id) return;
+
+    setResetPasswordError(null);
+    setResetPasswordSuccess(null);
+
+    const result = await userService.resetPassword(id, values.newPassword);
+    if (!result.success) {
+      setResetPasswordError(result.message || "Unable to reset password.");
+      return;
+    }
+
+    setResetPasswordSuccess("Password reset. The user has been signed out of all devices.");
+    resetResetPasswordForm({ newPassword: "" });
   };
 
   const handleRemovePhoto = async () => {
@@ -212,6 +244,42 @@ export default function UserForm() {
                   onChange={handlePhotoChange}
                 />
               </div>
+            </div>
+          )}
+
+          {isEditMode && id && canManage && (
+            <div className="border rounded-3 p-3 mb-4">
+              <h2 className="h6 fw-semibold mb-2">Reset Password</h2>
+              <p className="text-muted small mb-3">
+                Sets a new password for this user without needing their current one, and signs them out of every
+                device. Use this if a user is locked out or an account may be compromised.
+              </p>
+
+              {resetPasswordError && <div className="alert alert-danger py-2">{resetPasswordError}</div>}
+              {resetPasswordSuccess && <div className="alert alert-success py-2">{resetPasswordSuccess}</div>}
+
+              <form onSubmit={handleResetPasswordSubmit(onAdminResetPassword)} noValidate className="row g-2 align-items-end">
+                <div className="col-md-6">
+                  <label className="form-label small">New Password</label>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    className={`form-control form-control-sm ${resetPasswordErrors.newPassword ? "is-invalid" : ""}`}
+                    {...registerResetPassword("newPassword", {
+                      required: "A new password is required.",
+                      minLength: { value: 8, message: "Password must be at least 8 characters." },
+                    })}
+                  />
+                  {resetPasswordErrors.newPassword && (
+                    <div className="invalid-feedback">{resetPasswordErrors.newPassword.message}</div>
+                  )}
+                </div>
+                <div className="col-md-3">
+                  <button type="submit" className="btn btn-sm btn-outline-danger" disabled={isResettingPassword}>
+                    {isResettingPassword ? "Resetting..." : "Reset Password"}
+                  </button>
+                </div>
+              </form>
             </div>
           )}
 

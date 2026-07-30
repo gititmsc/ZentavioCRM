@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using ZentavioCRM.Core.Configuration;
 using ZentavioCRM.Core.Interfaces;
+using ZentavioCRM.Infrastructure.Email;
 using ZentavioCRM.Infrastructure.Multitenancy;
 using ZentavioCRM.Infrastructure.Persistence;
 using ZentavioCRM.Infrastructure.Security;
@@ -19,6 +20,8 @@ namespace ZentavioCRM.Infrastructure.Extensions
         {
             services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
             services.Configure<TenancySettings>(configuration.GetSection(TenancySettings.SectionName));
+            services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
+            services.Configure<FrontendSettings>(configuration);
 
             // Scoped per request. TenantResolutionMiddleware populates this before any controller
             // action runs; AppDbContext's options factory below reads it to pick the right database.
@@ -56,6 +59,8 @@ namespace ZentavioCRM.Infrastructure.Extensions
 
             services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+            services.AddScoped<ISecureTokenGenerator, SecureTokenGenerator>();
+            services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
 
             return services;

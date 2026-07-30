@@ -24,6 +24,8 @@ namespace ZentavioCRM.Repositories.Extensions
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IDocumentRepository, DocumentRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
 
             return services;
         }

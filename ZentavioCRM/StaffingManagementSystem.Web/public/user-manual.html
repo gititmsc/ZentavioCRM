@@ -428,13 +428,13 @@
 
       <h3>2.1 Logging in</h3>
       <p>Go to the login screen and enter your email address and password (minimum 8 characters). Check <strong>Remember Me</strong> to stay signed in on this device between browser sessions; leave it unchecked and your session ends when you close the browser tab.</p>
-      <div class="callout gap">
-        <span class="callout-title">Known Gap &mdash; Session expiry</span>
-        Your sign-in session (access token) expires after <strong>15 minutes</strong>. There is currently no automatic renewal and no "your session expired, please log in again" message &mdash; API calls will simply start failing. If the app seems to stop responding to actions, refresh the page and log in again.
+      <div class="callout rule">
+        <span class="callout-title">Behavior &mdash; Session renewal</span>
+        Your sign-in session's access token expires after <strong>15 minutes</strong>, but the app renews it automatically in the background using a longer-lived refresh token &mdash; you generally won't notice this happening. A refresh token is valid for 7 days (or until you log out), after which you'll be returned to the login screen with a clear "Your session has expired. Please log in again." message instead of actions silently failing.
       </div>
-      <div class="callout gap">
-        <span class="callout-title">Known Gap &mdash; Forgot Password / SSO</span>
-        The <em>Forgot Password?</em> link is shown on the login screen but is <strong>not functional yet</strong>. There is also no password-reset or password-change feature anywhere in the app once an account is created &mdash; contact your administrator if you need your password changed.
+      <div class="callout rule">
+        <span class="callout-title">Behavior &mdash; Forgot Password / Change Password</span>
+        The <em>Forgot Password?</em> link on the login screen emails a reset link to the account's address (valid for 60 minutes, single-use). Signed-in users can also change their own password any time from <strong>My Profile</strong> (requires the current password); an administrator with the Users.Manage permission can reset any user's password from that user's edit screen without needing their current password. Any password change or reset signs the account out of every other device.
       </div>
 
       <h3>2.2 The Dashboard</h3>
@@ -493,6 +493,18 @@
         <span class="callout-title">Business rule</span>
         You cannot delegate to yourself, and End Date must be on or after Start Date. Only the person who created a delegation can cancel it &mdash; cancelling someone else's delegation (e.g. by guessing an ID) returns a generic "not found" response.
       </div>
+
+      <h3>3.3 Change Password</h3>
+      <ol class="steps">
+        <li>On <strong>My Profile</strong>, scroll to <strong>Change Password</strong>.</li>
+        <li>Enter your current password, then a new password (minimum 8 characters) twice to confirm.</li>
+        <li>Click <strong>Change Password</strong>.</li>
+      </ol>
+      <div class="callout rule">
+        <span class="callout-title">Behavior</span>
+        Changing your password signs you out of every <strong>other</strong> device/session, but keeps you signed in here &mdash; the page silently swaps in a fresh session behind the scenes so you don't need to log back in yourself.
+      </div>
+      <p>If you don't know your current password, use <strong>Forgot Password?</strong> on the login screen (see <a href="#getting-started">section 2.1</a>) instead, or ask an administrator with <span class="perm-pill">Users.Manage</span> to reset it for you from the Users screen (see <a href="#users">section 11</a>).</p>
     </section>
 
     <!-- ============================================================ -->
@@ -713,9 +725,20 @@
       </table>
       <div class="callout gap">
         <span class="callout-title">Known Gap</span>
-        Users are never permanently deleted &mdash; there is no delete function at all, only Active/Inactive. There is also no password reset or change feature after account creation; if a user forgets their password, an administrator currently has no in-app way to issue a new one. A deactivated user cannot log in (a deliberately vague "invalid email or password" message is shown, rather than revealing the account exists but is inactive).
+        Users are never permanently deleted &mdash; there is no delete function at all, only Active/Inactive. A deactivated user cannot log in (a deliberately vague "invalid email or password" message is shown, rather than revealing the account exists but is inactive).
       </div>
       <p>The user's own profile photo is managed from <a href="#my-profile">My Profile</a>, or by an administrator from this Users screen.</p>
+
+      <h3>11.1 Resetting a User's Password</h3>
+      <p>An administrator holding <span class="perm-pill">Users.Manage</span> can set a new password for any user directly from that user's edit screen, without needing to know their current password &mdash; useful if a user is locked out or an account may be compromised.</p>
+      <ol class="steps">
+        <li>Open the user's edit screen and find the <strong>Reset Password</strong> box near the top.</li>
+        <li>Enter a new password (minimum 8 characters) and click <strong>Reset Password</strong>.</li>
+      </ol>
+      <div class="callout rule">
+        <span class="callout-title">Behavior</span>
+        This immediately signs the user out of every device they're currently signed into &mdash; unlike a self-service password change (<a href="#my-profile">section 3.3</a>), there is no "keep this session alive" exception, since the admin isn't the one holding that session.
+      </div>
     </section>
 
     <!-- ============================================================ -->
@@ -836,8 +859,8 @@
       <h2 class="module-title">17. Known Limitations &amp; Test Focus Summary</h2>
       <p>A single checklist gathering every orange/red callout in this manual, for quick reference during test planning.</p>
       <ul>
-        <li>Access tokens expire after 15 minutes with no refresh and no "please log in again" message &mdash; the app just starts failing silently.</li>
-        <li>Forgot Password is visible but non-functional; there is no password reset/change flow anywhere post-creation.</li>
+        <li>Fixed: access tokens (15-minute lifetime) now renew automatically via a background refresh token, with a clear "please log in again" message once the refresh token itself expires or is revoked &mdash; instead of failing silently.</li>
+        <li>Fixed: Forgot Password now sends a real, single-use, 60-minute email link; signed-in users can also change their own password from My Profile, and Users.Manage admins can reset any user's password from that user's edit screen.</li>
         <li>Lead status transitions are enforced loosely on the server (only terminal-state and reason-required rules) even though the UI presents a stricter flow &mdash; test both the UI paths and out-of-sequence transitions directly. (Opportunity stage transitions, by contrast, are now fully enforced server-side to match the UI's linear pipeline.)</li>
         <li>Visibility Scope (Own/Team/All) applies only to Leads, Customers, Opportunities, and the Dashboard's summary counts &mdash; not to Quotations or Sales Orders.</li>
         <li>Out-of-scope records return a generic "not found," never "forbidden" &mdash; don't conflate the two when triaging.</li>

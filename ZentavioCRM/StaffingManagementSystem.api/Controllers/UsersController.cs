@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ZentavioCRM.Api.Extensions;
 using ZentavioCRM.Core.Common;
+using ZentavioCRM.Core.DTOs.Auth;
 using ZentavioCRM.Core.DTOs.Users;
 using ZentavioCRM.Services.Interfaces;
 
@@ -128,6 +129,42 @@ namespace ZentavioCRM.Api.Controllers
 
         private bool CanManagePhoto(Guid targetUserId)
             => targetUserId == User.GetUserId() || User.HasClaim(PermissionCodes.ClaimType, PermissionCodes.UsersManage);
+
+        /// <summary>
+        /// Self-service password change — only the account owner can call this (proof of identity
+        /// is the CurrentPassword field itself, so there's no reason to also allow admins here;
+        /// admins use <see cref="ResetPassword"/> instead, which is deliberately a distinct endpoint).
+        /// </summary>
+        [HttpPost("{id:guid}/change-password")]
+        public async Task<IActionResult> ChangePassword(Guid id, [FromBody] ChangePasswordRequest request)
+        {
+            if (id != User.GetUserId())
+            {
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ApiResponse<LoginResponseDto>.FailureResponse("Validation failed.", CollectErrors()));
+            }
+
+            var result = await _userService.ChangePasswordAsync(id, request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        /// <summary>Admin-initiated password reset for another user — requires Users.Manage.</summary>
+        [HttpPost("{id:guid}/reset-password")]
+        [Authorize(Policy = PermissionCodes.UsersManage)]
+        public async Task<IActionResult> ResetPassword(Guid id, [FromBody] AdminResetPasswordRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ApiResponse<bool>.FailureResponse("Validation failed.", CollectErrors()));
+            }
+
+            var result = await _userService.AdminResetPasswordAsync(id, request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
 
         private List<string> CollectErrors() => ModelState.Values
             .SelectMany(v => v.Errors)

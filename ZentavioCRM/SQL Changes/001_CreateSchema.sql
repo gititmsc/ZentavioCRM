@@ -914,3 +914,50 @@ BEGIN
     CREATE INDEX IX_Documents_EntityType_EntityId ON dbo.Documents (EntityType, EntityId);
 END
 GO
+
+-- ============================================================================
+-- RefreshTokens (long-lived credential backing silent access-token renewal — see
+-- RefreshToken.cs; only a SHA-256 hash of the raw token is ever stored)
+-- ============================================================================
+IF OBJECT_ID(N'dbo.RefreshTokens', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.RefreshTokens
+    (
+        Id                   UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_RefreshTokens_Id DEFAULT NEWID(),
+        UserId               UNIQUEIDENTIFIER NOT NULL,
+        TokenHash            NVARCHAR(128)    NOT NULL,
+        ExpiresAtUtc         DATETIME2        NOT NULL,
+        CreatedAtUtc         DATETIME2        NOT NULL,
+        RevokedAtUtc         DATETIME2        NULL,
+        ReplacedByTokenHash  NVARCHAR(128)    NULL,
+        CONSTRAINT PK_RefreshTokens PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT FK_RefreshTokens_User FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE NO ACTION
+    );
+
+    CREATE UNIQUE INDEX IX_RefreshTokens_TokenHash ON dbo.RefreshTokens (TokenHash);
+    CREATE INDEX IX_RefreshTokens_UserId ON dbo.RefreshTokens (UserId);
+END
+GO
+
+-- ============================================================================
+-- PasswordResetTokens (short-lived, single-use token backing the "Forgot Password?" email
+-- flow — see PasswordResetToken.cs; only a SHA-256 hash of the raw token is ever stored)
+-- ============================================================================
+IF OBJECT_ID(N'dbo.PasswordResetTokens', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.PasswordResetTokens
+    (
+        Id             UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_PasswordResetTokens_Id DEFAULT NEWID(),
+        UserId         UNIQUEIDENTIFIER NOT NULL,
+        TokenHash      NVARCHAR(128)    NOT NULL,
+        ExpiresAtUtc   DATETIME2        NOT NULL,
+        CreatedAtUtc   DATETIME2        NOT NULL,
+        UsedAtUtc      DATETIME2        NULL,
+        CONSTRAINT PK_PasswordResetTokens PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT FK_PasswordResetTokens_User FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE NO ACTION
+    );
+
+    CREATE UNIQUE INDEX IX_PasswordResetTokens_TokenHash ON dbo.PasswordResetTokens (TokenHash);
+    CREATE INDEX IX_PasswordResetTokens_UserId ON dbo.PasswordResetTokens (UserId);
+END
+GO
