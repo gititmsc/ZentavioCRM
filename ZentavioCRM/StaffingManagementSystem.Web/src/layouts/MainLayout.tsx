@@ -28,7 +28,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export function MainLayout() {
-  const { user, logout, hasPermission } = useAuth();
+  const { user, logout, hasPermission, avatarVersion } = useAuth();
 
   const visibleNavItems = NAV_ITEMS.filter(
     (item) => !item.requiresAnyOf || item.requiresAnyOf.some((code) => hasPermission(code))
@@ -68,7 +68,7 @@ export function MainLayout() {
       <div className="app-main">
         <header className="app-topbar">
           <NavLink to="/profile" className="app-topbar__user text-decoration-none">
-            {user && <UserAvatar userId={user.id} fullName={user.fullName} size={34} />}
+            {user && <UserAvatar userId={user.id} fullName={user.fullName} size={34} version={avatarVersion} />}
             <div>
               <div className="fw-semibold">{user?.fullName}</div>
               <div className="text-muted" style={{ fontSize: "0.78rem" }}>

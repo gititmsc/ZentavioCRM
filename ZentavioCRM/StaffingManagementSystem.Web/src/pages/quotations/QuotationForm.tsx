@@ -201,10 +201,15 @@ export default function QuotationForm() {
               <div className="row g-2 align-items-center mb-2" key={field.id}>
                 <div className="col-md-3">
                   <input
-                    className="form-control form-control-sm"
+                    className={`form-control form-control-sm ${
+                      errors.lineItems?.[index]?.productName ? "is-invalid" : ""
+                    }`}
                     placeholder="Product/service"
-                    {...register(`lineItems.${index}.productName`, { required: true })}
+                    {...register(`lineItems.${index}.productName`, { required: "Required" })}
                   />
+                  {errors.lineItems?.[index]?.productName && (
+                    <div className="invalid-feedback">Product/service name is required.</div>
+                  )}
                 </div>
                 <div className="col-md-2">
                   <input

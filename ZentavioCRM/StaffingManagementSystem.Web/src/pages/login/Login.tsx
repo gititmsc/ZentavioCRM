@@ -5,6 +5,7 @@ import { ITMLogo } from "@/components/brand/ITMLogo";
 import { useAuth } from "@/context/AuthContext";
 import { authService } from "@/services/authService";
 import { LoginPanelPattern } from "@/pages/login/LoginPanelPattern";
+import { requiredEmailRule } from "@/utils/validation";
 import "./Login.css";
 
 interface LoginFormValues {
@@ -135,13 +136,7 @@ export default function Login() {
                   aria-label="Email address"
                   aria-invalid={errors.email ? "true" : "false"}
                   aria-describedby={errors.email ? "email-error" : undefined}
-                  {...register("email", {
-                    required: "Email address is required.",
-                    pattern: {
-                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                      message: "Enter a valid email address.",
-                    },
-                  })}
+                  {...register("email", requiredEmailRule)}
                 />
               </div>
               {errors.email && (

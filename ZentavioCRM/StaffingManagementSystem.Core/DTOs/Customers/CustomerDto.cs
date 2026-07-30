@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using ZentavioCRM.Core.Enums;
 
 namespace ZentavioCRM.Core.DTOs.Customers
@@ -88,14 +89,18 @@ namespace ZentavioCRM.Core.DTOs.Customers
     {
         public CustomerType Type { get; set; } = CustomerType.Prospect;
 
+        [Required(ErrorMessage = "Legal name is required.")]
+        [MaxLength(200)]
         public string LegalName { get; set; } = string.Empty;
 
+        [MaxLength(200)]
         public string DisplayName { get; set; } = string.Empty;
 
         public string? Industry { get; set; }
 
         public string? Website { get; set; }
 
+        [EmailAddress(ErrorMessage = "Enter a valid email address.")]
         public string? Email { get; set; }
 
         public string? Phone { get; set; }

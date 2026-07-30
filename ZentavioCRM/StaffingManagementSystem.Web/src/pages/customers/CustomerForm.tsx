@@ -12,6 +12,7 @@ import type { LeadSource } from "@/services/leadService";
 import { userService, type ManagedUser } from "@/services/userService";
 import { DocumentsPanel } from "@/components/documents/DocumentsPanel";
 import { HistoryPanel } from "@/components/history/HistoryPanel";
+import { emailPatternRule } from "@/utils/validation";
 
 /** yyyy-MM-dd for a native <input type="date">, or "" if null. */
 function toDateInputValue(value: string | null): string {
@@ -219,7 +220,12 @@ export default function CustomerForm() {
 
             <div className="col-md-4">
               <label className="form-label">Email</label>
-              <input type="email" className="form-control" {...register("email")} />
+              <input
+                type="email"
+                className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                {...register("email", emailPatternRule)}
+              />
+              {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
             </div>
 
             <div className="col-md-4">
@@ -363,7 +369,14 @@ export default function CustomerForm() {
                 </div>
                 <div className="col-md-3">
                   <label className="form-label small">Email</label>
-                  <input className="form-control form-control-sm" {...register(`contacts.${index}.email`)} />
+                  <input
+                    type="email"
+                    className={`form-control form-control-sm ${errors.contacts?.[index]?.email ? "is-invalid" : ""}`}
+                    {...register(`contacts.${index}.email`, emailPatternRule)}
+                  />
+                  {errors.contacts?.[index]?.email && (
+                    <div className="invalid-feedback">{errors.contacts?.[index]?.email?.message}</div>
+                  )}
                 </div>
                 <div className="col-md-3">
                   <label className="form-label small">Mobile</label>

@@ -7,12 +7,18 @@ interface AuthContextValue {
   setSession: (user: AuthUser) => void;
   logout: () => void;
   hasPermission: (code: string) => boolean;
+  /** Bumped whenever the signed-in user's own profile photo changes, so any
+   *  <UserAvatar> showing the current user (e.g. the topbar) knows to refetch
+   *  even though its own props (userId/fullName) never changed. */
+  avatarVersion: number;
+  bumpAvatarVersion: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => authService.getStoredUser());
+  const [avatarVersion, setAvatarVersion] = useState(0);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -24,8 +30,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       },
       hasPermission: (code: string) => user?.permissions?.includes(code) ?? false,
+      avatarVersion,
+      bumpAvatarVersion: () => setAvatarVersion((v) => v + 1),
     }),
-    [user]
+    [user, avatarVersion]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

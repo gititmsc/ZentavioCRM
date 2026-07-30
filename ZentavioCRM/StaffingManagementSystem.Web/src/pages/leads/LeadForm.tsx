@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { leadService, type DuplicateMatch, type LeadSource, type SaveLeadRequest } from "@/services/leadService";
 import { userService, type ManagedUser } from "@/services/userService";
 import { territoryService, type Territory } from "@/services/territoryService";
+import { emailPatternRule } from "@/utils/validation";
 
 /** yyyy-MM-dd for a native <input type="date">, or "" if null. */
 function toDateInputValue(value: string | null): string {
@@ -190,7 +191,12 @@ export default function LeadForm() {
 
               <div className="col-md-6">
                 <label className="form-label">Email</label>
-                <input type="email" className="form-control" {...register("email", { onBlur: checkForDuplicates })} />
+                <input
+                  type="email"
+                  className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                  {...register("email", { onBlur: checkForDuplicates, ...emailPatternRule })}
+                />
+                {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
               </div>
 
               <div className="col-md-6">

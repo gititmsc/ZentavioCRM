@@ -18,7 +18,7 @@ interface DelegationFormValues {
 }
 
 export default function MyProfile() {
-  const { user } = useAuth();
+  const { user, bumpAvatarVersion } = useAuth();
 
   const [hasProfilePhoto, setHasProfilePhoto] = useState(false);
   const [photoVersion, setPhotoVersion] = useState(0);
@@ -82,6 +82,7 @@ export default function MyProfile() {
     }
     setHasProfilePhoto(true);
     setPhotoVersion((v) => v + 1);
+    bumpAvatarVersion();
   };
 
   const handleRemovePhoto = async () => {
@@ -95,6 +96,7 @@ export default function MyProfile() {
     }
     setHasProfilePhoto(false);
     setPhotoVersion((v) => v + 1);
+    bumpAvatarVersion();
   };
 
   const onCreateDelegation = async (values: DelegationFormValues) => {

@@ -16,10 +16,12 @@ interface UserAvatarProps {
   hasProfilePhoto?: boolean;
   size?: number;
   className?: string;
+  /** Bump this (e.g. AuthContext's avatarVersion) to force a refetch after the photo changes elsewhere — userId/fullName alone won't change when only the photo bytes do. */
+  version?: number | string;
 }
 
 /** Renders a user's uploaded avatar (fetched as an authenticated blob, since <img src> can't carry the Bearer token), or an initials circle if they have none. */
-export function UserAvatar({ userId, fullName, hasProfilePhoto, size = 36, className }: UserAvatarProps) {
+export function UserAvatar({ userId, fullName, hasProfilePhoto, size = 36, className, version }: UserAvatarProps) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export function UserAvatar({ userId, fullName, hasProfilePhoto, size = 36, class
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [userId, hasProfilePhoto]);
+  }, [userId, hasProfilePhoto, version]);
 
   const style = { width: size, height: size, minWidth: size, fontSize: Math.max(11, size * 0.4) };
 

@@ -291,10 +291,15 @@ export default function OpportunityForm() {
               <div className="row g-2 align-items-center mb-2" key={field.id}>
                 <div className="col-md-4">
                   <input
-                    className="form-control form-control-sm"
+                    className={`form-control form-control-sm ${
+                      errors.lineItems?.[index]?.productName ? "is-invalid" : ""
+                    }`}
                     placeholder="Product/service"
-                    {...register(`lineItems.${index}.productName`, { required: true })}
+                    {...register(`lineItems.${index}.productName`, { required: "Required" })}
                   />
+                  {errors.lineItems?.[index]?.productName && (
+                    <div className="invalid-feedback">Product/service name is required.</div>
+                  )}
                 </div>
                 <div className="col-md-2">
                   <input
@@ -375,8 +380,10 @@ export default function OpportunityForm() {
               <div className="row g-2 align-items-center mb-2" key={field.id}>
                 <div className="col-md-4">
                   <select
-                    className="form-select form-select-sm"
-                    {...register(`contacts.${index}.contactPersonId`, { required: true })}
+                    className={`form-select form-select-sm ${
+                      errors.contacts?.[index]?.contactPersonId ? "is-invalid" : ""
+                    }`}
+                    {...register(`contacts.${index}.contactPersonId`, { required: "Required" })}
                   >
                     <option value="">Select a contact</option>
                     {customerContacts.map((contact) => (
@@ -386,6 +393,9 @@ export default function OpportunityForm() {
                       </option>
                     ))}
                   </select>
+                  {errors.contacts?.[index]?.contactPersonId && (
+                    <div className="invalid-feedback">A buying-committee contact must be selected.</div>
+                  )}
                 </div>
                 <div className="col-md-3">
                   <select className="form-select form-select-sm" {...register(`contacts.${index}.role`)}>

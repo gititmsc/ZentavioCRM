@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using ZentavioCRM.Core.Enums;
 
 namespace ZentavioCRM.Core.DTOs.Customers
@@ -47,6 +48,7 @@ namespace ZentavioCRM.Core.DTOs.Customers
 
         public string? Department { get; set; }
 
+        [EmailAddress(ErrorMessage = "Enter a valid email address.")]
         public string? Email { get; set; }
 
         public string? Mobile { get; set; }

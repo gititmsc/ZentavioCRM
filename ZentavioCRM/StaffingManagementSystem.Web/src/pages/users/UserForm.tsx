@@ -6,6 +6,8 @@ import { roleService, type Role } from "@/services/roleService";
 import { departmentService, type Department } from "@/services/departmentService";
 import { territoryService, type Territory } from "@/services/territoryService";
 import { UserAvatar } from "@/components/users/UserAvatar";
+import { emailPatternRule } from "@/utils/validation";
+import { useAuth } from "@/context/AuthContext";
 
 // isActive only applies in edit mode (new users are always created active); kept on one
 // form type so the same fields/inputs work for both create and edit.
@@ -15,6 +17,7 @@ export default function UserForm() {
   const { id } = useParams<{ id: string }>();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
+  const { user: currentUser, bumpAvatarVersion } = useAuth();
 
   const [roles, setRoles] = useState<Role[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -106,6 +109,7 @@ export default function UserForm() {
     }
     setHasProfilePhoto(true);
     setPhotoVersion((v) => v + 1);
+    if (currentUser && id === currentUser.id) bumpAvatarVersion();
   };
 
   const handleRemovePhoto = async () => {
@@ -119,6 +123,7 @@ export default function UserForm() {
     }
     setHasProfilePhoto(false);
     setPhotoVersion((v) => v + 1);
+    if (currentUser && id === currentUser.id) bumpAvatarVersion();
   };
 
   const onSubmit = async (values: FormValues) => {
@@ -233,7 +238,11 @@ export default function UserForm() {
 
               <div className="col-md-4">
                 <label className="form-label">Last Name</label>
-                <input className="form-control" {...register("lastName")} />
+                <input
+                  className={`form-control ${errors.lastName ? "is-invalid" : ""}`}
+                  {...register("lastName", { required: "Last name is required." })}
+                />
+                {errors.lastName && <div className="invalid-feedback">{errors.lastName.message}</div>}
               </div>
 
               <div className="col-md-6">
@@ -242,7 +251,7 @@ export default function UserForm() {
                   type="email"
                   className={`form-control ${errors.email ? "is-invalid" : ""}`}
                   disabled={isEditMode}
-                  {...register("email", { required: "Email is required." })}
+                  {...register("email", { required: "Email is required.", ...emailPatternRule })}
                 />
                 {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
               </div>
