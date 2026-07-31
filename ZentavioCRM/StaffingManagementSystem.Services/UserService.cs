@@ -1,5 +1,4 @@
 using ZentavioCRM.Core.Common;
-using ZentavioCRM.Core.DTOs.Auth;
 using ZentavioCRM.Core.DTOs.Users;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Interfaces;
@@ -167,17 +166,17 @@ namespace ZentavioCRM.Services
             return ApiResponse<bool>.SuccessResponse(true, "Profile photo removed.");
         }
 
-        public async Task<ApiResponse<LoginResponseDto>> ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
+        public async Task<ApiResponse<ZentavioCRM.Core.DTOs.Auth.LoginResponseDto>> ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
         {
             var user = await _userRepository.GetByIdAsync(userId);
             if (user is null)
             {
-                return ApiResponse<LoginResponseDto>.FailureResponse("User not found.");
+                return ApiResponse<ZentavioCRM.Core.DTOs.Auth.LoginResponseDto>.FailureResponse("User not found.");
             }
 
             if (!_passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
             {
-                return ApiResponse<LoginResponseDto>.FailureResponse(
+                return ApiResponse<ZentavioCRM.Core.DTOs.Auth.LoginResponseDto>.FailureResponse(
                     "Current password is incorrect.",
                     ["Current password is incorrect."]);
             }
@@ -194,11 +193,11 @@ namespace ZentavioCRM.Services
             var sessionResult = await _authService.IssueSessionAsync(userId);
             if (!sessionResult.Success || sessionResult.Data is null)
             {
-                return ApiResponse<LoginResponseDto>.FailureResponse(
+                return ApiResponse<ZentavioCRM.Core.DTOs.Auth.LoginResponseDto>.FailureResponse(
                     "Password changed, but your session could not be refreshed. Please log in again.");
             }
 
-            return ApiResponse<LoginResponseDto>.SuccessResponse(sessionResult.Data, "Password changed.");
+            return ApiResponse<ZentavioCRM.Core.DTOs.Auth.LoginResponseDto>.SuccessResponse(sessionResult.Data, "Password changed.");
         }
 
         public async Task<ApiResponse<bool>> AdminResetPasswordAsync(Guid userId, AdminResetPasswordRequest request)

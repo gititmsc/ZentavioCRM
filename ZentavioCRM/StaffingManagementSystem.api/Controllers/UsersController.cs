@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ZentavioCRM.Api.Extensions;
 using ZentavioCRM.Core.Common;
-using ZentavioCRM.Core.DTOs.Auth;
 using ZentavioCRM.Core.DTOs.Users;
 using ZentavioCRM.Services.Interfaces;
 
@@ -145,7 +144,7 @@ namespace ZentavioCRM.Api.Controllers
 
             if (!ModelState.IsValid)
             {
-                return BadRequest(ApiResponse<LoginResponseDto>.FailureResponse("Validation failed.", CollectErrors()));
+                return BadRequest(ApiResponse<ZentavioCRM.Core.DTOs.Auth.LoginResponseDto>.FailureResponse("Validation failed.", CollectErrors()));
             }
 
             var result = await _userService.ChangePasswordAsync(id, request);

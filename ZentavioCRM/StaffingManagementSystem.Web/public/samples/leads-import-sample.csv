@@ -1,0 +1,3 @@
+CompanyName,ContactName,Email,Mobile,Industry,Source,Campaign,UtmSource,UtmMedium,UtmCampaign,UtmTerm,UtmContent,Budget,Timeline,ExpectedValue,Territory,Notes
+Acme Corporation,John Smith,john.smith@acme.com,+1 555 123 4567,Manufacturing,Website,Spring2026,google,cpc,spring_promo,crm software,ad_variant_a,50000,Q2 2026,75000,North America,Interested in the Professional plan.
+Globex Inc,Jane Doe,jane.doe@globex.com,+1 555 987 6543,Retail,Referral,,,,,,,,Immediate,25000,EMEA,Referred by an existing customer.

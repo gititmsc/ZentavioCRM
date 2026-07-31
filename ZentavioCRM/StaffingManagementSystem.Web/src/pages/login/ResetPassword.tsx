@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useSearchParams } from "react-router-dom";
-import { ITMLogo } from "@/components/brand/ITMLogo";
+import { ZentavioLogo } from "@/components/brand/ZentavioLogo";
 import { apiClient } from "@/services/apiClient";
 import "./Login.css";
 
@@ -63,7 +63,7 @@ export default function ResetPassword() {
     <div className="login-page">
       <main className="login-content">
         <div className="login-card">
-          <ITMLogo height={32} className="mb-1" />
+          <ZentavioLogo height={32} className="mb-1" />
 
           <h2 className="login-card__heading">Reset Password</h2>
           {!succeeded && <p className="login-card__subtitle">Choose a new password for your account.</p>}

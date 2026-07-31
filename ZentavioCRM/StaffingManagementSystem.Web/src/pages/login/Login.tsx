@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ITMLogo } from "@/components/brand/ITMLogo";
+import { ZentavioLogo } from "@/components/brand/ZentavioLogo";
 import { useAuth } from "@/context/AuthContext";
 import { authService } from "@/services/authService";
 import { LoginPanelPattern } from "@/pages/login/LoginPanelPattern";
@@ -78,7 +78,7 @@ export default function Login() {
         </div>
 
         <div className="login-panel__content">
-          <ITMLogo height={40} variant="light" />
+          <ZentavioLogo height={40} variant="light" />
 
           <h1 className="login-panel__heading">ZentavioCRM</h1>
           <p className="login-panel__subtitle">{"Manage Customers.\nAccelerate Sales.\nGrow Every Relationship."}</p>
@@ -111,7 +111,7 @@ export default function Login() {
       {/* Right login panel */}
       <main className="login-content">
         <div className="login-card">
-          <ITMLogo height={32} className="mb-1" />
+          <ZentavioLogo height={32} className="mb-1" />
 
           <h2 className="login-card__heading">Welcome Back</h2>
           <p className="login-card__subtitle">Sign in to continue to ZentavioCRM</p>

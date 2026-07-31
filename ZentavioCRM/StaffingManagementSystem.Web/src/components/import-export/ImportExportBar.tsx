@@ -8,10 +8,12 @@ interface ImportExportBarProps {
   onExport: () => Promise<Blob>;
   onImport: (file: File) => Promise<ApiResponse<ImportResult>>;
   onImportComplete?: () => void;
+  /** Outer wrapper className, e.g. "ms-auto" to right-align inside a flex row. Defaults to "mb-3". */
+  className?: string;
 }
 
 /** Shared Export/Import buttons — reused by LeadsList and CustomersList. */
-export function ImportExportBar({ entityLabel, onExport, onImport, onImportComplete }: ImportExportBarProps) {
+export function ImportExportBar({ entityLabel, onExport, onImport, onImportComplete, className = "mb-3" }: ImportExportBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -52,7 +54,7 @@ export function ImportExportBar({ entityLabel, onExport, onImport, onImportCompl
   };
 
   return (
-    <div className="mb-3">
+    <div className={className}>
       <div className="d-flex gap-2">
         <button type="button" className="btn btn-outline-secondary" onClick={handleExport} disabled={isExporting}>
           <i className="bi bi-download me-1" aria-hidden="true" />

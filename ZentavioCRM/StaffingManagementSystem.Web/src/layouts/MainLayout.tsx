@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { ITMLogo } from "@/components/brand/ITMLogo";
+import { ZentavioLogo } from "@/components/brand/ZentavioLogo";
 import { useAuth } from "@/context/AuthContext";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -38,7 +38,7 @@ export function MainLayout() {
     <div className="app-shell">
       <aside className="app-sidebar">
         <div className="app-sidebar__brand">
-          <ITMLogo height={28} variant="light" />
+          <ZentavioLogo height={28} variant="light" />
         </div>
 
         <nav className="app-sidebar__nav">

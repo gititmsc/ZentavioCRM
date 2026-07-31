@@ -85,14 +85,7 @@ export default function LeadsList() {
         )}
       </div>
 
-      <ImportExportBar
-        entityLabel="Leads"
-        onExport={leadService.exportCsv}
-        onImport={leadService.importCsv}
-        onImportComplete={() => load(search, status, page)}
-      />
-
-      <div className="d-flex gap-2 mb-3">
+      <div className="d-flex gap-2 mb-3 align-items-start">
         <form className="d-flex" style={{ maxWidth: 320 }} onSubmit={handleSearchSubmit}>
           <input
             className="form-control me-2"
@@ -121,6 +114,14 @@ export default function LeadsList() {
             </option>
           ))}
         </select>
+
+        <ImportExportBar
+          className="ms-auto"
+          entityLabel="Leads"
+          onExport={leadService.exportCsv}
+          onImport={leadService.importCsv}
+          onImportComplete={() => load(search, status, page)}
+        />
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}

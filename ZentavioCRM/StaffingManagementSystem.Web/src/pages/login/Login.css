@@ -27,7 +27,7 @@
   opacity: 0.5;
   background-image:
     radial-gradient(circle at 82% 8%, rgba(255, 255, 255, 0.09) 0, transparent 40%),
-    radial-gradient(circle at 8% 92%, rgba(229, 57, 53, 0.25) 0, transparent 45%);
+    radial-gradient(circle at 8% 92%, rgba(var(--itm-teal-rgb), 0.28) 0, transparent 45%);
 }
 
 .login-panel__pattern svg {
@@ -53,7 +53,7 @@
 .login-panel__subtitle {
   font-size: 1.05rem;
   font-weight: 500;
-  color: #ffe0de;
+  color: #a9e8f5;
   margin-bottom: 1rem;
   white-space: pre-line;
   line-height: 1.5;
@@ -102,7 +102,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: linear-gradient(135deg, rgba(47, 128, 237, 0.35), rgba(229, 57, 53, 0.35));
+  background: linear-gradient(135deg, rgba(var(--itm-accent-rgb), 0.35), rgba(var(--itm-teal-rgb), 0.35));
   font-size: 1.15rem;
 }
 
@@ -190,15 +190,15 @@
 
 .login-input-group:focus-within {
   border-color: var(--itm-accent);
-  box-shadow: 0 0 0 3px rgba(47, 128, 237, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--itm-accent-rgb), 0.15);
 }
 
 .login-input-group.is-invalid {
-  border-color: var(--itm-secondary);
+  border-color: var(--itm-danger);
 }
 
 .login-input-group.is-invalid:focus-within {
-  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--itm-danger-rgb), 0.15);
 }
 
 .login-input-group__icon {
@@ -239,7 +239,7 @@
 
 .login-field__error {
   font-size: 0.78rem;
-  color: var(--itm-secondary);
+  color: var(--itm-danger);
   margin-top: 0.35rem;
 }
 
@@ -312,7 +312,7 @@
   gap: 0.5rem;
   font-size: 0.85rem;
   color: #fff;
-  background: var(--itm-secondary);
+  background: var(--itm-danger);
   border-radius: var(--itm-radius-control);
   padding: 0.65rem 0.85rem;
   margin-bottom: 1.1rem;

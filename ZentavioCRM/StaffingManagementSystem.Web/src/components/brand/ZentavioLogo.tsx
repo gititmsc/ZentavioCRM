@@ -1,6 +1,6 @@
 import logoUrl from "@/assets/logo.png";
 
-interface ITMLogoProps {
+interface ZentavioLogoProps {
   /** Rendered height of the logo in pixels. Width scales proportionally. */
   height?: number;
   /**
@@ -11,9 +11,9 @@ interface ITMLogoProps {
   className?: string;
 }
 
-/** ITMusketeers Consultancy Services brand mark. */
-export function ITMLogo({ height = 40, variant = "dark", className }: ITMLogoProps) {
-  const image = <img src={logoUrl} alt="ITMusketeers Consultancy Services" height={height} style={{ display: "block" }} />;
+/** Zentavio brand mark. */
+export function ZentavioLogo({ height = 40, variant = "dark", className }: ZentavioLogoProps) {
+  const image = <img src={logoUrl} alt="Zentavio" height={height} style={{ display: "block" }} />;
 
   if (variant === "light") {
     return (

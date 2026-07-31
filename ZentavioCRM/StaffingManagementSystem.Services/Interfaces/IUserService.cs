@@ -1,5 +1,4 @@
 using ZentavioCRM.Core.Common;
-using ZentavioCRM.Core.DTOs.Auth;
 using ZentavioCRM.Core.DTOs.Users;
 
 namespace ZentavioCRM.Services.Interfaces
@@ -27,7 +26,7 @@ namespace ZentavioCRM.Services.Interfaces
         /// so the session that made this change continues seamlessly while every other
         /// device/session is signed out.
         /// </summary>
-        Task<ApiResponse<LoginResponseDto>> ChangePasswordAsync(Guid userId, ChangePasswordRequest request);
+        Task<ApiResponse<ZentavioCRM.Core.DTOs.Auth.LoginResponseDto>> ChangePasswordAsync(Guid userId, ChangePasswordRequest request);
 
         /// <summary>
         /// Admin-initiated password reset for another user — no current-password proof required.
