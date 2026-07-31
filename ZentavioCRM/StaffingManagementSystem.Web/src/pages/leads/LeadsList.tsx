@@ -121,6 +121,7 @@ export default function LeadsList() {
           onExport={leadService.exportCsv}
           onImport={leadService.importCsv}
           onImportComplete={() => load(search, status, page)}
+          sampleFileUrl="/samples/leads-import-sample.csv"
         />
       </div>
 

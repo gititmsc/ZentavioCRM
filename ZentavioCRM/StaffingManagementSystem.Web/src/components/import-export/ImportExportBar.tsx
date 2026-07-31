@@ -10,10 +10,19 @@ interface ImportExportBarProps {
   onImportComplete?: () => void;
   /** Outer wrapper className, e.g. "ms-auto" to right-align inside a flex row. Defaults to "mb-3". */
   className?: string;
+  /** Public URL of a blank sample file matching the expected import columns, e.g. "/samples/leads-import-sample.csv". Omit to hide the link. */
+  sampleFileUrl?: string;
 }
 
 /** Shared Export/Import buttons — reused by LeadsList and CustomersList. */
-export function ImportExportBar({ entityLabel, onExport, onImport, onImportComplete, className = "mb-3" }: ImportExportBarProps) {
+export function ImportExportBar({
+  entityLabel,
+  onExport,
+  onImport,
+  onImportComplete,
+  className = "mb-3",
+  sampleFileUrl,
+}: ImportExportBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -71,6 +80,12 @@ export function ImportExportBar({ entityLabel, onExport, onImport, onImportCompl
           className="d-none"
           onChange={handleFileChange}
         />
+        {sampleFileUrl && (
+          <a href={sampleFileUrl} download className="btn btn-link align-self-center px-0">
+            <i className="bi bi-file-earmark-arrow-down me-1" aria-hidden="true" />
+            Download sample format
+          </a>
+        )}
       </div>
 
       {importError && (
