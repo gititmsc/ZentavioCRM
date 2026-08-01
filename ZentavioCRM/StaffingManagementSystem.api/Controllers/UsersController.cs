@@ -31,6 +31,23 @@ namespace ZentavioCRM.Api.Controllers
             return Ok(ApiResponse<IReadOnlyList<UserDto>>.SuccessResponse(users));
         }
 
+        /// <summary>Paged, filterable, sortable user search — powers the Users administration list grid. Gated on Users.View (same convention as Roles/Departments/Territories' equivalent endpoints), not Users.Manage — a viewer can browse the grid read-only, same as GetAll above, just paged/sortable instead of the full unpaged directory.</summary>
+        [HttpGet("search")]
+        [Authorize(Policy = PermissionCodes.UsersView)]
+        public async Task<IActionResult> Search(
+            [FromQuery] string? search,
+            [FromQuery] Guid? roleId,
+            [FromQuery] Guid? departmentId,
+            [FromQuery] bool? isActive,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = true)
+        {
+            var result = await _userService.SearchAsync(search, roleId, departmentId, isActive, page, pageSize, sortBy, sortDescending);
+            return Ok(ApiResponse<PagedResult<UserDto>>.SuccessResponse(result));
+        }
+
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)
         {

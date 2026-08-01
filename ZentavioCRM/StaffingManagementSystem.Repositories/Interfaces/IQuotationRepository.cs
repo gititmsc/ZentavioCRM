@@ -7,8 +7,10 @@ namespace ZentavioCRM.Repositories.Interfaces
     {
         Task<Quotation?> GetByIdAsync(Guid id);
 
+        /// <param name="sortBy">Column key (case-insensitive): quotationNumber, opportunityName, customerName, grandTotal, validUntil, assignedToUserName, status, createdAtUtc. Unrecognized/null falls back to createdAtUtc.</param>
         Task<(IReadOnlyList<Quotation> Items, int TotalCount)> SearchAsync(
-            string? search, QuotationStatus? status, Guid? opportunityId, Guid? customerId, int page, int pageSize);
+            string? search, QuotationStatus? status, Guid? opportunityId, Guid? customerId, int page, int pageSize,
+            string? sortBy = null, bool sortDescending = true);
 
         /// <summary>All versions of every quotation sharing this number, newest first — used to resolve "the latest version" and to list a quotation's history.</summary>
         Task<IReadOnlyList<Quotation>> GetVersionsAsync(string quotationNumber);

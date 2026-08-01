@@ -6,8 +6,10 @@ namespace ZentavioCRM.Services.Interfaces
 {
     public interface ICustomerService
     {
+        /// <param name="sortBy">Column key (case-insensitive): customerNumber, displayName, type, industry, healthStatus, assignedToUserName, isActive, createdAtUtc. Unrecognized/null falls back to createdAtUtc.</param>
         Task<PagedResult<CustomerListItemDto>> SearchAsync(
-            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize, Guid? currentUserId = null);
+            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize, Guid? currentUserId = null,
+            string? sortBy = null, bool sortDescending = true);
 
         Task<ApiResponse<CustomerDto>> GetByIdAsync(Guid id, Guid? currentUserId = null);
 

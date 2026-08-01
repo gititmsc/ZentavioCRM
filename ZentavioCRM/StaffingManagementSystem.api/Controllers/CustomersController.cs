@@ -29,9 +29,11 @@ namespace ZentavioCRM.Api.Controllers
             [FromQuery] Guid? assignedToUserId,
             [FromQuery] bool? isActive,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20)
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = true)
         {
-            var result = await _customerService.SearchAsync(search, assignedToUserId, isActive, page, pageSize, User.GetUserId());
+            var result = await _customerService.SearchAsync(search, assignedToUserId, isActive, page, pageSize, User.GetUserId(), sortBy, sortDescending);
             return Ok(ApiResponse<PagedResult<CustomerListItemDto>>.SuccessResponse(result));
         }
 

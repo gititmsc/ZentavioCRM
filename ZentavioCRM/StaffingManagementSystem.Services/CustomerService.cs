@@ -38,13 +38,14 @@ namespace ZentavioCRM.Services
         }
 
         public async Task<PagedResult<CustomerListItemDto>> SearchAsync(
-            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize, Guid? currentUserId = null)
+            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize, Guid? currentUserId = null,
+            string? sortBy = null, bool sortDescending = true)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize is < 1 or > 200 ? 20 : pageSize;
 
             AccessScope? accessScope = currentUserId is null ? null : await _accessScopeService.GetForUserAsync(currentUserId.Value);
-            var (items, totalCount) = await _customerRepository.SearchAsync(search, assignedToUserId, isActive, page, pageSize, accessScope);
+            var (items, totalCount) = await _customerRepository.SearchAsync(search, assignedToUserId, isActive, page, pageSize, accessScope, sortBy, sortDescending);
 
             return new PagedResult<CustomerListItemDto>
             {

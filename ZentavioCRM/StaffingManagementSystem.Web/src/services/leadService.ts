@@ -115,6 +115,8 @@ export interface LeadSearchParams {
   assignedToUserId?: string;
   page?: number;
   pageSize?: number;
+  sortBy?: string;
+  sortDescending?: boolean;
 }
 
 export interface ConvertLeadResult {

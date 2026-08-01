@@ -27,6 +27,20 @@ namespace ZentavioCRM.Api.Controllers
             return Ok(ApiResponse<IReadOnlyList<TerritoryDto>>.SuccessResponse(territories));
         }
 
+        /// <summary>Paged, filterable, sortable territory search — powers the Territories administration list grid.</summary>
+        [HttpGet("search")]
+        [Authorize(Policy = PermissionCodes.TerritoriesView)]
+        public async Task<IActionResult> Search(
+            [FromQuery] string? search,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
+        {
+            var result = await _territoryService.SearchAsync(search, page, pageSize, sortBy, sortDescending);
+            return Ok(ApiResponse<PagedResult<TerritoryDto>>.SuccessResponse(result));
+        }
+
         [HttpGet("{id:guid}")]
         [Authorize(Policy = PermissionCodes.TerritoriesView)]
         public async Task<IActionResult> GetById(Guid id)

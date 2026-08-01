@@ -7,8 +7,10 @@ namespace ZentavioCRM.Repositories.Interfaces
     {
         Task<SalesOrder?> GetByIdAsync(Guid id);
 
+        /// <param name="sortBy">Column key (case-insensitive): salesOrderNumber, quotationNumber, customerName, grandTotal, orderDate, expectedDeliveryDate, status, createdAtUtc. Unrecognized/null falls back to createdAtUtc.</param>
         Task<(IReadOnlyList<SalesOrder> Items, int TotalCount)> SearchAsync(
-            string? search, SalesOrderStatus? status, Guid? customerId, int page, int pageSize);
+            string? search, SalesOrderStatus? status, Guid? customerId, int page, int pageSize,
+            string? sortBy = null, bool sortDescending = true);
 
         Task<string> GetNextSalesOrderNumberAsync();
 

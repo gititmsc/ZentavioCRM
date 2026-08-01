@@ -6,8 +6,10 @@ namespace ZentavioCRM.Services.Interfaces
 {
     public interface IOpportunityService
     {
+        /// <param name="sortBy">Column key (case-insensitive): opportunityNumber, name, customerName, value, expectedCloseDate, assignedToUserName, stage, createdAtUtc. Unrecognized/null falls back to createdAtUtc.</param>
         Task<PagedResult<OpportunityListItemDto>> SearchAsync(
-            string? search, OpportunityStage? stage, Guid? customerId, Guid? assignedToUserId, int page, int pageSize, Guid? currentUserId = null);
+            string? search, OpportunityStage? stage, Guid? customerId, Guid? assignedToUserId, int page, int pageSize, Guid? currentUserId = null,
+            string? sortBy = null, bool sortDescending = true);
 
         Task<ApiResponse<OpportunityDto>> GetByIdAsync(Guid id, Guid? currentUserId = null);
 

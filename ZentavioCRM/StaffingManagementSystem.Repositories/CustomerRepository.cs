@@ -26,7 +26,8 @@ namespace ZentavioCRM.Repositories
             => WithDetails().FirstOrDefaultAsync(c => c.Id == id);
 
         public async Task<(IReadOnlyList<Customer> Items, int TotalCount)> SearchAsync(
-            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize, AccessScope? accessScope = null)
+            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize,
+            AccessScope? accessScope = null, string? sortBy = null, bool sortDescending = true)
         {
             var query = _dbContext.Customers.Include(c => c.AssignedToUser).AsQueryable();
 
@@ -72,13 +73,33 @@ namespace ZentavioCRM.Repositories
 
             var totalCount = await query.CountAsync();
 
-            var items = await query
-                .OrderByDescending(c => c.CreatedAtUtc)
+            var items = await ApplySort(query, sortBy, sortDescending)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             return (items, totalCount);
+        }
+
+        /// <summary>
+        /// Column-key-driven sort, kept as an explicit switch (not reflection/dynamic-LINQ) so every
+        /// sortable column is a real, EF-translatable expression. Unrecognized/null sortBy falls back to CreatedAtUtc.
+        /// </summary>
+        private static IOrderedQueryable<Customer> ApplySort(IQueryable<Customer> query, string? sortBy, bool sortDescending)
+        {
+            return sortBy?.Trim().ToLowerInvariant() switch
+            {
+                "customernumber" => sortDescending ? query.OrderByDescending(c => c.CustomerNumber) : query.OrderBy(c => c.CustomerNumber),
+                "displayname" => sortDescending ? query.OrderByDescending(c => c.DisplayName) : query.OrderBy(c => c.DisplayName),
+                "type" => sortDescending ? query.OrderByDescending(c => c.Type) : query.OrderBy(c => c.Type),
+                "industry" => sortDescending ? query.OrderByDescending(c => c.Industry) : query.OrderBy(c => c.Industry),
+                "healthstatus" => sortDescending ? query.OrderByDescending(c => c.HealthStatus) : query.OrderBy(c => c.HealthStatus),
+                "assignedtousername" => sortDescending
+                    ? query.OrderByDescending(c => c.AssignedToUser!.FirstName).ThenByDescending(c => c.AssignedToUser!.LastName)
+                    : query.OrderBy(c => c.AssignedToUser!.FirstName).ThenBy(c => c.AssignedToUser!.LastName),
+                "isactive" => sortDescending ? query.OrderByDescending(c => c.IsActive) : query.OrderBy(c => c.IsActive),
+                _ => sortDescending ? query.OrderByDescending(c => c.CreatedAtUtc) : query.OrderBy(c => c.CreatedAtUtc),
+            };
         }
 
         public async Task<string> GetNextCustomerNumberAsync()

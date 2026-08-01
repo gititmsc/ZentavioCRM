@@ -7,6 +7,10 @@ namespace ZentavioCRM.Services.Interfaces
     {
         Task<IReadOnlyList<DepartmentDto>> GetAllAsync();
 
+        /// <summary>Paged, filterable, sortable department search — powers the Departments administration list.</summary>
+        /// <param name="sortBy">Column key (case-insensitive): name, parentDepartmentName, userCount, isActive, createdAtUtc. Unrecognized/null falls back to name.</param>
+        Task<PagedResult<DepartmentDto>> SearchAsync(string? search, int page, int pageSize, string? sortBy = null, bool sortDescending = false);
+
         Task<ApiResponse<DepartmentDto>> GetByIdAsync(Guid id);
 
         Task<ApiResponse<DepartmentDto>> CreateAsync(SaveDepartmentRequest request);

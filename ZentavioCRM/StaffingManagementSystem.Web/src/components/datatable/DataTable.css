@@ -1,0 +1,118 @@
+/*
+  Shared "fancy" grid styling for every list screen — reuses the Zentavio design tokens
+  from src/styles/theme.css (rounded cards, soft shadows, accent-colored hover/sort states)
+  so every DataTable in the app looks consistent instead of a bare Bootstrap table.
+*/
+
+.itm-datatable-card {
+  background: var(--itm-card-bg);
+  border-radius: var(--itm-radius-card);
+  box-shadow: var(--itm-shadow-soft);
+  border: 1px solid var(--itm-border);
+  overflow: hidden;
+  animation: itm-fade-in-up 240ms ease both;
+}
+
+.itm-datatable {
+  --bs-table-bg: transparent;
+  margin-bottom: 0;
+}
+
+.itm-datatable thead th {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  color: var(--itm-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--itm-border);
+  padding: 0.85rem 1rem;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.itm-datatable tbody td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--itm-border);
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.itm-datatable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.itm-row-clickable {
+  cursor: pointer;
+  transition: background-color var(--itm-transition);
+}
+
+.itm-row-clickable:hover {
+  background-color: color-mix(in srgb, var(--itm-accent) 6%, white);
+}
+
+.itm-sortable {
+  cursor: pointer;
+  transition: color var(--itm-transition);
+}
+
+.itm-sortable:hover {
+  color: var(--itm-accent);
+}
+
+.itm-th-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.itm-sort-icon {
+  font-size: 0.65rem;
+  opacity: 0.3;
+  display: inline-flex;
+  align-items: center;
+}
+
+.itm-sort-icon.active {
+  opacity: 1;
+  color: var(--itm-accent);
+}
+
+.itm-empty-state {
+  padding: 3rem 1rem;
+}
+
+.itm-empty-state .bi {
+  font-size: 1.75rem;
+  color: var(--itm-border);
+}
+
+/* Pagination bar */
+
+.itm-pagination-bar {
+  margin-top: 0.9rem;
+}
+
+.itm-pagesize-select {
+  width: auto;
+  border-radius: var(--itm-radius-control);
+}
+
+.itm-pagination-list .page-link {
+  border-radius: var(--itm-radius-control);
+  margin: 0 2px;
+  border: 1px solid var(--itm-border);
+  color: var(--itm-text);
+}
+
+.itm-pagination-list .page-item.active .page-link {
+  background: var(--itm-accent);
+  border-color: var(--itm-accent);
+  color: #fff;
+}
+
+.itm-pagination-list .page-item.disabled .page-link {
+  color: var(--itm-muted);
+  background: transparent;
+  border-color: var(--itm-border);
+}

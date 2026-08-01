@@ -1,8 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { quotationService, type QuotationListItem, type QuotationStatus } from "@/services/quotationService";
+import {
+  quotationService,
+  type QuotationListItem,
+  type QuotationSearchParams,
+  type QuotationStatus,
+} from "@/services/quotationService";
 import { PermissionCodes } from "@/services/permissionCodes";
+import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
+import { Pagination } from "@/components/datatable/Pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 
 const STATUSES: QuotationStatus[] = ["Draft", "Sent", "Accepted", "Rejected", "Expired"];
 
@@ -19,44 +27,71 @@ export default function QuotationsList() {
   const { hasPermission } = useAuth();
   const canCreate = hasPermission(PermissionCodes.QuotationsCreate);
 
-  const [quotations, setQuotations] = useState<QuotationListItem[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<QuotationStatus | "">("");
-  const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const pageSize = 20;
 
-  const load = async (searchTerm: string, statusFilter: QuotationStatus | "", pageNumber: number) => {
-    setIsLoading(true);
-    const result = await quotationService.search({
-      search: searchTerm || undefined,
-      status: statusFilter || undefined,
-      page: pageNumber,
+  const {
+    items: quotations,
+    totalCount,
+    totalPages,
+    page,
+    pageSize,
+    sortBy,
+    sortDescending,
+    isLoading,
+    error,
+    setPage,
+    setPageSize,
+    onSortChange,
+    resetToFirstPage,
+  } = usePagedList<QuotationListItem, QuotationSearchParams>(
+    quotationService.search,
+    ({ page, pageSize, sortBy, sortDescending }) => ({
+      search: search || undefined,
+      status: status || undefined,
+      page,
       pageSize,
-    });
-    setIsLoading(false);
-    if (!result.success || !result.data) {
-      setError(result.message || "Unable to load quotations.");
-      return;
-    }
-    setQuotations(result.data.items);
-    setTotalCount(result.data.totalCount);
-  };
-
-  useEffect(() => {
-    load(search, status, page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, status]);
+      sortBy,
+      sortDescending,
+    }),
+    [search, status]
+  );
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(1);
-    load(search, status, 1);
+    resetToFirstPage();
   };
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const columns: DataTableColumn<QuotationListItem>[] = [
+    {
+      key: "quotationNumber",
+      header: "Number",
+      render: (q) => (
+        <>
+          {q.quotationNumber}
+          {q.version > 1 && <span className="text-muted"> v{q.version}</span>}
+        </>
+      ),
+    },
+    { key: "opportunityName", header: "Opportunity", render: (q) => q.opportunityName },
+    { key: "customerName", header: "Customer", render: (q) => q.customerName },
+    { key: "grandTotal", header: "Total", align: "end", render: (q) => q.grandTotal.toLocaleString() },
+    {
+      key: "validUntil",
+      header: "Valid Until",
+      render: (q) => (q.validUntil ? new Date(q.validUntil).toLocaleDateString() : <span className="text-muted">&mdash;</span>),
+    },
+    {
+      key: "assignedToUserName",
+      header: "Owner",
+      render: (q) => q.assignedToUserName ?? <span className="text-muted">Unassigned</span>,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (q) => <span className={`badge ${STATUS_BADGE[q.status]}`}>{q.status}</span>,
+    },
+  ];
 
   return (
     <div>
@@ -89,7 +124,7 @@ export default function QuotationsList() {
           value={status}
           onChange={(e) => {
             setStatus(e.target.value as QuotationStatus | "");
-            setPage(1);
+            resetToFirstPage();
           }}
         >
           <option value="">All statuses</option>
@@ -103,81 +138,27 @@ export default function QuotationsList() {
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      <div className="card shadow-sm border-0">
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>Number</th>
-                <th>Opportunity</th>
-                <th>Customer</th>
-                <th>Total</th>
-                <th>Valid Until</th>
-                <th>Owner</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading && (
-                <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">
-                    Loading...
-                  </td>
-                </tr>
-              )}
-              {!isLoading && quotations.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">
-                    No quotations found.
-                  </td>
-                </tr>
-              )}
-              {quotations.map((quotation) => (
-                <tr key={quotation.id} role="button" onClick={() => navigate(`/quotations/${quotation.id}`)}>
-                  <td>
-                    {quotation.quotationNumber}
-                    {quotation.version > 1 && <span className="text-muted"> v{quotation.version}</span>}
-                  </td>
-                  <td>{quotation.opportunityName}</td>
-                  <td>{quotation.customerName}</td>
-                  <td>{quotation.grandTotal.toLocaleString()}</td>
-                  <td>{quotation.validUntil ? new Date(quotation.validUntil).toLocaleDateString() : "—"}</td>
-                  <td>{quotation.assignedToUserName ?? <span className="text-muted">Unassigned</span>}</td>
-                  <td>
-                    <span className={`badge ${STATUS_BADGE[quotation.status]}`}>{quotation.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        items={quotations}
+        rowKey={(q) => q.id}
+        isLoading={isLoading}
+        emptyMessage="No quotations found."
+        emptyIcon="bi-file-earmark-text"
+        onRowClick={(q) => navigate(`/quotations/${q.id}`)}
+        sortBy={sortBy}
+        sortDescending={sortDescending}
+        onSortChange={onSortChange}
+      />
 
-      {totalPages > 1 && (
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <span className="text-muted small">
-            Page {page} of {totalPages} &middot; {totalCount} total
-          </span>
-          <div className="btn-group">
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
     </div>
   );
 }

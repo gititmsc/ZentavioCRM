@@ -30,12 +30,13 @@ namespace ZentavioCRM.Services
         }
 
         public async Task<PagedResult<SalesOrderListItemDto>> SearchAsync(
-            string? search, SalesOrderStatus? status, Guid? customerId, int page, int pageSize)
+            string? search, SalesOrderStatus? status, Guid? customerId, int page, int pageSize,
+            string? sortBy = null, bool sortDescending = true)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize is < 1 or > 200 ? 20 : pageSize;
 
-            var (items, totalCount) = await _salesOrderRepository.SearchAsync(search, status, customerId, page, pageSize);
+            var (items, totalCount) = await _salesOrderRepository.SearchAsync(search, status, customerId, page, pageSize, sortBy, sortDescending);
 
             return new PagedResult<SalesOrderListItemDto>
             {

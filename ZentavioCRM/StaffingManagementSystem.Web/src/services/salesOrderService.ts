@@ -72,6 +72,8 @@ export interface SalesOrderSearchParams {
   customerId?: string;
   page?: number;
   pageSize?: number;
+  sortBy?: string;
+  sortDescending?: boolean;
 }
 
 const search = (params: SalesOrderSearchParams) =>

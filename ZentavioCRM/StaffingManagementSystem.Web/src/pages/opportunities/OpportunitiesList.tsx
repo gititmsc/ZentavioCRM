@@ -1,8 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { opportunityService, type OpportunityListItem, type OpportunityStage } from "@/services/opportunityService";
+import {
+  opportunityService,
+  type OpportunityListItem,
+  type OpportunitySearchParams,
+  type OpportunityStage,
+} from "@/services/opportunityService";
 import { PermissionCodes } from "@/services/permissionCodes";
+import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
+import { Pagination } from "@/components/datatable/Pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 
 const STAGES: OpportunityStage[] = [
   "Qualification",
@@ -29,44 +37,67 @@ export default function OpportunitiesList() {
   const { hasPermission } = useAuth();
   const canCreate = hasPermission(PermissionCodes.OpportunitiesCreate);
 
-  const [opportunities, setOpportunities] = useState<OpportunityListItem[]>([]);
   const [search, setSearch] = useState("");
   const [stage, setStage] = useState<OpportunityStage | "">("");
-  const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const pageSize = 20;
 
-  const load = async (searchTerm: string, stageFilter: OpportunityStage | "", pageNumber: number) => {
-    setIsLoading(true);
-    const result = await opportunityService.search({
-      search: searchTerm || undefined,
-      stage: stageFilter || undefined,
-      page: pageNumber,
+  const {
+    items: opportunities,
+    totalCount,
+    totalPages,
+    page,
+    pageSize,
+    sortBy,
+    sortDescending,
+    isLoading,
+    error,
+    setPage,
+    setPageSize,
+    onSortChange,
+    resetToFirstPage,
+  } = usePagedList<OpportunityListItem, OpportunitySearchParams>(
+    opportunityService.search,
+    ({ page, pageSize, sortBy, sortDescending }) => ({
+      search: search || undefined,
+      stage: stage || undefined,
+      page,
       pageSize,
-    });
-    setIsLoading(false);
-    if (!result.success || !result.data) {
-      setError(result.message || "Unable to load opportunities.");
-      return;
-    }
-    setOpportunities(result.data.items);
-    setTotalCount(result.data.totalCount);
-  };
-
-  useEffect(() => {
-    load(search, stage, page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, stage]);
+      sortBy,
+      sortDescending,
+    }),
+    [search, stage]
+  );
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(1);
-    load(search, stage, 1);
+    resetToFirstPage();
   };
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const columns: DataTableColumn<OpportunityListItem>[] = [
+    { key: "opportunityNumber", header: "Number", render: (o) => o.opportunityNumber },
+    { key: "name", header: "Opportunity", render: (o) => o.name },
+    { key: "customerName", header: "Customer", render: (o) => o.customerName },
+    {
+      key: "value",
+      header: "Value",
+      align: "end",
+      render: (o) => (o.value != null ? `${o.currencyCode} ${o.value.toLocaleString()}` : <span className="text-muted">&mdash;</span>),
+    },
+    {
+      key: "expectedCloseDate",
+      header: "Close Date",
+      render: (o) => (o.expectedCloseDate ? new Date(o.expectedCloseDate).toLocaleDateString() : <span className="text-muted">&mdash;</span>),
+    },
+    {
+      key: "assignedToUserName",
+      header: "Owner",
+      render: (o) => o.assignedToUserName ?? <span className="text-muted">Unassigned</span>,
+    },
+    {
+      key: "stage",
+      header: "Stage",
+      render: (o) => <span className={`badge ${STAGE_BADGE[o.stage]}`}>{o.stage}</span>,
+    },
+  ];
 
   return (
     <div>
@@ -99,7 +130,7 @@ export default function OpportunitiesList() {
           value={stage}
           onChange={(e) => {
             setStage(e.target.value as OpportunityStage | "");
-            setPage(1);
+            resetToFirstPage();
           }}
         >
           <option value="">All stages</option>
@@ -113,82 +144,27 @@ export default function OpportunitiesList() {
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      <div className="card shadow-sm border-0">
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>Number</th>
-                <th>Opportunity</th>
-                <th>Customer</th>
-                <th>Value</th>
-                <th>Close Date</th>
-                <th>Owner</th>
-                <th>Stage</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading && (
-                <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">
-                    Loading...
-                  </td>
-                </tr>
-              )}
-              {!isLoading && opportunities.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">
-                    No opportunities found.
-                  </td>
-                </tr>
-              )}
-              {opportunities.map((opportunity) => (
-                <tr key={opportunity.id} role="button" onClick={() => navigate(`/opportunities/${opportunity.id}`)}>
-                  <td>{opportunity.opportunityNumber}</td>
-                  <td>{opportunity.name}</td>
-                  <td>{opportunity.customerName}</td>
-                  <td>
-                    {opportunity.value != null
-                      ? `${opportunity.currencyCode} ${opportunity.value.toLocaleString()}`
-                      : "—"}
-                  </td>
-                  <td>{opportunity.expectedCloseDate ? new Date(opportunity.expectedCloseDate).toLocaleDateString() : "—"}</td>
-                  <td>{opportunity.assignedToUserName ?? <span className="text-muted">Unassigned</span>}</td>
-                  <td>
-                    <span className={`badge ${STAGE_BADGE[opportunity.stage]}`}>{opportunity.stage}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        items={opportunities}
+        rowKey={(o) => o.id}
+        isLoading={isLoading}
+        emptyMessage="No opportunities found."
+        emptyIcon="bi-graph-up-arrow"
+        onRowClick={(o) => navigate(`/opportunities/${o.id}`)}
+        sortBy={sortBy}
+        sortDescending={sortDescending}
+        onSortChange={onSortChange}
+      />
 
-      {totalPages > 1 && (
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <span className="text-muted small">
-            Page {page} of {totalPages} &middot; {totalCount} total
-          </span>
-          <div className="btn-group">
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
     </div>
   );
 }

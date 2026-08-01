@@ -7,6 +7,12 @@ namespace ZentavioCRM.Services.Interfaces
     {
         Task<IReadOnlyList<UserDto>> GetAllAsync();
 
+        /// <summary>Paged, filterable, sortable user search — powers the Users administration list.</summary>
+        /// <param name="sortBy">Column key (case-insensitive): employeeCode, fullName, email, roleName, departmentName, isActive, createdAtUtc. Unrecognized/null falls back to createdAtUtc.</param>
+        Task<PagedResult<UserDto>> SearchAsync(
+            string? search, Guid? roleId, Guid? departmentId, bool? isActive, int page, int pageSize,
+            string? sortBy = null, bool sortDescending = true);
+
         Task<ApiResponse<UserDto>> GetByIdAsync(Guid id);
 
         Task<ApiResponse<UserDto>> CreateAsync(CreateUserRequest request);

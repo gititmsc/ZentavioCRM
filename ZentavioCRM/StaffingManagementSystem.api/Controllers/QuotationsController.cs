@@ -29,9 +29,11 @@ namespace ZentavioCRM.Api.Controllers
             [FromQuery] Guid? opportunityId,
             [FromQuery] Guid? customerId,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20)
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = true)
         {
-            var result = await _quotationService.SearchAsync(search, status, opportunityId, customerId, page, pageSize);
+            var result = await _quotationService.SearchAsync(search, status, opportunityId, customerId, page, pageSize, sortBy, sortDescending);
             return Ok(ApiResponse<PagedResult<QuotationListItemDto>>.SuccessResponse(result));
         }
 

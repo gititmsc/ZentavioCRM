@@ -22,6 +22,22 @@ namespace ZentavioCRM.Services
             return roles.Select(Map).ToList();
         }
 
+        public async Task<PagedResult<RoleDto>> SearchAsync(string? search, int page, int pageSize, string? sortBy = null, bool sortDescending = false)
+        {
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize is < 1 or > 200 ? 20 : pageSize;
+
+            var (items, totalCount) = await _roleRepository.SearchAsync(search, page, pageSize, sortBy, sortDescending);
+
+            return new PagedResult<RoleDto>
+            {
+                Items = items.Select(Map).ToList(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+            };
+        }
+
         public async Task<ApiResponse<RoleDto>> GetByIdAsync(Guid id)
         {
             var role = await _roleRepository.GetByIdAsync(id);

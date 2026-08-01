@@ -127,6 +127,8 @@ export interface CustomerSearchParams {
   isActive?: boolean;
   page?: number;
   pageSize?: number;
+  sortBy?: string;
+  sortDescending?: boolean;
 }
 
 const search = (params: CustomerSearchParams) =>

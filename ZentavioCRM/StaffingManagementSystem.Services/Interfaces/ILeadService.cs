@@ -7,8 +7,10 @@ namespace ZentavioCRM.Services.Interfaces
 {
     public interface ILeadService
     {
+        /// <param name="sortBy">Column key (case-insensitive): leadNumber, companyName, contactName, source, expectedValue, assignedToUserName, status, createdAtUtc. Unrecognized/null falls back to createdAtUtc.</param>
         Task<PagedResult<LeadListItemDto>> SearchAsync(
-            string? search, LeadStatus? status, Guid? assignedToUserId, int page, int pageSize, Guid? currentUserId = null);
+            string? search, LeadStatus? status, Guid? assignedToUserId, int page, int pageSize, Guid? currentUserId = null,
+            string? sortBy = null, bool sortDescending = true);
 
         Task<ApiResponse<LeadDto>> GetByIdAsync(Guid id, Guid? currentUserId = null);
 

@@ -25,6 +25,47 @@ namespace ZentavioCRM.Repositories
         public async Task<IReadOnlyList<Role>> GetAllAsync()
             => await WithPermissions().OrderBy(r => r.Name).ToListAsync();
 
+        public async Task<(IReadOnlyList<Role> Items, int TotalCount)> SearchAsync(
+            string? search, int page, int pageSize, string? sortBy = null, bool sortDescending = false)
+        {
+            var query = WithPermissions();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLower();
+                query = query.Where(r =>
+                    r.Name.ToLower().Contains(term) ||
+                    (r.Description != null && r.Description.ToLower().Contains(term)));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var items = await ApplySort(query, sortBy, sortDescending)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
+        /// <summary>
+        /// Column-key-driven sort, kept as an explicit switch (not reflection/dynamic-LINQ) so every
+        /// sortable column is a real, EF-translatable expression. Unrecognized/null sortBy falls back to Name (ascending), matching the prior unpaged GetAllAsync ordering.
+        /// </summary>
+        private static IOrderedQueryable<Role> ApplySort(IQueryable<Role> query, string? sortBy, bool sortDescending)
+        {
+            return sortBy?.Trim().ToLowerInvariant() switch
+            {
+                "name" => sortDescending ? query.OrderByDescending(r => r.Name) : query.OrderBy(r => r.Name),
+                "description" => sortDescending ? query.OrderByDescending(r => r.Description) : query.OrderBy(r => r.Description),
+                "visibilityscope" => sortDescending ? query.OrderByDescending(r => r.VisibilityScope) : query.OrderBy(r => r.VisibilityScope),
+                "permissioncount" => sortDescending ? query.OrderByDescending(r => r.RolePermissions.Count) : query.OrderBy(r => r.RolePermissions.Count),
+                "issystemrole" => sortDescending ? query.OrderByDescending(r => r.IsSystemRole) : query.OrderBy(r => r.IsSystemRole),
+                "createdatutc" => sortDescending ? query.OrderByDescending(r => r.CreatedAtUtc) : query.OrderBy(r => r.CreatedAtUtc),
+                _ => sortDescending ? query.OrderByDescending(r => r.Name) : query.OrderBy(r => r.Name),
+            };
+        }
+
         public async Task<IReadOnlyList<Permission>> GetAllPermissionsAsync()
             => await _dbContext.Permissions.OrderBy(p => p.Module).ThenBy(p => p.Name).ToListAsync();
 

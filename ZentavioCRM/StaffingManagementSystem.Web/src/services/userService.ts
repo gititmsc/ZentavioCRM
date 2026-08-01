@@ -4,6 +4,7 @@
  */
 import { apiClient } from "@/services/apiClient";
 import { callApi } from "@/services/apiHelpers";
+import type { PagedResult } from "@/services/leadService";
 
 export interface ManagedUser {
   id: string;
@@ -51,6 +52,21 @@ export interface UpdateUserRequest {
 }
 
 const getAll = () => callApi<ManagedUser[]>(apiClient.get("/api/users"));
+
+export interface UserSearchParams {
+  search?: string;
+  roleId?: string;
+  departmentId?: string;
+  isActive?: boolean;
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDescending?: boolean;
+}
+
+/** Paged, filterable, sortable — powers the Users administration list grid. Distinct from getAll(), which many dropdowns rely on. */
+const search = (params: UserSearchParams) =>
+  callApi<PagedResult<ManagedUser>>(apiClient.get("/api/users/search", { params }));
 
 const getById = (id: string) => callApi<ManagedUser>(apiClient.get(`/api/users/${id}`));
 
@@ -101,6 +117,7 @@ const resetPassword = (id: string, newPassword: string) =>
 
 export const userService = {
   getAll,
+  search,
   getById,
   create,
   update,

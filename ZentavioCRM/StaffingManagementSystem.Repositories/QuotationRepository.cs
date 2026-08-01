@@ -25,7 +25,8 @@ namespace ZentavioCRM.Repositories
                 .FirstOrDefaultAsync(q => q.Id == id);
 
         public async Task<(IReadOnlyList<Quotation> Items, int TotalCount)> SearchAsync(
-            string? search, QuotationStatus? status, Guid? opportunityId, Guid? customerId, int page, int pageSize)
+            string? search, QuotationStatus? status, Guid? opportunityId, Guid? customerId, int page, int pageSize,
+            string? sortBy = null, bool sortDescending = true)
         {
             var query = _dbContext.Quotations
                 .Include(q => q.Opportunity)
@@ -59,13 +60,33 @@ namespace ZentavioCRM.Repositories
 
             var totalCount = await query.CountAsync();
 
-            var items = await query
-                .OrderByDescending(q => q.CreatedAtUtc)
+            var items = await ApplySort(query, sortBy, sortDescending)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             return (items, totalCount);
+        }
+
+        /// <summary>
+        /// Column-key-driven sort, kept as an explicit switch (not reflection/dynamic-LINQ) so every
+        /// sortable column is a real, EF-translatable expression. Unrecognized/null sortBy falls back to CreatedAtUtc.
+        /// </summary>
+        private static IOrderedQueryable<Quotation> ApplySort(IQueryable<Quotation> query, string? sortBy, bool sortDescending)
+        {
+            return sortBy?.Trim().ToLowerInvariant() switch
+            {
+                "quotationnumber" => sortDescending ? query.OrderByDescending(q => q.QuotationNumber) : query.OrderBy(q => q.QuotationNumber),
+                "opportunityname" => sortDescending ? query.OrderByDescending(q => q.Opportunity!.Name) : query.OrderBy(q => q.Opportunity!.Name),
+                "customername" => sortDescending ? query.OrderByDescending(q => q.Customer!.DisplayName) : query.OrderBy(q => q.Customer!.DisplayName),
+                "grandtotal" => sortDescending ? query.OrderByDescending(q => q.GrandTotal) : query.OrderBy(q => q.GrandTotal),
+                "validuntil" => sortDescending ? query.OrderByDescending(q => q.ValidUntil) : query.OrderBy(q => q.ValidUntil),
+                "assignedtousername" => sortDescending
+                    ? query.OrderByDescending(q => q.AssignedToUser!.FirstName).ThenByDescending(q => q.AssignedToUser!.LastName)
+                    : query.OrderBy(q => q.AssignedToUser!.FirstName).ThenBy(q => q.AssignedToUser!.LastName),
+                "status" => sortDescending ? query.OrderByDescending(q => q.Status) : query.OrderBy(q => q.Status),
+                _ => sortDescending ? query.OrderByDescending(q => q.CreatedAtUtc) : query.OrderBy(q => q.CreatedAtUtc),
+            };
         }
 
         public async Task<IReadOnlyList<Quotation>> GetVersionsAsync(string quotationNumber)

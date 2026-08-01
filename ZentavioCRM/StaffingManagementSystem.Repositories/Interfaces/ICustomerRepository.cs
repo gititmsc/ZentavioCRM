@@ -8,8 +8,10 @@ namespace ZentavioCRM.Repositories.Interfaces
         Task<Customer?> GetByIdAsync(Guid id);
 
         /// <param name="accessScope">When non-null and Scope != All, restricts results to records the scope's user is allowed to see (Own/Team, plus any active delegations).</param>
+        /// <param name="sortBy">Column key (case-insensitive): customerNumber, displayName, type, industry, healthStatus, assignedToUserName, isActive, createdAtUtc. Unrecognized/null falls back to createdAtUtc.</param>
         Task<(IReadOnlyList<Customer> Items, int TotalCount)> SearchAsync(
-            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize, AccessScope? accessScope = null);
+            string? search, Guid? assignedToUserId, bool? isActive, int page, int pageSize,
+            AccessScope? accessScope = null, string? sortBy = null, bool sortDescending = true);
 
         Task<string> GetNextCustomerNumberAsync();
 

@@ -27,6 +27,20 @@ namespace ZentavioCRM.Api.Controllers
             return Ok(ApiResponse<IReadOnlyList<DepartmentDto>>.SuccessResponse(departments));
         }
 
+        /// <summary>Paged, filterable, sortable department search — powers the Departments administration list grid.</summary>
+        [HttpGet("search")]
+        [Authorize(Policy = PermissionCodes.DepartmentsView)]
+        public async Task<IActionResult> Search(
+            [FromQuery] string? search,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
+        {
+            var result = await _departmentService.SearchAsync(search, page, pageSize, sortBy, sortDescending);
+            return Ok(ApiResponse<PagedResult<DepartmentDto>>.SuccessResponse(result));
+        }
+
         [HttpGet("{id:guid}")]
         [Authorize(Policy = PermissionCodes.DepartmentsView)]
         public async Task<IActionResult> GetById(Guid id)

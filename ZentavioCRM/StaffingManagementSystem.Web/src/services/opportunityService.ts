@@ -121,6 +121,8 @@ export interface OpportunitySearchParams {
   assignedToUserId?: string;
   page?: number;
   pageSize?: number;
+  sortBy?: string;
+  sortDescending?: boolean;
 }
 
 const search = (params: OpportunitySearchParams) =>

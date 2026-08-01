@@ -29,6 +29,28 @@ namespace ZentavioCRM.Services
             return result;
         }
 
+        public async Task<PagedResult<TerritoryDto>> SearchAsync(string? search, int page, int pageSize, string? sortBy = null, bool sortDescending = false)
+        {
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize is < 1 or > 200 ? 20 : pageSize;
+
+            var (items, totalCount) = await _territoryRepository.SearchAsync(search, page, pageSize, sortBy, sortDescending);
+
+            var mapped = new List<TerritoryDto>();
+            foreach (var territory in items)
+            {
+                mapped.Add(await MapAsync(territory));
+            }
+
+            return new PagedResult<TerritoryDto>
+            {
+                Items = mapped,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+            };
+        }
+
         public async Task<ApiResponse<TerritoryDto>> GetByIdAsync(Guid id)
         {
             var territory = await _territoryRepository.GetByIdAsync(id);

@@ -1,6 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { salesOrderService, type SalesOrderListItem, type SalesOrderStatus } from "@/services/salesOrderService";
+import {
+  salesOrderService,
+  type SalesOrderListItem,
+  type SalesOrderSearchParams,
+  type SalesOrderStatus,
+} from "@/services/salesOrderService";
+import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
+import { Pagination } from "@/components/datatable/Pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 
 const STATUSES: SalesOrderStatus[] = ["Draft", "Confirmed", "PartiallyDelivered", "Delivered", "Cancelled"];
 
@@ -15,44 +23,58 @@ const STATUS_BADGE: Record<SalesOrderStatus, string> = {
 export default function SalesOrdersList() {
   const navigate = useNavigate();
 
-  const [orders, setOrders] = useState<SalesOrderListItem[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<SalesOrderStatus | "">("");
-  const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const pageSize = 20;
 
-  const load = async (searchTerm: string, statusFilter: SalesOrderStatus | "", pageNumber: number) => {
-    setIsLoading(true);
-    const result = await salesOrderService.search({
-      search: searchTerm || undefined,
-      status: statusFilter || undefined,
-      page: pageNumber,
+  const {
+    items: orders,
+    totalCount,
+    totalPages,
+    page,
+    pageSize,
+    sortBy,
+    sortDescending,
+    isLoading,
+    error,
+    setPage,
+    setPageSize,
+    onSortChange,
+    resetToFirstPage,
+  } = usePagedList<SalesOrderListItem, SalesOrderSearchParams>(
+    salesOrderService.search,
+    ({ page, pageSize, sortBy, sortDescending }) => ({
+      search: search || undefined,
+      status: status || undefined,
+      page,
       pageSize,
-    });
-    setIsLoading(false);
-    if (!result.success || !result.data) {
-      setError(result.message || "Unable to load sales orders.");
-      return;
-    }
-    setOrders(result.data.items);
-    setTotalCount(result.data.totalCount);
-  };
-
-  useEffect(() => {
-    load(search, status, page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, status]);
+      sortBy,
+      sortDescending,
+    }),
+    [search, status]
+  );
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(1);
-    load(search, status, 1);
+    resetToFirstPage();
   };
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const columns: DataTableColumn<SalesOrderListItem>[] = [
+    { key: "salesOrderNumber", header: "Number", render: (o) => o.salesOrderNumber },
+    { key: "quotationNumber", header: "Quotation", render: (o) => o.quotationNumber },
+    { key: "customerName", header: "Customer", render: (o) => o.customerName },
+    { key: "grandTotal", header: "Total", align: "end", render: (o) => o.grandTotal.toLocaleString() },
+    { key: "orderDate", header: "Order Date", render: (o) => new Date(o.orderDate).toLocaleDateString() },
+    {
+      key: "expectedDeliveryDate",
+      header: "Expected Delivery",
+      render: (o) => (o.expectedDeliveryDate ? new Date(o.expectedDeliveryDate).toLocaleDateString() : <span className="text-muted">&mdash;</span>),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (o) => <span className={`badge ${STATUS_BADGE[o.status]}`}>{o.status}</span>,
+    },
+  ];
 
   return (
     <div>
@@ -79,7 +101,7 @@ export default function SalesOrdersList() {
           value={status}
           onChange={(e) => {
             setStatus(e.target.value as SalesOrderStatus | "");
-            setPage(1);
+            resetToFirstPage();
           }}
         >
           <option value="">All statuses</option>
@@ -93,78 +115,27 @@ export default function SalesOrdersList() {
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      <div className="card shadow-sm border-0">
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>Number</th>
-                <th>Quotation</th>
-                <th>Customer</th>
-                <th>Total</th>
-                <th>Order Date</th>
-                <th>Expected Delivery</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading && (
-                <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">
-                    Loading...
-                  </td>
-                </tr>
-              )}
-              {!isLoading && orders.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">
-                    No sales orders found. Convert an accepted quotation to create one.
-                  </td>
-                </tr>
-              )}
-              {orders.map((order) => (
-                <tr key={order.id} role="button" onClick={() => navigate(`/sales-orders/${order.id}`)}>
-                  <td>{order.salesOrderNumber}</td>
-                  <td>{order.quotationNumber}</td>
-                  <td>{order.customerName}</td>
-                  <td>{order.grandTotal.toLocaleString()}</td>
-                  <td>{new Date(order.orderDate).toLocaleDateString()}</td>
-                  <td>{order.expectedDeliveryDate ? new Date(order.expectedDeliveryDate).toLocaleDateString() : "—"}</td>
-                  <td>
-                    <span className={`badge ${STATUS_BADGE[order.status]}`}>{order.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        items={orders}
+        rowKey={(o) => o.id}
+        isLoading={isLoading}
+        emptyMessage="No sales orders found. Convert an accepted quotation to create one."
+        emptyIcon="bi-cart-check"
+        onRowClick={(o) => navigate(`/sales-orders/${o.id}`)}
+        sortBy={sortBy}
+        sortDescending={sortDescending}
+        onSortChange={onSortChange}
+      />
 
-      {totalPages > 1 && (
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <span className="text-muted small">
-            Page {page} of {totalPages} &middot; {totalCount} total
-          </span>
-          <div className="btn-group">
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
     </div>
   );
 }

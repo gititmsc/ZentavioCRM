@@ -25,7 +25,8 @@ namespace ZentavioCRM.Repositories
                 .FirstOrDefaultAsync(so => so.Id == id);
 
         public async Task<(IReadOnlyList<SalesOrder> Items, int TotalCount)> SearchAsync(
-            string? search, SalesOrderStatus? status, Guid? customerId, int page, int pageSize)
+            string? search, SalesOrderStatus? status, Guid? customerId, int page, int pageSize,
+            string? sortBy = null, bool sortDescending = true)
         {
             var query = _dbContext.SalesOrders
                 .Include(so => so.Quotation)
@@ -53,13 +54,31 @@ namespace ZentavioCRM.Repositories
 
             var totalCount = await query.CountAsync();
 
-            var items = await query
-                .OrderByDescending(so => so.CreatedAtUtc)
+            var items = await ApplySort(query, sortBy, sortDescending)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             return (items, totalCount);
+        }
+
+        /// <summary>
+        /// Column-key-driven sort, kept as an explicit switch (not reflection/dynamic-LINQ) so every
+        /// sortable column is a real, EF-translatable expression. Unrecognized/null sortBy falls back to CreatedAtUtc.
+        /// </summary>
+        private static IOrderedQueryable<SalesOrder> ApplySort(IQueryable<SalesOrder> query, string? sortBy, bool sortDescending)
+        {
+            return sortBy?.Trim().ToLowerInvariant() switch
+            {
+                "salesordernumber" => sortDescending ? query.OrderByDescending(so => so.SalesOrderNumber) : query.OrderBy(so => so.SalesOrderNumber),
+                "quotationnumber" => sortDescending ? query.OrderByDescending(so => so.Quotation!.QuotationNumber) : query.OrderBy(so => so.Quotation!.QuotationNumber),
+                "customername" => sortDescending ? query.OrderByDescending(so => so.Customer!.DisplayName) : query.OrderBy(so => so.Customer!.DisplayName),
+                "grandtotal" => sortDescending ? query.OrderByDescending(so => so.GrandTotal) : query.OrderBy(so => so.GrandTotal),
+                "orderdate" => sortDescending ? query.OrderByDescending(so => so.OrderDate) : query.OrderBy(so => so.OrderDate),
+                "expecteddeliverydate" => sortDescending ? query.OrderByDescending(so => so.ExpectedDeliveryDate) : query.OrderBy(so => so.ExpectedDeliveryDate),
+                "status" => sortDescending ? query.OrderByDescending(so => so.Status) : query.OrderBy(so => so.Status),
+                _ => sortDescending ? query.OrderByDescending(so => so.CreatedAtUtc) : query.OrderBy(so => so.CreatedAtUtc),
+            };
         }
 
         public async Task<string> GetNextSalesOrderNumberAsync()

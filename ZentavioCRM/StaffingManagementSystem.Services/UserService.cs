@@ -36,6 +36,24 @@ namespace ZentavioCRM.Services
             return users.Select(Map).ToList();
         }
 
+        public async Task<PagedResult<UserDto>> SearchAsync(
+            string? search, Guid? roleId, Guid? departmentId, bool? isActive, int page, int pageSize,
+            string? sortBy = null, bool sortDescending = true)
+        {
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize is < 1 or > 200 ? 20 : pageSize;
+
+            var (items, totalCount) = await _userRepository.SearchAsync(search, roleId, departmentId, isActive, page, pageSize, sortBy, sortDescending);
+
+            return new PagedResult<UserDto>
+            {
+                Items = items.Select(Map).ToList(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+            };
+        }
+
         public async Task<ApiResponse<UserDto>> GetByIdAsync(Guid id)
         {
             var user = await _userRepository.GetByIdAsync(id);

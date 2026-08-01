@@ -28,9 +28,11 @@ namespace ZentavioCRM.Api.Controllers
             [FromQuery] SalesOrderStatus? status,
             [FromQuery] Guid? customerId,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20)
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = true)
         {
-            var result = await _salesOrderService.SearchAsync(search, status, customerId, page, pageSize);
+            var result = await _salesOrderService.SearchAsync(search, status, customerId, page, pageSize, sortBy, sortDescending);
             return Ok(ApiResponse<PagedResult<SalesOrderListItemDto>>.SuccessResponse(result));
         }
 

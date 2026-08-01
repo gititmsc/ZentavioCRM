@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { leadService, type LeadListItem, type LeadStatus } from "@/services/leadService";
+import { leadService, type LeadListItem, type LeadSearchParams, type LeadStatus } from "@/services/leadService";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { ImportExportBar } from "@/components/import-export/ImportExportBar";
+import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
+import { Pagination } from "@/components/datatable/Pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 
 const STATUSES: LeadStatus[] = [
   "New",
@@ -34,44 +37,64 @@ export default function LeadsList() {
   const { hasPermission } = useAuth();
   const canCreate = hasPermission(PermissionCodes.LeadsCreate);
 
-  const [leads, setLeads] = useState<LeadListItem[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<LeadStatus | "">("");
-  const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const pageSize = 20;
 
-  const load = async (searchTerm: string, statusFilter: LeadStatus | "", pageNumber: number) => {
-    setIsLoading(true);
-    const result = await leadService.search({
-      search: searchTerm || undefined,
-      status: statusFilter || undefined,
-      page: pageNumber,
+  const {
+    items: leads,
+    totalCount,
+    totalPages,
+    page,
+    pageSize,
+    sortBy,
+    sortDescending,
+    isLoading,
+    error,
+    setPage,
+    setPageSize,
+    onSortChange,
+    resetToFirstPage,
+    reload,
+  } = usePagedList<LeadListItem, LeadSearchParams>(
+    leadService.search,
+    ({ page, pageSize, sortBy, sortDescending }) => ({
+      search: search || undefined,
+      status: status || undefined,
+      page,
       pageSize,
-    });
-    setIsLoading(false);
-    if (!result.success || !result.data) {
-      setError(result.message || "Unable to load leads.");
-      return;
-    }
-    setLeads(result.data.items);
-    setTotalCount(result.data.totalCount);
-  };
-
-  useEffect(() => {
-    load(search, status, page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, status]);
+      sortBy,
+      sortDescending,
+    }),
+    [search, status]
+  );
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(1);
-    load(search, status, 1);
+    resetToFirstPage();
   };
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const columns: DataTableColumn<LeadListItem>[] = [
+    { key: "leadNumber", header: "Number", render: (lead) => lead.leadNumber },
+    { key: "companyName", header: "Company", render: (lead) => lead.companyName },
+    { key: "contactName", header: "Contact", render: (lead) => lead.contactName },
+    { key: "source", header: "Source", render: (lead) => lead.source },
+    {
+      key: "expectedValue",
+      header: "Expected Value",
+      align: "end",
+      render: (lead) => (lead.expectedValue != null ? lead.expectedValue.toLocaleString() : <span className="text-muted">&mdash;</span>),
+    },
+    {
+      key: "assignedToUserName",
+      header: "Owner",
+      render: (lead) => lead.assignedToUserName ?? <span className="text-muted">Unassigned</span>,
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (lead) => <span className={`badge ${STATUS_BADGE[lead.status]}`}>{lead.status}</span>,
+    },
+  ];
 
   return (
     <div>
@@ -104,7 +127,7 @@ export default function LeadsList() {
           value={status}
           onChange={(e) => {
             setStatus(e.target.value as LeadStatus | "");
-            setPage(1);
+            resetToFirstPage();
           }}
         >
           <option value="">All statuses</option>
@@ -120,85 +143,34 @@ export default function LeadsList() {
           entityLabel="Leads"
           onExport={leadService.exportCsv}
           onImport={leadService.importCsv}
-          onImportComplete={() => load(search, status, page)}
+          onImportComplete={reload}
           sampleFileUrl="/samples/leads-import-sample.csv"
         />
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      <div className="card shadow-sm border-0">
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>Number</th>
-                <th>Company</th>
-                <th>Contact</th>
-                <th>Source</th>
-                <th>Expected Value</th>
-                <th>Owner</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading && (
-                <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">
-                    Loading...
-                  </td>
-                </tr>
-              )}
-              {!isLoading && leads.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="text-center text-muted py-4">
-                    No leads found.
-                  </td>
-                </tr>
-              )}
-              {leads.map((lead) => (
-                <tr key={lead.id} role="button" onClick={() => navigate(`/leads/${lead.id}`)}>
-                  <td>{lead.leadNumber}</td>
-                  <td>{lead.companyName}</td>
-                  <td>{lead.contactName}</td>
-                  <td>{lead.source}</td>
-                  <td>{lead.expectedValue != null ? lead.expectedValue.toLocaleString() : "—"}</td>
-                  <td>{lead.assignedToUserName ?? <span className="text-muted">Unassigned</span>}</td>
-                  <td>
-                    <span className={`badge ${STATUS_BADGE[lead.status]}`}>{lead.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        items={leads}
+        rowKey={(lead) => lead.id}
+        isLoading={isLoading}
+        emptyMessage="No leads found."
+        emptyIcon="bi-person-lines-fill"
+        onRowClick={(lead) => navigate(`/leads/${lead.id}`)}
+        sortBy={sortBy}
+        sortDescending={sortDescending}
+        onSortChange={onSortChange}
+      />
 
-      {totalPages > 1 && (
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <span className="text-muted small">
-            Page {page} of {totalPages} &middot; {totalCount} total
-          </span>
-          <div className="btn-group">
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
     </div>
   );
 }

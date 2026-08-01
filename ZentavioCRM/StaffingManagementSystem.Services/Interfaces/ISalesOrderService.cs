@@ -6,8 +6,10 @@ namespace ZentavioCRM.Services.Interfaces
 {
     public interface ISalesOrderService
     {
+        /// <param name="sortBy">Column key (case-insensitive): salesOrderNumber, quotationNumber, customerName, grandTotal, orderDate, expectedDeliveryDate, status, createdAtUtc. Unrecognized/null falls back to createdAtUtc.</param>
         Task<PagedResult<SalesOrderListItemDto>> SearchAsync(
-            string? search, SalesOrderStatus? status, Guid? customerId, int page, int pageSize);
+            string? search, SalesOrderStatus? status, Guid? customerId, int page, int pageSize,
+            string? sortBy = null, bool sortDescending = true);
 
         Task<ApiResponse<SalesOrderDto>> GetByIdAsync(Guid id);
 

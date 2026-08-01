@@ -30,9 +30,11 @@ namespace ZentavioCRM.Api.Controllers
             [FromQuery] LeadStatus? status,
             [FromQuery] Guid? assignedToUserId,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20)
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = true)
         {
-            var result = await _leadService.SearchAsync(search, status, assignedToUserId, page, pageSize, User.GetUserId());
+            var result = await _leadService.SearchAsync(search, status, assignedToUserId, page, pageSize, User.GetUserId(), sortBy, sortDescending);
             return Ok(ApiResponse<PagedResult<LeadListItemDto>>.SuccessResponse(result));
         }
 

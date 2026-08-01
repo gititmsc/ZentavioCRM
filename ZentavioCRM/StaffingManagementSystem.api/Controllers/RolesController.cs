@@ -27,6 +27,20 @@ namespace ZentavioCRM.Api.Controllers
             return Ok(ApiResponse<IReadOnlyList<RoleDto>>.SuccessResponse(roles));
         }
 
+        /// <summary>Paged, filterable, sortable role search — powers the Roles administration list grid.</summary>
+        [HttpGet("search")]
+        [Authorize(Policy = PermissionCodes.RolesView)]
+        public async Task<IActionResult> Search(
+            [FromQuery] string? search,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool sortDescending = false)
+        {
+            var result = await _roleService.SearchAsync(search, page, pageSize, sortBy, sortDescending);
+            return Ok(ApiResponse<PagedResult<RoleDto>>.SuccessResponse(result));
+        }
+
         [HttpGet("permissions")]
         [Authorize(Policy = PermissionCodes.RolesView)]
         public async Task<IActionResult> GetPermissionCatalog()

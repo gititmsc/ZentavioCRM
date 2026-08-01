@@ -4,6 +4,7 @@
 import { apiClient } from "@/services/apiClient";
 import { callApi } from "@/services/apiHelpers";
 import type { ApiResponse } from "@/services/authService";
+import type { PagedResult } from "@/services/leadService";
 
 export interface Department {
   id: string;
@@ -22,6 +23,18 @@ export interface SaveDepartmentRequest {
 
 const getAll = () => callApi<Department[]>(apiClient.get("/api/departments"));
 
+export interface DepartmentSearchParams {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDescending?: boolean;
+}
+
+/** Paged, filterable, sortable — powers the Departments administration list grid. Distinct from getAll(), which department pickers rely on. */
+const search = (params: DepartmentSearchParams) =>
+  callApi<PagedResult<Department>>(apiClient.get("/api/departments/search", { params }));
+
 const getById = (id: string) => callApi<Department>(apiClient.get(`/api/departments/${id}`));
 
 const create = (request: SaveDepartmentRequest) => callApi<Department>(apiClient.post("/api/departments", request));
@@ -31,6 +44,6 @@ const update = (id: string, request: SaveDepartmentRequest) =>
 
 const remove = (id: string) => callApi<boolean>(apiClient.delete(`/api/departments/${id}`));
 
-export const departmentService = { getAll, getById, create, update, remove };
+export const departmentService = { getAll, search, getById, create, update, remove };
 
 export type { ApiResponse };

@@ -40,12 +40,13 @@ namespace ZentavioCRM.Services
         }
 
         public async Task<PagedResult<QuotationListItemDto>> SearchAsync(
-            string? search, QuotationStatus? status, Guid? opportunityId, Guid? customerId, int page, int pageSize)
+            string? search, QuotationStatus? status, Guid? opportunityId, Guid? customerId, int page, int pageSize,
+            string? sortBy = null, bool sortDescending = true)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize is < 1 or > 200 ? 20 : pageSize;
 
-            var (items, totalCount) = await _quotationRepository.SearchAsync(search, status, opportunityId, customerId, page, pageSize);
+            var (items, totalCount) = await _quotationRepository.SearchAsync(search, status, opportunityId, customerId, page, pageSize, sortBy, sortDescending);
 
             return new PagedResult<QuotationListItemDto>
             {

@@ -29,6 +29,28 @@ namespace ZentavioCRM.Services
             return result;
         }
 
+        public async Task<PagedResult<DepartmentDto>> SearchAsync(string? search, int page, int pageSize, string? sortBy = null, bool sortDescending = false)
+        {
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize is < 1 or > 200 ? 20 : pageSize;
+
+            var (items, totalCount) = await _departmentRepository.SearchAsync(search, page, pageSize, sortBy, sortDescending);
+
+            var mapped = new List<DepartmentDto>();
+            foreach (var department in items)
+            {
+                mapped.Add(await MapAsync(department));
+            }
+
+            return new PagedResult<DepartmentDto>
+            {
+                Items = mapped,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+            };
+        }
+
         public async Task<ApiResponse<DepartmentDto>> GetByIdAsync(Guid id)
         {
             var department = await _departmentRepository.GetByIdAsync(id);

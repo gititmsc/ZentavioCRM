@@ -1,9 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { customerService, type CustomerHealthStatus, type CustomerListItem } from "@/services/customerService";
+import {
+  customerService,
+  type CustomerHealthStatus,
+  type CustomerListItem,
+  type CustomerSearchParams,
+} from "@/services/customerService";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { ImportExportBar } from "@/components/import-export/ImportExportBar";
+import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
+import { Pagination } from "@/components/datatable/Pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 
 const HEALTH_LABEL: Record<CustomerHealthStatus, string> = {
   Hot: "Hot Account",
@@ -24,38 +32,83 @@ export default function CustomersList() {
   const { hasPermission } = useAuth();
   const canCreate = hasPermission(PermissionCodes.CustomersCreate);
 
-  const [customers, setCustomers] = useState<CustomerListItem[]>([]);
   const [search, setSearch] = useState("");
-  const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const pageSize = 20;
 
-  const load = async (searchTerm: string, pageNumber: number) => {
-    setIsLoading(true);
-    const result = await customerService.search({ search: searchTerm || undefined, page: pageNumber, pageSize });
-    setIsLoading(false);
-    if (!result.success || !result.data) {
-      setError(result.message || "Unable to load customers.");
-      return;
-    }
-    setCustomers(result.data.items);
-    setTotalCount(result.data.totalCount);
-  };
-
-  useEffect(() => {
-    load(search, page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  const {
+    items: customers,
+    totalCount,
+    totalPages,
+    page,
+    pageSize,
+    sortBy,
+    sortDescending,
+    isLoading,
+    error,
+    setPage,
+    setPageSize,
+    onSortChange,
+    resetToFirstPage,
+    reload,
+  } = usePagedList<CustomerListItem, CustomerSearchParams>(
+    customerService.search,
+    ({ page, pageSize, sortBy, sortDescending }) => ({
+      search: search || undefined,
+      page,
+      pageSize,
+      sortBy,
+      sortDescending,
+    }),
+    [search]
+  );
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(1);
-    load(search, 1);
+    resetToFirstPage();
   };
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const columns: DataTableColumn<CustomerListItem>[] = [
+    { key: "customerNumber", header: "Number", render: (c) => c.customerNumber },
+    { key: "displayName", header: "Name", render: (c) => c.displayName },
+    { key: "type", header: "Type", render: (c) => c.type },
+    { key: "industry", header: "Industry", render: (c) => c.industry ?? <span className="text-muted">&mdash;</span> },
+    {
+      header: "Tags",
+      render: (c) =>
+        c.tags ? (
+          c.tags.split(",").map((tag) => (
+            <span key={tag} className="badge text-bg-light border me-1">
+              {tag.trim()}
+            </span>
+          ))
+        ) : (
+          <span className="text-muted">&mdash;</span>
+        ),
+    },
+    {
+      key: "healthStatus",
+      header: "Health",
+      render: (c) =>
+        c.healthStatus ? (
+          <span className={`badge ${HEALTH_BADGE_CLASS[c.healthStatus]}`}>{HEALTH_LABEL[c.healthStatus]}</span>
+        ) : (
+          <span className="text-muted">&mdash;</span>
+        ),
+    },
+    {
+      key: "assignedToUserName",
+      header: "Owner",
+      render: (c) => c.assignedToUserName ?? <span className="text-muted">Unassigned</span>,
+    },
+    {
+      key: "isActive",
+      header: "Status",
+      render: (c) => (
+        <span className={`badge ${c.isActive ? "text-bg-success" : "text-bg-secondary"}`}>
+          {c.isActive ? "Active" : "Inactive"}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div>
@@ -69,123 +122,51 @@ export default function CustomersList() {
         )}
       </div>
 
-      <ImportExportBar
-        entityLabel="Customers"
-        onExport={customerService.exportCsv}
-        onImport={customerService.importCsv}
-        onImportComplete={() => load(search, page)}
-      />
+      <div className="d-flex gap-2 mb-3 align-items-start">
+        <form className="d-flex" style={{ maxWidth: 360 }} onSubmit={handleSearchSubmit}>
+          <input
+            className="form-control me-2"
+            placeholder="Search by name, number, email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button type="submit" className="btn btn-outline-secondary">
+            <i className="bi bi-search" aria-hidden="true" />
+          </button>
+        </form>
 
-      <form className="d-flex mb-3" style={{ maxWidth: 360 }} onSubmit={handleSearchSubmit}>
-        <input
-          className="form-control me-2"
-          placeholder="Search by name, number, email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+        <ImportExportBar
+          className="ms-auto"
+          entityLabel="Customers"
+          onExport={customerService.exportCsv}
+          onImport={customerService.importCsv}
+          onImportComplete={reload}
         />
-        <button type="submit" className="btn btn-outline-secondary">
-          <i className="bi bi-search" aria-hidden="true" />
-        </button>
-      </form>
+      </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      <div className="card shadow-sm border-0">
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>Number</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Industry</th>
-                <th>Tags</th>
-                <th>Health</th>
-                <th>Owner</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading && (
-                <tr>
-                  <td colSpan={8} className="text-center text-muted py-4">
-                    Loading...
-                  </td>
-                </tr>
-              )}
-              {!isLoading && customers.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="text-center text-muted py-4">
-                    No customers found.
-                  </td>
-                </tr>
-              )}
-              {customers.map((customer) => (
-                <tr
-                  key={customer.id}
-                  role="button"
-                  onClick={() => navigate(`/customers/${customer.id}/edit`)}
-                >
-                  <td>{customer.customerNumber}</td>
-                  <td>{customer.displayName}</td>
-                  <td>{customer.type}</td>
-                  <td>{customer.industry ?? <span className="text-muted">&mdash;</span>}</td>
-                  <td>
-                    {customer.tags
-                      ? customer.tags.split(",").map((tag) => (
-                          <span key={tag} className="badge text-bg-light border me-1">
-                            {tag.trim()}
-                          </span>
-                        ))
-                      : <span className="text-muted">&mdash;</span>}
-                  </td>
-                  <td>
-                    {customer.healthStatus ? (
-                      <span className={`badge ${HEALTH_BADGE_CLASS[customer.healthStatus]}`}>
-                        {HEALTH_LABEL[customer.healthStatus]}
-                      </span>
-                    ) : (
-                      <span className="text-muted">&mdash;</span>
-                    )}
-                  </td>
-                  <td>{customer.assignedToUserName ?? <span className="text-muted">Unassigned</span>}</td>
-                  <td>
-                    <span className={`badge ${customer.isActive ? "text-bg-success" : "text-bg-secondary"}`}>
-                      {customer.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        items={customers}
+        rowKey={(c) => c.id}
+        isLoading={isLoading}
+        emptyMessage="No customers found."
+        emptyIcon="bi-building"
+        onRowClick={(c) => navigate(`/customers/${c.id}/edit`)}
+        sortBy={sortBy}
+        sortDescending={sortDescending}
+        onSortChange={onSortChange}
+      />
 
-      {totalPages > 1 && (
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <span className="text-muted small">
-            Page {page} of {totalPages} &middot; {totalCount} total
-          </span>
-          <div className="btn-group">
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
     </div>
   );
 }

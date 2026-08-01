@@ -8,6 +8,11 @@ namespace ZentavioCRM.Repositories.Interfaces
 
         Task<IReadOnlyList<Territory>> GetAllAsync();
 
+        /// <summary>Paged, filterable, sortable territory search — powers the Territories administration list.</summary>
+        /// <param name="sortBy">Column key (case-insensitive): name, parentTerritoryName, userCount, leadCount, isActive, createdAtUtc. Unrecognized/null falls back to name.</param>
+        Task<(IReadOnlyList<Territory> Items, int TotalCount)> SearchAsync(
+            string? search, int page, int pageSize, string? sortBy = null, bool sortDescending = false);
+
         Task<bool> NameExistsAsync(string name, Guid? excludeId = null);
 
         Task<int> CountUsersAsync(Guid territoryId);

@@ -21,7 +21,8 @@ namespace ZentavioCRM.Repositories
             => _dbContext.Leads.Include(l => l.AssignedToUser).Include(l => l.TerritoryRef).FirstOrDefaultAsync(l => l.Id == id);
 
         public async Task<(IReadOnlyList<Lead> Items, int TotalCount)> SearchAsync(
-            string? search, LeadStatus? status, Guid? assignedToUserId, int page, int pageSize, AccessScope? accessScope = null)
+            string? search, LeadStatus? status, Guid? assignedToUserId, int page, int pageSize,
+            AccessScope? accessScope = null, string? sortBy = null, bool sortDescending = true)
         {
             var query = _dbContext.Leads.Include(l => l.AssignedToUser).AsQueryable();
 
@@ -49,13 +50,34 @@ namespace ZentavioCRM.Repositories
 
             var totalCount = await query.CountAsync();
 
-            var items = await query
-                .OrderByDescending(l => l.CreatedAtUtc)
+            var items = await ApplySort(query, sortBy, sortDescending)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             return (items, totalCount);
+        }
+
+        /// <summary>
+        /// Column-key-driven sort, kept as an explicit switch (not reflection/dynamic-LINQ) so every
+        /// sortable column is a real, EF-translatable expression and arbitrary client input can never
+        /// reach raw SQL. Unrecognized/null sortBy falls back to CreatedAtUtc.
+        /// </summary>
+        private static IOrderedQueryable<Lead> ApplySort(IQueryable<Lead> query, string? sortBy, bool sortDescending)
+        {
+            return sortBy?.Trim().ToLowerInvariant() switch
+            {
+                "leadnumber" => sortDescending ? query.OrderByDescending(l => l.LeadNumber) : query.OrderBy(l => l.LeadNumber),
+                "companyname" => sortDescending ? query.OrderByDescending(l => l.CompanyName) : query.OrderBy(l => l.CompanyName),
+                "contactname" => sortDescending ? query.OrderByDescending(l => l.ContactName) : query.OrderBy(l => l.ContactName),
+                "source" => sortDescending ? query.OrderByDescending(l => l.Source) : query.OrderBy(l => l.Source),
+                "expectedvalue" => sortDescending ? query.OrderByDescending(l => l.ExpectedValue) : query.OrderBy(l => l.ExpectedValue),
+                "assignedtousername" => sortDescending
+                    ? query.OrderByDescending(l => l.AssignedToUser!.FirstName).ThenByDescending(l => l.AssignedToUser!.LastName)
+                    : query.OrderBy(l => l.AssignedToUser!.FirstName).ThenBy(l => l.AssignedToUser!.LastName),
+                "status" => sortDescending ? query.OrderByDescending(l => l.Status) : query.OrderBy(l => l.Status),
+                _ => sortDescending ? query.OrderByDescending(l => l.CreatedAtUtc) : query.OrderBy(l => l.CreatedAtUtc),
+            };
         }
 
         /// <summary>Shared Own/Team/All + delegation filter, reused by SearchAsync and the dashboard count methods below.</summary>

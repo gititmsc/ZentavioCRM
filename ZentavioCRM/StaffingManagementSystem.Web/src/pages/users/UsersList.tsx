@@ -1,31 +1,88 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { userService, type ManagedUser } from "@/services/userService";
+import { userService, type ManagedUser, type UserSearchParams } from "@/services/userService";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { UserAvatar } from "@/components/users/UserAvatar";
+import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
+import { Pagination } from "@/components/datatable/Pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 
 export default function UsersList() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const canManage = hasPermission(PermissionCodes.UsersManage);
 
-  const [users, setUsers] = useState<ManagedUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    (async () => {
-      setIsLoading(true);
-      const result = await userService.getAll();
-      setIsLoading(false);
-      if (!result.success || !result.data) {
-        setError(result.message || "Unable to load users.");
-        return;
-      }
-      setUsers(result.data);
-    })();
-  }, []);
+  const {
+    items: users,
+    totalCount,
+    totalPages,
+    page,
+    pageSize,
+    sortBy,
+    sortDescending,
+    isLoading,
+    error,
+    setPage,
+    setPageSize,
+    onSortChange,
+    resetToFirstPage,
+  } = usePagedList<ManagedUser, UserSearchParams>(
+    userService.search,
+    ({ page, pageSize, sortBy, sortDescending }) => ({
+      search: search || undefined,
+      page,
+      pageSize,
+      sortBy,
+      sortDescending,
+    }),
+    [search]
+  );
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    resetToFirstPage();
+  };
+
+  const columns: DataTableColumn<ManagedUser>[] = [
+    {
+      header: "",
+      render: (user) => <UserAvatar userId={user.id} fullName={user.fullName} hasProfilePhoto={user.hasProfilePhoto} size={32} />,
+    },
+    { key: "employeeCode", header: "Employee Code", render: (user) => user.employeeCode },
+    { key: "fullName", header: "Name", render: (user) => user.fullName },
+    { key: "email", header: "Email", render: (user) => user.email },
+    { key: "roleName", header: "Role", render: (user) => user.roleName },
+    {
+      key: "departmentName",
+      header: "Department",
+      render: (user) => user.departmentName ?? <span className="text-muted">&mdash;</span>,
+    },
+    {
+      key: "isActive",
+      header: "Status",
+      render: (user) => (
+        <span className={`badge ${user.isActive ? "text-bg-success" : "text-bg-secondary"}`}>
+          {user.isActive ? "Active" : "Inactive"}
+        </span>
+      ),
+    },
+    ...(canManage
+      ? [
+          {
+            header: "",
+            align: "end" as const,
+            render: (user: ManagedUser) => (
+              <Link to={`/users/${user.id}/edit`} className="btn btn-sm btn-outline-secondary" onClick={(e) => e.stopPropagation()}>
+                Edit
+              </Link>
+            ),
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div>
@@ -39,66 +96,40 @@ export default function UsersList() {
         )}
       </div>
 
+      <form className="d-flex mb-3" style={{ maxWidth: 360 }} onSubmit={handleSearchSubmit}>
+        <input
+          className="form-control me-2"
+          placeholder="Search by name, code, email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <button type="submit" className="btn btn-outline-secondary">
+          <i className="bi bi-search" aria-hidden="true" />
+        </button>
+      </form>
+
       {error && <div className="alert alert-danger">{error}</div>}
 
-      <div className="card shadow-sm border-0">
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead className="table-light">
-              <tr>
-                <th></th>
-                <th>Employee Code</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Department</th>
-                <th>Status</th>
-                {canManage && <th className="text-end">Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading && (
-                <tr>
-                  <td colSpan={8} className="text-center text-muted py-4">
-                    Loading...
-                  </td>
-                </tr>
-              )}
-              {!isLoading && users.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="text-center text-muted py-4">
-                    No users yet.
-                  </td>
-                </tr>
-              )}
-              {users.map((user) => (
-                <tr key={user.id}>
-                  <td>
-                    <UserAvatar userId={user.id} fullName={user.fullName} hasProfilePhoto={user.hasProfilePhoto} size={32} />
-                  </td>
-                  <td>{user.employeeCode}</td>
-                  <td>{user.fullName}</td>
-                  <td>{user.email}</td>
-                  <td>{user.roleName}</td>
-                  <td>{user.departmentName ?? <span className="text-muted">&mdash;</span>}</td>
-                  <td>
-                    <span className={`badge ${user.isActive ? "text-bg-success" : "text-bg-secondary"}`}>
-                      {user.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  {canManage && (
-                    <td className="text-end">
-                      <Link to={`/users/${user.id}/edit`} className="btn btn-sm btn-outline-secondary">
-                        Edit
-                      </Link>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        items={users}
+        rowKey={(user) => user.id}
+        isLoading={isLoading}
+        emptyMessage="No users yet."
+        emptyIcon="bi-people"
+        sortBy={sortBy}
+        sortDescending={sortDescending}
+        onSortChange={onSortChange}
+      />
+
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
     </div>
   );
 }

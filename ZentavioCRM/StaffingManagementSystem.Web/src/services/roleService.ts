@@ -3,6 +3,7 @@
  */
 import { apiClient } from "@/services/apiClient";
 import { callApi } from "@/services/apiHelpers";
+import type { PagedResult } from "@/services/leadService";
 
 /** How much of the Leads/Customers/Opportunities record-set a user with this role can see: only their own records, their department's, or everyone's. */
 export type VisibilityScope = "Own" | "Team" | "All";
@@ -28,6 +29,18 @@ export type PermissionCatalog = Record<string, string[]>;
 
 const getAll = () => callApi<Role[]>(apiClient.get("/api/roles"));
 
+export interface RoleSearchParams {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortDescending?: boolean;
+}
+
+/** Paged, filterable, sortable — powers the Roles administration list grid. Distinct from getAll(), which the permission-catalog/role pickers rely on. */
+const search = (params: RoleSearchParams) =>
+  callApi<PagedResult<Role>>(apiClient.get("/api/roles/search", { params }));
+
 const getById = (id: string) => callApi<Role>(apiClient.get(`/api/roles/${id}`));
 
 const getPermissionCatalog = () => callApi<PermissionCatalog>(apiClient.get("/api/roles/permissions"));
@@ -38,4 +51,4 @@ const update = (id: string, request: SaveRoleRequest) => callApi<Role>(apiClient
 
 const remove = (id: string) => callApi<boolean>(apiClient.delete(`/api/roles/${id}`));
 
-export const roleService = { getAll, getById, getPermissionCatalog, create, update, remove };
+export const roleService = { getAll, search, getById, getPermissionCatalog, create, update, remove };

@@ -14,6 +14,12 @@ namespace ZentavioCRM.Repositories.Interfaces
 
         Task<IReadOnlyList<User>> GetAllAsync();
 
+        /// <summary>Paged, filterable, sortable user search — powers the Users administration list (distinct from the unpaged GetAllAsync, which many dropdowns rely on).</summary>
+        /// <param name="sortBy">Column key (case-insensitive): employeeCode, fullName, email, roleName, departmentName, isActive, createdAtUtc. Unrecognized/null falls back to createdAtUtc.</param>
+        Task<(IReadOnlyList<User> Items, int TotalCount)> SearchAsync(
+            string? search, Guid? roleId, Guid? departmentId, bool? isActive, int page, int pageSize,
+            string? sortBy = null, bool sortDescending = true);
+
         Task<bool> EmailExistsAsync(string email, Guid? excludeUserId = null);
 
         Task<bool> EmployeeCodeExistsAsync(string employeeCode, Guid? excludeUserId = null);
