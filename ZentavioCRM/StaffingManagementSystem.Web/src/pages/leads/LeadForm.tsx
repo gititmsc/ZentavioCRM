@@ -5,6 +5,9 @@ import { leadService, type DuplicateMatch, type LeadSource, type SaveLeadRequest
 import { userService, type ManagedUser } from "@/services/userService";
 import { territoryService, type Territory } from "@/services/territoryService";
 import { emailPatternRule } from "@/utils/validation";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
+import { FormActionBar } from "@/components/form/FormActionBar";
 
 /** yyyy-MM-dd for a native <input type="date">, or "" if null. */
 function toDateInputValue(value: string | null): string {
@@ -138,38 +141,45 @@ export default function LeadForm() {
     return <div className="text-muted">Loading...</div>;
   }
 
+  const backTo = isEditMode && id ? `/leads/${id}` : "/leads";
+
   return (
     <div>
-      <h1 className="h4 mb-4">{isEditMode ? "Edit Lead" : "New Lead"}</h1>
+      <PageHeader
+        title={isEditMode ? "Edit Lead" : "New Lead"}
+        subtitle={isEditMode ? "Update this lead's details, tracking info, and assignment." : "Capture a new inbound or outbound lead."}
+        backTo={backTo}
+        backLabel="Back to Leads"
+      />
 
-      <div className="card shadow-sm border-0" style={{ maxWidth: 780 }}>
-        <div className="card-body">
-          {serverError && <div className="alert alert-danger">{serverError}</div>}
+      <div style={{ maxWidth: 860 }}>
+        {serverError && <div className="alert alert-danger">{serverError}</div>}
 
-          {!duplicatesDismissed && duplicateMatches.length > 0 && (
-            <div className="alert alert-warning d-flex justify-content-between align-items-start">
-              <div>
-                <strong>Possible duplicate{duplicateMatches.length > 1 ? "s" : ""} found:</strong>{" "}
-                {duplicateMatches.map((match, i) => (
-                  <span key={match.id}>
-                    {i > 0 && ", "}
-                    <Link to={match.type === "Lead" ? `/leads/${match.id}` : `/customers/${match.id}/edit`}>
-                      {match.name} ({match.type})
-                    </Link>
-                  </span>
-                ))}
-                . You can still save — this is just a heads-up.
-              </div>
-              <button
-                type="button"
-                className="btn-close"
-                aria-label="Dismiss"
-                onClick={() => setDuplicatesDismissed(true)}
-              />
+        {!duplicatesDismissed && duplicateMatches.length > 0 && (
+          <div className="alert alert-warning d-flex justify-content-between align-items-start">
+            <div>
+              <strong>Possible duplicate{duplicateMatches.length > 1 ? "s" : ""} found:</strong>{" "}
+              {duplicateMatches.map((match, i) => (
+                <span key={match.id}>
+                  {i > 0 && ", "}
+                  <Link to={match.type === "Lead" ? `/leads/${match.id}` : `/customers/${match.id}/edit`}>
+                    {match.name} ({match.type})
+                  </Link>
+                </span>
+              ))}
+              . You can still save — this is just a heads-up.
             </div>
-          )}
+            <button
+              type="button"
+              className="btn-close"
+              aria-label="Dismiss"
+              onClick={() => setDuplicatesDismissed(true)}
+            />
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <FormSection icon="bi-building" title="Company & Contact" description="Who this lead is and how to reach them.">
             <div className="row g-3">
               <div className="col-md-6">
                 <label className="form-label">Company Name</label>
@@ -204,12 +214,16 @@ export default function LeadForm() {
                 <input className="form-control" {...register("mobile", { onBlur: checkForDuplicates })} />
               </div>
 
-              <div className="col-md-4">
+              <div className="col-md-6">
                 <label className="form-label">Industry</label>
                 <input className="form-control" {...register("industry")} />
               </div>
+            </div>
+          </FormSection>
 
-              <div className="col-md-4">
+          <FormSection icon="bi-graph-up-arrow" title="Source & Tracking" description="Where this lead came from and any campaign attribution.">
+            <div className="row g-3">
+              <div className="col-md-6">
                 <label className="form-label">Source</label>
                 <select className="form-select" {...register("source")}>
                   {SOURCES.map((source) => (
@@ -220,7 +234,7 @@ export default function LeadForm() {
                 </select>
               </div>
 
-              <div className="col-md-4">
+              <div className="col-md-6">
                 <label className="form-label">Campaign</label>
                 <input className="form-control" placeholder="Human-readable label, e.g. Spring Promo" {...register("campaign")} />
               </div>
@@ -245,7 +259,11 @@ export default function LeadForm() {
                   </div>
                 </div>
               </div>
+            </div>
+          </FormSection>
 
+          <FormSection icon="bi-cash-coin" title="Deal Details & Assignment" description="Value, timeline, territory, and who owns this lead.">
+            <div className="row g-3">
               <div className="col-md-4">
                 <label className="form-label">Budget</label>
                 <input type="number" step="0.01" className="form-control" {...register("budget")} />
@@ -278,7 +296,7 @@ export default function LeadForm() {
                 </select>
               </div>
 
-              <div className="col-md-2">
+              <div className="col-md-4">
                 <label className="form-label">Next Follow-Up</label>
                 <input type="date" className="form-control" {...register("nextFollowUpDate")} />
               </div>
@@ -294,27 +312,22 @@ export default function LeadForm() {
                   ))}
                 </select>
               </div>
-
-              <div className="col-12">
-                <label className="form-label">Notes</label>
-                <textarea className="form-control" rows={3} {...register("notes")} />
-              </div>
             </div>
+          </FormSection>
 
-            <div className="d-flex gap-2 mt-4">
-              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save"}
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => navigate(isEditMode && id ? `/leads/${id}` : "/leads")}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
+          <FormSection icon="bi-journal-text" title="Notes">
+            <textarea className="form-control" rows={3} placeholder="Anything else worth noting about this lead..." {...register("notes")} />
+          </FormSection>
+
+          <FormActionBar>
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Lead"}
+            </button>
+            <button type="button" className="btn btn-outline-secondary" onClick={() => navigate(backTo)}>
+              Cancel
+            </button>
+          </FormActionBar>
+        </form>
       </div>
     </div>
   );

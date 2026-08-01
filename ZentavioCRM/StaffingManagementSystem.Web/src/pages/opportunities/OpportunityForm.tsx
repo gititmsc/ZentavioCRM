@@ -4,6 +4,9 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { opportunityService, type OpportunityContactRole, type SaveOpportunityRequest } from "@/services/opportunityService";
 import { userService, type ManagedUser } from "@/services/userService";
 import { customerService, type CustomerListItem, type ContactPerson } from "@/services/customerService";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
+import { FormActionBar } from "@/components/form/FormActionBar";
 
 /** yyyy-MM-dd for a native <input type="date">, or "" if null. */
 function toDateInputValue(value: string | null): string {
@@ -161,135 +164,151 @@ export default function OpportunityForm() {
     return <div className="text-muted">Loading...</div>;
   }
 
+  const backTo = isEditMode && id ? `/opportunities/${id}` : "/opportunities";
+
   return (
     <div>
-      <h1 className="h4 mb-4">{isEditMode ? "Edit Opportunity" : "New Opportunity"}</h1>
+      <PageHeader
+        title={isEditMode ? "Edit Opportunity" : "New Opportunity"}
+        subtitle={
+          isEditMode
+            ? "Update deal details, line items, and the buying committee."
+            : "Create a new sales opportunity."
+        }
+        backTo={backTo}
+        backLabel="Back to Opportunities"
+      />
 
-      <div className="card shadow-sm border-0" style={{ maxWidth: 900 }}>
-        <div className="card-body">
-          {serverError && <div className="alert alert-danger">{serverError}</div>}
+      {serverError && <div className="alert alert-danger">{serverError}</div>}
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label">Opportunity Name</label>
-                <input
-                  className={`form-control ${errors.name ? "is-invalid" : ""}`}
-                  {...register("name", { required: "Opportunity name is required." })}
-                />
-                {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Customer</label>
-                <select
-                  className={`form-select ${errors.customerId ? "is-invalid" : ""}`}
-                  {...register("customerId", { required: "A customer must be selected." })}
-                >
-                  <option value="">Select a customer</option>
-                  {customers.map((customer) => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.displayName}
-                    </option>
-                  ))}
-                </select>
-                {errors.customerId && <div className="invalid-feedback">{errors.customerId.message}</div>}
-              </div>
-
-              <div className="col-md-4">
-                <label className="form-label">
-                  Value {hasLineItems && <span className="text-muted small">(computed from line items)</span>}
-                </label>
-                {hasLineItems ? (
-                  <input type="number" className="form-control" value={computedTotal} readOnly disabled />
-                ) : (
-                  <input type="number" step="0.01" className="form-control" {...register("value")} />
-                )}
-              </div>
-
-              <div className="col-md-2">
-                <label className="form-label">Currency</label>
-                <input
-                  className="form-control"
-                  placeholder="USD"
-                  maxLength={10}
-                  {...register("currencyCode")}
-                />
-              </div>
-
-              <div className="col-md-2">
-                <label className="form-label">Probability (%)</label>
-                <input type="number" min={0} max={100} className="form-control" {...register("probability")} />
-              </div>
-
-              <div className="col-md-4">
-                <label className="form-label">Expected Close Date</label>
-                <input type="date" className="form-control" {...register("expectedCloseDate")} />
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Products (summary)</label>
-                <input className="form-control" placeholder="Short free-text summary" {...register("products")} />
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Competitors</label>
-                <input className="form-control" {...register("competitors")} />
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Owner</label>
-                <select className="form-select" {...register("assignedToUserId")}>
-                  <option value="">Unassigned</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.fullName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-md-6" />
-
-              <div className="col-md-8">
-                <label className="form-label">Next Step</label>
-                <input className="form-control" placeholder="What happens next to move this deal forward" {...register("nextStep")} />
-              </div>
-
-              <div className="col-md-4">
-                <label className="form-label">Next Step Date</label>
-                <input type="date" className="form-control" {...register("nextStepDate")} />
-              </div>
-
-              <div className="col-12">
-                <label className="form-label">Notes</label>
-                <textarea className="form-control" rows={3} {...register("notes")} />
-              </div>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <FormSection icon="bi-briefcase" title="Opportunity Details" description="Core information about this deal.">
+          <div className="row g-3">
+            <div className="col-md-6">
+              <label className="form-label">Opportunity Name</label>
+              <input
+                className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                {...register("name", { required: "Opportunity name is required." })}
+              />
+              {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
             </div>
 
-            <hr className="my-4" />
-
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <h2 className="h6 mb-0">Line Items</h2>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-primary"
-                onClick={() => append({ productName: "", quantity: 1, unitPrice: 0, discountPercent: null })}
+            <div className="col-md-6">
+              <label className="form-label">Customer</label>
+              <select
+                className={`form-select ${errors.customerId ? "is-invalid" : ""}`}
+                {...register("customerId", { required: "A customer must be selected." })}
               >
-                <i className="bi bi-plus-lg me-1" aria-hidden="true" />
-                Add Line
-              </button>
+                <option value="">Select a customer</option>
+                {customers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.displayName}
+                  </option>
+                ))}
+              </select>
+              {errors.customerId && <div className="invalid-feedback">{errors.customerId.message}</div>}
             </div>
 
-            {fields.length === 0 && (
-              <div className="text-muted small mb-2">
-                No line items — Value above is entered manually. Add a line item to switch to computed pricing.
-              </div>
-            )}
+            <div className="col-md-4">
+              <label className="form-label">
+                Value {hasLineItems && <span className="text-muted small">(computed from line items)</span>}
+              </label>
+              {hasLineItems ? (
+                <input type="number" className="form-control" value={computedTotal} readOnly disabled />
+              ) : (
+                <input type="number" step="0.01" className="form-control" {...register("value")} />
+              )}
+            </div>
 
-            {fields.map((field, index) => (
-              <div className="row g-2 align-items-center mb-2" key={field.id}>
+            <div className="col-md-2">
+              <label className="form-label">Currency</label>
+              <input
+                className="form-control"
+                placeholder="USD"
+                maxLength={10}
+                {...register("currencyCode")}
+              />
+            </div>
+
+            <div className="col-md-2">
+              <label className="form-label">Probability (%)</label>
+              <input type="number" min={0} max={100} className="form-control" {...register("probability")} />
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">Expected Close Date</label>
+              <input type="date" className="form-control" {...register("expectedCloseDate")} />
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">Owner</label>
+              <select className="form-select" {...register("assignedToUserId")}>
+                <option value="">Unassigned</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.fullName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection icon="bi-signpost-2" title="Strategy & Notes" description="Products, competitors, next steps, and internal notes.">
+          <div className="row g-3">
+            <div className="col-md-6">
+              <label className="form-label">Products (summary)</label>
+              <input className="form-control" placeholder="Short free-text summary" {...register("products")} />
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">Competitors</label>
+              <input className="form-control" {...register("competitors")} />
+            </div>
+
+            <div className="col-md-8">
+              <label className="form-label">Next Step</label>
+              <input className="form-control" placeholder="What happens next to move this deal forward" {...register("nextStep")} />
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">Next Step Date</label>
+              <input type="date" className="form-control" {...register("nextStepDate")} />
+            </div>
+
+            <div className="col-12">
+              <label className="form-label">Notes</label>
+              <textarea className="form-control" rows={3} {...register("notes")} />
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection
+          icon="bi-list-check"
+          title="Line Items"
+          description="Products and services included in this deal."
+          actions={
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary"
+              onClick={() => append({ productName: "", quantity: 1, unitPrice: 0, discountPercent: null })}
+            >
+              <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+              Add Line
+            </button>
+          }
+        >
+          {fields.length === 0 && (
+            <div className="text-muted small mb-2">
+              No line items — Value above is entered manually. Add a line item to switch to computed pricing.
+            </div>
+          )}
+
+          {fields.map((field, index) => (
+            <div className="itm-form-row-card" key={field.id}>
+              <div className="row g-2 align-items-end">
                 <div className="col-md-4">
+                  <label className="form-label small">Product/Service</label>
                   <input
                     className={`form-control form-control-sm ${
                       errors.lineItems?.[index]?.productName ? "is-invalid" : ""
@@ -302,6 +321,7 @@ export default function OpportunityForm() {
                   )}
                 </div>
                 <div className="col-md-2">
+                  <label className="form-label small">Qty</label>
                   <input
                     type="number"
                     step="0.01"
@@ -311,6 +331,7 @@ export default function OpportunityForm() {
                   />
                 </div>
                 <div className="col-md-2">
+                  <label className="form-label small">Unit Price</label>
                   <input
                     type="number"
                     step="0.01"
@@ -320,6 +341,7 @@ export default function OpportunityForm() {
                   />
                 </div>
                 <div className="col-md-2">
+                  <label className="form-label small">Discount %</label>
                   <input
                     type="number"
                     step="0.01"
@@ -341,44 +363,49 @@ export default function OpportunityForm() {
                   </button>
                 </div>
               </div>
-            ))}
-
-            {hasLineItems && (
-              <div className="text-end fw-semibold mt-2">Total: {computedTotal.toLocaleString()}</div>
-            )}
-
-            <hr className="my-4" />
-
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <h2 className="h6 mb-0">Buying Committee</h2>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-primary"
-                disabled={customerContacts.length === 0}
-                onClick={() => contactsArray.append({ contactPersonId: "", role: "Other", notes: null })}
-              >
-                <i className="bi bi-plus-lg me-1" aria-hidden="true" />
-                Add Contact
-              </button>
             </div>
+          ))}
 
-            {customerContacts.length === 0 && (
-              <div className="text-muted small mb-2">
-                {watchedCustomerId
-                  ? "This customer has no contacts yet — add one from the customer's edit screen first."
-                  : "Select a customer above to add buying-committee members."}
-              </div>
-            )}
+          {hasLineItems && (
+            <div className="text-end fw-semibold mt-2">Total: {computedTotal.toLocaleString()}</div>
+          )}
+        </FormSection>
 
-            {contactsArray.fields.length === 0 && customerContacts.length > 0 && (
-              <div className="text-muted small mb-2">
-                No buying-committee members added yet — track who's the champion, economic buyer, or a blocker on this deal.
-              </div>
-            )}
+        <FormSection
+          icon="bi-people"
+          title="Buying Committee"
+          description="Key contacts and their roles in this deal."
+          actions={
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary"
+              disabled={customerContacts.length === 0}
+              onClick={() => contactsArray.append({ contactPersonId: "", role: "Other", notes: null })}
+            >
+              <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+              Add Contact
+            </button>
+          }
+        >
+          {customerContacts.length === 0 && (
+            <div className="text-muted small mb-2">
+              {watchedCustomerId
+                ? "This customer has no contacts yet — add one from the customer's edit screen first."
+                : "Select a customer above to add buying-committee members."}
+            </div>
+          )}
 
-            {contactsArray.fields.map((field, index) => (
-              <div className="row g-2 align-items-center mb-2" key={field.id}>
+          {contactsArray.fields.length === 0 && customerContacts.length > 0 && (
+            <div className="text-muted small mb-2">
+              No buying-committee members added yet — track who's the champion, economic buyer, or a blocker on this deal.
+            </div>
+          )}
+
+          {contactsArray.fields.map((field, index) => (
+            <div className="itm-form-row-card" key={field.id}>
+              <div className="row g-2 align-items-end">
                 <div className="col-md-4">
+                  <label className="form-label small">Contact</label>
                   <select
                     className={`form-select form-select-sm ${
                       errors.contacts?.[index]?.contactPersonId ? "is-invalid" : ""
@@ -398,6 +425,7 @@ export default function OpportunityForm() {
                   )}
                 </div>
                 <div className="col-md-3">
+                  <label className="form-label small">Role</label>
                   <select className="form-select form-select-sm" {...register(`contacts.${index}.role`)}>
                     {OPPORTUNITY_CONTACT_ROLES.map((role) => (
                       <option key={role.value} value={role.value}>
@@ -407,6 +435,7 @@ export default function OpportunityForm() {
                   </select>
                 </div>
                 <div className="col-md-4">
+                  <label className="form-label small">Notes</label>
                   <input
                     className="form-control form-control-sm"
                     placeholder="Notes (optional)"
@@ -423,23 +452,19 @@ export default function OpportunityForm() {
                   </button>
                 </div>
               </div>
-            ))}
-
-            <div className="d-flex gap-2 mt-4">
-              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save"}
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => navigate(isEditMode && id ? `/opportunities/${id}` : "/opportunities")}
-              >
-                Cancel
-              </button>
             </div>
-          </form>
-        </div>
-      </div>
+          ))}
+        </FormSection>
+
+        <FormActionBar>
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save"}
+          </button>
+          <button type="button" className="btn btn-outline-secondary" onClick={() => navigate(backTo)}>
+            Cancel
+          </button>
+        </FormActionBar>
+      </form>
     </div>
   );
 }

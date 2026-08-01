@@ -9,6 +9,7 @@ import {
 } from "@/services/customerService";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { ImportExportBar } from "@/components/import-export/ImportExportBar";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
 import { Pagination } from "@/components/datatable/Pagination";
 import { usePagedList } from "@/hooks/usePagedList";
@@ -112,36 +113,41 @@ export default function CustomersList() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h4 mb-0">Customers</h1>
-        {canCreate && (
-          <button type="button" className="btn btn-primary" onClick={() => navigate("/customers/new")}>
-            <i className="bi bi-plus-lg me-1" aria-hidden="true" />
-            New Customer
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Customers"
+        subtitle="Your accounts, contacts, and addresses in one place."
+        actions={
+          canCreate && (
+            <button type="button" className="btn btn-primary" onClick={() => navigate("/customers/new")}>
+              <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+              New Customer
+            </button>
+          )
+        }
+      />
 
-      <div className="d-flex gap-2 mb-3 align-items-start">
-        <form className="d-flex" style={{ maxWidth: 360 }} onSubmit={handleSearchSubmit}>
-          <input
-            className="form-control me-2"
-            placeholder="Search by name, number, email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+      <div className="card shadow-sm border-0 p-3 mb-3">
+        <div className="d-flex gap-2 align-items-start">
+          <form className="d-flex" style={{ maxWidth: 360 }} onSubmit={handleSearchSubmit}>
+            <input
+              className="form-control me-2"
+              placeholder="Search by name, number, email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button type="submit" className="btn btn-outline-secondary">
+              <i className="bi bi-search" aria-hidden="true" />
+            </button>
+          </form>
+
+          <ImportExportBar
+            className="ms-auto"
+            entityLabel="Customers"
+            onExport={customerService.exportCsv}
+            onImport={customerService.importCsv}
+            onImportComplete={reload}
           />
-          <button type="submit" className="btn btn-outline-secondary">
-            <i className="bi bi-search" aria-hidden="true" />
-          </button>
-        </form>
-
-        <ImportExportBar
-          className="ms-auto"
-          entityLabel="Customers"
-          onExport={customerService.exportCsv}
-          onImport={customerService.importCsv}
-          onImportComplete={reload}
-        />
+        </div>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}

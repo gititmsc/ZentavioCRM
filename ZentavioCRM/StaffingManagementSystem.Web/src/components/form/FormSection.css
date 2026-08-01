@@ -1,0 +1,98 @@
+.itm-form-section {
+  background: var(--itm-card-bg);
+  border: 1px solid var(--itm-border);
+  border-radius: var(--itm-radius-card);
+  box-shadow: var(--itm-shadow-soft);
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  animation: itm-fade-in-up 240ms ease both;
+}
+
+.itm-form-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.05rem 1.4rem;
+  border-bottom: 1px solid var(--itm-border);
+  background: linear-gradient(180deg, #fbfdff 0%, #f6f9fc 100%);
+}
+
+.itm-form-section__heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.itm-form-section__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--itm-accent) 12%, white);
+  color: var(--itm-accent);
+  font-size: 1rem;
+  flex: none;
+}
+
+.itm-form-section__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--itm-text);
+}
+
+.itm-form-section__description {
+  font-size: 0.78rem;
+  color: var(--itm-muted);
+  margin: 0.2rem 0 0;
+}
+
+.itm-form-section__actions {
+  flex: none;
+}
+
+.itm-form-section__body {
+  padding: 1.4rem;
+}
+
+/* Refined field styling, scoped to inside a form section so it never leaks into unrelated forms (login, etc). */
+.itm-form-section__body .form-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--itm-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+  margin-bottom: 0.35rem;
+}
+
+.itm-form-section__body .form-control,
+.itm-form-section__body .form-select {
+  border-radius: var(--itm-radius-control);
+  border-color: var(--itm-border);
+}
+
+.itm-form-section__body .form-control:hover,
+.itm-form-section__body .form-select:hover {
+  border-color: color-mix(in srgb, var(--itm-accent) 45%, var(--itm-border));
+}
+
+.itm-form-section__body .form-control-sm,
+.itm-form-section__body .form-select-sm {
+  border-radius: 8px;
+}
+
+/* Repeatable rows inside a section (contacts, addresses, line items). */
+.itm-form-row-card {
+  background: var(--itm-bg);
+  border: 1px solid var(--itm-border);
+  border-radius: var(--itm-radius-control);
+  padding: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.itm-form-row-card:last-child {
+  margin-bottom: 0;
+}

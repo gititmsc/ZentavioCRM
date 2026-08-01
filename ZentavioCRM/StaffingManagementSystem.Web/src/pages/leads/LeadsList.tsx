@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { leadService, type LeadListItem, type LeadSearchParams, type LeadStatus } from "@/services/leadService";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { ImportExportBar } from "@/components/import-export/ImportExportBar";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
 import { Pagination } from "@/components/datatable/Pagination";
 import { usePagedList } from "@/hooks/usePagedList";
@@ -98,54 +99,59 @@ export default function LeadsList() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h4 mb-0">Leads</h1>
-        {canCreate && (
-          <button type="button" className="btn btn-primary" onClick={() => navigate("/leads/new")}>
-            <i className="bi bi-plus-lg me-1" aria-hidden="true" />
-            New Lead
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Leads"
+        subtitle="Track and qualify inbound and outbound leads."
+        actions={
+          canCreate && (
+            <button type="button" className="btn btn-primary" onClick={() => navigate("/leads/new")}>
+              <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+              New Lead
+            </button>
+          )
+        }
+      />
 
-      <div className="d-flex gap-2 mb-3 align-items-start">
-        <form className="d-flex" style={{ maxWidth: 320 }} onSubmit={handleSearchSubmit}>
-          <input
-            className="form-control me-2"
-            placeholder="Search leads..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+      <div className="card shadow-sm border-0 p-3 mb-3">
+        <div className="d-flex gap-2 align-items-start">
+          <form className="d-flex" style={{ maxWidth: 320 }} onSubmit={handleSearchSubmit}>
+            <input
+              className="form-control me-2"
+              placeholder="Search leads..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button type="submit" className="btn btn-outline-secondary">
+              <i className="bi bi-search" aria-hidden="true" />
+            </button>
+          </form>
+
+          <select
+            className="form-select"
+            style={{ maxWidth: 200 }}
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value as LeadStatus | "");
+              resetToFirstPage();
+            }}
+          >
+            <option value="">All statuses</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+
+          <ImportExportBar
+            className="ms-auto"
+            entityLabel="Leads"
+            onExport={leadService.exportCsv}
+            onImport={leadService.importCsv}
+            onImportComplete={reload}
+            sampleFileUrl="/samples/leads-import-sample.csv"
           />
-          <button type="submit" className="btn btn-outline-secondary">
-            <i className="bi bi-search" aria-hidden="true" />
-          </button>
-        </form>
-
-        <select
-          className="form-select"
-          style={{ maxWidth: 200 }}
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value as LeadStatus | "");
-            resetToFirstPage();
-          }}
-        >
-          <option value="">All statuses</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-
-        <ImportExportBar
-          className="ms-auto"
-          entityLabel="Leads"
-          onExport={leadService.exportCsv}
-          onImport={leadService.importCsv}
-          onImportComplete={reload}
-          sampleFileUrl="/samples/leads-import-sample.csv"
-        />
+        </div>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}

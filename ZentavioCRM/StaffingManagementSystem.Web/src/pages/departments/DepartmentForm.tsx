@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { departmentService, type Department, type SaveDepartmentRequest } from "@/services/departmentService";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
+import { FormActionBar } from "@/components/form/FormActionBar";
 
 export default function DepartmentForm() {
   const { id } = useParams<{ id: string }>();
@@ -67,14 +70,19 @@ export default function DepartmentForm() {
 
   return (
     <div>
-      <h1 className="h4 mb-4">{isEditMode ? "Edit Department" : "New Department"}</h1>
+      <PageHeader
+        title={isEditMode ? "Edit Department" : "New Department"}
+        subtitle={isEditMode ? "Update this department's name and hierarchy." : "Add a new department to the org structure."}
+        backTo="/departments"
+        backLabel="Back to Departments"
+      />
 
-      <div className="card shadow-sm border-0" style={{ maxWidth: 560 }}>
-        <div className="card-body">
-          {serverError && <div className="alert alert-danger">{serverError}</div>}
+      {serverError && <div className="alert alert-danger">{serverError}</div>}
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className="mb-3">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <FormSection icon="bi-diagram-3" title="Department Details" description="Name, hierarchy, and status.">
+          <div className="row g-3">
+            <div className="col-md-6">
               <label className="form-label" htmlFor="name">
                 Department Name
               </label>
@@ -86,7 +94,7 @@ export default function DepartmentForm() {
               {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
             </div>
 
-            <div className="mb-3">
+            <div className="col-md-6">
               <label className="form-label" htmlFor="parentDepartmentId">
                 Parent Department
               </label>
@@ -100,24 +108,26 @@ export default function DepartmentForm() {
               </select>
             </div>
 
-            <div className="form-check mb-4">
-              <input id="isActive" type="checkbox" className="form-check-input" {...register("isActive")} />
-              <label className="form-check-label" htmlFor="isActive">
-                Active
-              </label>
+            <div className="col-md-6 d-flex align-items-end">
+              <div className="form-check">
+                <input id="isActive" type="checkbox" className="form-check-input" {...register("isActive")} />
+                <label className="form-check-label" htmlFor="isActive">
+                  Active
+                </label>
+              </div>
             </div>
+          </div>
+        </FormSection>
 
-            <div className="d-flex gap-2">
-              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save"}
-              </button>
-              <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/departments")}>
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+        <FormActionBar>
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save"}
+          </button>
+          <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/departments")}>
+            Cancel
+          </button>
+        </FormActionBar>
+      </form>
     </div>
   );
 }

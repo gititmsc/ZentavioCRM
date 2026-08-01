@@ -13,6 +13,9 @@ import { userService, type ManagedUser } from "@/services/userService";
 import { DocumentsPanel } from "@/components/documents/DocumentsPanel";
 import { HistoryPanel } from "@/components/history/HistoryPanel";
 import { emailPatternRule } from "@/utils/validation";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
+import { FormActionBar } from "@/components/form/FormActionBar";
 
 /** yyyy-MM-dd for a native <input type="date">, or "" if null. */
 function toDateInputValue(value: string | null): string {
@@ -175,14 +178,18 @@ export default function CustomerForm() {
 
   return (
     <div>
-      <h1 className="h4 mb-4">{isEditMode ? "Edit Customer" : "New Customer"}</h1>
+      <PageHeader
+        title={isEditMode ? "Edit Customer" : "New Customer"}
+        subtitle={isEditMode ? "Update company details, contacts, and addresses." : "Add a new customer account."}
+        backTo="/customers"
+        backLabel="Back to Customers"
+      />
 
       {serverError && <div className="alert alert-danger">{serverError}</div>}
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <div className="card shadow-sm border-0 mb-4">
-          <div className="card-header bg-white fw-semibold">Company Details</div>
-          <div className="card-body row g-3">
+        <FormSection icon="bi-building" title="Company Details" description="Legal identity and primary contact information.">
+          <div className="row g-3">
             <div className="col-md-4">
               <label className="form-label">Legal Name</label>
               <input
@@ -249,7 +256,11 @@ export default function CustomerForm() {
                 ))}
               </select>
             </div>
+          </div>
+        </FormSection>
 
+        <FormSection icon="bi-cash-coin" title="Commercial Details" description="Financials, rating, and segmentation.">
+          <div className="row g-3">
             <div className="col-md-3">
               <label className="form-label">Employees</label>
               <input type="number" className="form-control" {...register("employeesCount")} />
@@ -303,7 +314,7 @@ export default function CustomerForm() {
 
             <div className="col-md-6">
               <label className="form-label">
-                Tags <span className="text-muted small">(comma-separated, e.g. VIP, At Risk)</span>
+                Tags <span className="text-muted small text-lowercase fw-normal">(comma-separated, e.g. VIP, At Risk)</span>
               </label>
               <input className="form-control" placeholder="VIP, Hot Account, At Risk" {...register("tags")} />
             </div>
@@ -320,11 +331,13 @@ export default function CustomerForm() {
               </select>
             </div>
           </div>
-        </div>
+        </FormSection>
 
-        <div className="card shadow-sm border-0 mb-4">
-          <div className="card-header bg-white d-flex justify-content-between align-items-center">
-            <span className="fw-semibold">Contacts</span>
+        <FormSection
+          icon="bi-person-lines-fill"
+          title="Contacts"
+          description="People at this company you deal with."
+          actions={
             <button
               type="button"
               className="btn btn-sm btn-outline-primary"
@@ -350,11 +363,12 @@ export default function CustomerForm() {
               <i className="bi bi-plus-lg me-1" aria-hidden="true" />
               Add Contact
             </button>
-          </div>
-          <div className="card-body">
-            {contactsArray.fields.length === 0 && <div className="text-muted">No contacts added yet.</div>}
-            {contactsArray.fields.map((field, index) => (
-              <div className="row g-2 align-items-end border-bottom pb-3 mb-3" key={field.id}>
+          }
+        >
+          {contactsArray.fields.length === 0 && <div className="text-muted">No contacts added yet.</div>}
+          {contactsArray.fields.map((field, index) => (
+            <div className="itm-form-row-card" key={field.id}>
+              <div className="row g-2 align-items-end">
                 <div className="col-md-3">
                   <label className="form-label small">First Name</label>
                   <input className="form-control form-control-sm" {...register(`contacts.${index}.firstName`)} />
@@ -441,13 +455,15 @@ export default function CustomerForm() {
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          ))}
+        </FormSection>
 
-        <div className="card shadow-sm border-0 mb-4">
-          <div className="card-header bg-white d-flex justify-content-between align-items-center">
-            <span className="fw-semibold">Addresses</span>
+        <FormSection
+          icon="bi-geo-alt"
+          title="Addresses"
+          description="Billing, shipping, and other site locations."
+          actions={
             <button
               type="button"
               className="btn btn-sm btn-outline-primary"
@@ -467,11 +483,12 @@ export default function CustomerForm() {
               <i className="bi bi-plus-lg me-1" aria-hidden="true" />
               Add Address
             </button>
-          </div>
-          <div className="card-body">
-            {addressesArray.fields.length === 0 && <div className="text-muted">No addresses added yet.</div>}
-            {addressesArray.fields.map((field, index) => (
-              <div className="row g-2 align-items-end border-bottom pb-3 mb-3" key={field.id}>
+          }
+        >
+          {addressesArray.fields.length === 0 && <div className="text-muted">No addresses added yet.</div>}
+          {addressesArray.fields.map((field, index) => (
+            <div className="itm-form-row-card" key={field.id}>
+              <div className="row g-2 align-items-end">
                 <div className="col-md-2">
                   <label className="form-label small">Type</label>
                   <select className="form-select form-select-sm" {...register(`addresses.${index}.type`)}>
@@ -509,25 +526,25 @@ export default function CustomerForm() {
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          ))}
+        </FormSection>
 
-        <div className="d-flex gap-2 mb-4">
+        <FormActionBar>
           <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save"}
+            {isSubmitting ? "Saving..." : "Save Customer"}
           </button>
           <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/customers")}>
             Cancel
           </button>
-        </div>
+        </FormActionBar>
       </form>
 
       {isEditMode && id && (
-        <>
+        <div className="mt-4">
           <DocumentsPanel entityType="Customer" entityId={id} />
           <HistoryPanel entityType="Customer" entityId={id} />
-        </>
+        </div>
       )}
     </div>
   );

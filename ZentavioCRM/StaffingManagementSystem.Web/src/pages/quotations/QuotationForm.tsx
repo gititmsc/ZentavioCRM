@@ -8,6 +8,9 @@ import {
 } from "@/services/quotationService";
 import { userService, type ManagedUser } from "@/services/userService";
 import { opportunityService, type OpportunityListItem } from "@/services/opportunityService";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
+import { FormActionBar } from "@/components/form/FormActionBar";
 
 type QuotationFormValues = CreateQuotationRequest;
 
@@ -125,81 +128,99 @@ export default function QuotationForm() {
     return <div className="text-muted">Loading...</div>;
   }
 
+  const backTo = isEditMode && id ? `/quotations/${id}` : "/quotations";
+
   return (
     <div>
-      <h1 className="h4 mb-4">{isEditMode ? "Edit Quotation" : "New Quotation"}</h1>
+      <PageHeader
+        title={isEditMode ? "Edit Quotation" : "New Quotation"}
+        subtitle={
+          isEditMode
+            ? "Update line items, terms, and validity for this quotation."
+            : "Create a new price quotation for an opportunity."
+        }
+        backTo={backTo}
+        backLabel="Back to Quotations"
+      />
 
-      <div className="card shadow-sm border-0" style={{ maxWidth: 900 }}>
-        <div className="card-body">
-          {serverError && <div className="alert alert-danger">{serverError}</div>}
+      {serverError && <div className="alert alert-danger">{serverError}</div>}
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label">Opportunity</label>
-                {isEditMode ? (
-                  <input className="form-control" value={opportunityName ?? ""} disabled readOnly />
-                ) : (
-                  <select
-                    className={`form-select ${errors.opportunityId ? "is-invalid" : ""}`}
-                    {...register("opportunityId", { required: "An opportunity must be selected." })}
-                  >
-                    <option value="">Select an opportunity</option>
-                    {opportunities.map((opportunity) => (
-                      <option key={opportunity.id} value={opportunity.id}>
-                        {opportunity.name} — {opportunity.customerName}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {errors.opportunityId && <div className="invalid-feedback">{errors.opportunityId.message}</div>}
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Valid Until</label>
-                <input type="date" className="form-control" {...register("validUntil")} />
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Owner</label>
-                <select className="form-select" {...register("assignedToUserId")} disabled={isEditMode}>
-                  <option value="">Unassigned</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.fullName}
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <FormSection icon="bi-file-earmark-text" title="Quotation Details" description="Opportunity, validity, and ownership.">
+          <div className="row g-3">
+            <div className="col-md-6">
+              <label className="form-label">Opportunity</label>
+              {isEditMode ? (
+                <input className="form-control" value={opportunityName ?? ""} disabled readOnly />
+              ) : (
+                <select
+                  className={`form-select ${errors.opportunityId ? "is-invalid" : ""}`}
+                  {...register("opportunityId", { required: "An opportunity must be selected." })}
+                >
+                  <option value="">Select an opportunity</option>
+                  {opportunities.map((opportunity) => (
+                    <option key={opportunity.id} value={opportunity.id}>
+                      {opportunity.name} — {opportunity.customerName}
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div className="col-12">
-                <label className="form-label">Terms &amp; Conditions</label>
-                <textarea className="form-control" rows={3} {...register("termsAndConditions")} />
-              </div>
-
-              <div className="col-12">
-                <label className="form-label">Notes</label>
-                <textarea className="form-control" rows={2} {...register("notes")} />
-              </div>
+              )}
+              {errors.opportunityId && <div className="invalid-feedback">{errors.opportunityId.message}</div>}
             </div>
 
-            <hr className="my-4" />
-
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <h2 className="h6 mb-0">Line Items</h2>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-primary"
-                onClick={() => append({ ...emptyLine })}
-              >
-                <i className="bi bi-plus-lg me-1" aria-hidden="true" />
-                Add Line
-              </button>
+            <div className="col-md-3">
+              <label className="form-label">Valid Until</label>
+              <input type="date" className="form-control" {...register("validUntil")} />
             </div>
 
-            {fields.map((field, index) => (
-              <div className="row g-2 align-items-center mb-2" key={field.id}>
+            <div className="col-md-3">
+              <label className="form-label">Owner</label>
+              <select className="form-select" {...register("assignedToUserId")} disabled={isEditMode}>
+                <option value="">Unassigned</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.fullName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection icon="bi-journal-text" title="Terms & Notes" description="Terms & conditions and internal notes.">
+          <div className="row g-3">
+            <div className="col-12">
+              <label className="form-label">Terms &amp; Conditions</label>
+              <textarea className="form-control" rows={3} {...register("termsAndConditions")} />
+            </div>
+
+            <div className="col-12">
+              <label className="form-label">Notes</label>
+              <textarea className="form-control" rows={2} {...register("notes")} />
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection
+          icon="bi-list-check"
+          title="Line Items"
+          description="Products and services on this quotation."
+          actions={
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary"
+              onClick={() => append({ ...emptyLine })}
+            >
+              <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+              Add Line
+            </button>
+          }
+        >
+          {fields.map((field, index) => (
+            <div className="itm-form-row-card" key={field.id}>
+              <div className="row g-2 align-items-end">
                 <div className="col-md-3">
+                  <label className="form-label small">Product/Service</label>
                   <input
                     className={`form-control form-control-sm ${
                       errors.lineItems?.[index]?.productName ? "is-invalid" : ""
@@ -212,6 +233,7 @@ export default function QuotationForm() {
                   )}
                 </div>
                 <div className="col-md-2">
+                  <label className="form-label small">Qty</label>
                   <input
                     type="number"
                     step="0.01"
@@ -221,6 +243,7 @@ export default function QuotationForm() {
                   />
                 </div>
                 <div className="col-md-2">
+                  <label className="form-label small">Unit Price</label>
                   <input
                     type="number"
                     step="0.01"
@@ -230,6 +253,7 @@ export default function QuotationForm() {
                   />
                 </div>
                 <div className="col-md-2">
+                  <label className="form-label small">Discount %</label>
                   <input
                     type="number"
                     step="0.01"
@@ -239,6 +263,7 @@ export default function QuotationForm() {
                   />
                 </div>
                 <div className="col-md-1">
+                  <label className="form-label small">Tax %</label>
                   <input
                     type="number"
                     step="0.01"
@@ -263,25 +288,23 @@ export default function QuotationForm() {
                   )}
                 </div>
               </div>
-            ))}
-
-            <div className="text-end fw-semibold mt-2">Grand Total (incl. tax): {computedTotal.toLocaleString()}</div>
-
-            <div className="d-flex gap-2 mt-4">
-              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save"}
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => navigate(isEditMode && id ? `/quotations/${id}` : "/quotations")}
-              >
-                Cancel
-              </button>
             </div>
-          </form>
-        </div>
-      </div>
+          ))}
+
+          <div className="itm-form-row-card d-flex justify-content-end align-items-center bg-light fw-semibold">
+            Grand Total (incl. tax): {computedTotal.toLocaleString()}
+          </div>
+        </FormSection>
+
+        <FormActionBar>
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save"}
+          </button>
+          <button type="button" className="btn btn-outline-secondary" onClick={() => navigate(backTo)}>
+            Cancel
+          </button>
+        </FormActionBar>
+      </form>
     </div>
   );
 }

@@ -9,6 +9,9 @@ import { UserAvatar } from "@/components/users/UserAvatar";
 import { emailPatternRule } from "@/utils/validation";
 import { useAuth } from "@/context/AuthContext";
 import { PermissionCodes } from "@/services/permissionCodes";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
+import { FormActionBar } from "@/components/form/FormActionBar";
 
 // isActive only applies in edit mode (new users are always created active); kept on one
 // form type so the same fields/inputs work for both create and edit.
@@ -205,220 +208,227 @@ export default function UserForm() {
 
   return (
     <div>
-      <h1 className="h4 mb-4">{isEditMode ? "Edit User" : "New User"}</h1>
+      <PageHeader
+        title={isEditMode ? "Edit User" : "New User"}
+        subtitle={isEditMode ? "Update this user's profile, role, and assignment." : "Create a new user account."}
+        backTo="/users"
+        backLabel="Back to Users"
+      />
 
-      <div className="card shadow-sm border-0" style={{ maxWidth: 720 }}>
-        <div className="card-body">
-          {serverError && <div className="alert alert-danger">{serverError}</div>}
+      {serverError && <div className="alert alert-danger">{serverError}</div>}
 
-          {isEditMode && id && (
-            <div className="d-flex align-items-center gap-3 mb-4">
-              <UserAvatar
-                key={`${id}-${photoVersion}`}
-                userId={id}
-                fullName={loadedFullName || "?"}
-                hasProfilePhoto={hasProfilePhoto}
-                size={64}
-              />
-              <div>
-                {photoError && <div className="text-danger small mb-1">{photoError}</div>}
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline-primary me-2"
-                  disabled={isUploadingPhoto}
-                  onClick={() => photoInputRef.current?.click()}
-                >
-                  <i className="bi bi-upload me-1" aria-hidden="true" />
-                  {isUploadingPhoto ? "Uploading..." : hasProfilePhoto ? "Change Photo" : "Upload Photo"}
-                </button>
-                {hasProfilePhoto && (
-                  <button type="button" className="btn btn-sm btn-outline-danger" onClick={handleRemovePhoto}>
-                    Remove
-                  </button>
-                )}
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/gif"
-                  className="d-none"
-                  onChange={handlePhotoChange}
-                />
-              </div>
-            </div>
-          )}
-
-          {isEditMode && id && canManage && (
-            <div className="border rounded-3 p-3 mb-4">
-              <h2 className="h6 fw-semibold mb-2">Reset Password</h2>
-              <p className="text-muted small mb-3">
-                Sets a new password for this user without needing their current one, and signs them out of every
-                device. Use this if a user is locked out or an account may be compromised.
-              </p>
-
-              {resetPasswordError && <div className="alert alert-danger py-2">{resetPasswordError}</div>}
-              {resetPasswordSuccess && <div className="alert alert-success py-2">{resetPasswordSuccess}</div>}
-
-              <form onSubmit={handleResetPasswordSubmit(onAdminResetPassword)} noValidate className="row g-2 align-items-end">
-                <div className="col-md-6">
-                  <label className="form-label small">New Password</label>
-                  <input
-                    type="password"
-                    autoComplete="new-password"
-                    className={`form-control form-control-sm ${resetPasswordErrors.newPassword ? "is-invalid" : ""}`}
-                    {...registerResetPassword("newPassword", {
-                      required: "A new password is required.",
-                      minLength: { value: 8, message: "Password must be at least 8 characters." },
-                    })}
-                  />
-                  {resetPasswordErrors.newPassword && (
-                    <div className="invalid-feedback">{resetPasswordErrors.newPassword.message}</div>
-                  )}
-                </div>
-                <div className="col-md-3">
-                  <button type="submit" className="btn btn-sm btn-outline-danger" disabled={isResettingPassword}>
-                    {isResettingPassword ? "Resetting..." : "Reset Password"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className="row g-3">
-              <div className="col-md-4">
-                <label className="form-label">Employee Code</label>
-                <input
-                  className={`form-control ${errors.employeeCode ? "is-invalid" : ""}`}
-                  disabled={isEditMode}
-                  {...register("employeeCode", { required: "Employee code is required." })}
-                />
-                {errors.employeeCode && <div className="invalid-feedback">{errors.employeeCode.message}</div>}
-              </div>
-
-              <div className="col-md-4">
-                <label className="form-label">First Name</label>
-                <input
-                  className={`form-control ${errors.firstName ? "is-invalid" : ""}`}
-                  {...register("firstName", { required: "First name is required." })}
-                />
-                {errors.firstName && <div className="invalid-feedback">{errors.firstName.message}</div>}
-              </div>
-
-              <div className="col-md-4">
-                <label className="form-label">Last Name</label>
-                <input
-                  className={`form-control ${errors.lastName ? "is-invalid" : ""}`}
-                  {...register("lastName", { required: "Last name is required." })}
-                />
-                {errors.lastName && <div className="invalid-feedback">{errors.lastName.message}</div>}
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Email</label>
-                <input
-                  type="email"
-                  className={`form-control ${errors.email ? "is-invalid" : ""}`}
-                  disabled={isEditMode}
-                  {...register("email", { required: "Email is required.", ...emailPatternRule })}
-                />
-                {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Mobile</label>
-                <input className="form-control" {...register("mobile")} />
-              </div>
-
-              {!isEditMode && (
-                <div className="col-md-6">
-                  <label className="form-label">Temporary Password</label>
-                  <input
-                    type="password"
-                    className={`form-control ${errors.password ? "is-invalid" : ""}`}
-                    {...register("password", {
-                      required: "Password is required.",
-                      minLength: { value: 8, message: "Password must be at least 8 characters." },
-                    })}
-                  />
-                  {errors.password && <div className="invalid-feedback">{errors.password.message}</div>}
-                </div>
-              )}
-
-              <div className="col-md-6">
-                <label className="form-label">Role</label>
-                <select
-                  className={`form-select ${errors.roleId ? "is-invalid" : ""}`}
-                  {...register("roleId", { required: "A role must be selected." })}
-                >
-                  <option value="">Select a role</option>
-                  {roles.map((role) => (
-                    <option key={role.id} value={role.id}>
-                      {role.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.roleId && <div className="invalid-feedback">{errors.roleId.message}</div>}
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Department</label>
-                <select className="form-select" {...register("departmentId")}>
-                  <option value="">None</option>
-                  {departments.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Reporting Manager</label>
-                <select className="form-select" {...register("reportingManagerId")}>
-                  <option value="">None</option>
-                  {managers.map((manager) => (
-                    <option key={manager.id} value={manager.id}>
-                      {manager.fullName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Territory</label>
-                <select className="form-select" {...register("territoryId")}>
-                  <option value="">None</option>
-                  {territories.map((territory) => (
-                    <option key={territory.id} value={territory.id}>
-                      {territory.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {isEditMode && (
-                <div className="col-md-6 d-flex align-items-end">
-                  <div className="form-check">
-                    <input id="isActive" type="checkbox" className="form-check-input" {...register("isActive")} />
-                    <label className="form-check-label" htmlFor="isActive">
-                      Active
-                    </label>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="d-flex gap-2 mt-4">
-              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save"}
+      {isEditMode && id && (
+        <FormSection icon="bi-camera" title="Profile Photo">
+          <div className="d-flex align-items-center gap-3">
+            <UserAvatar
+              key={`${id}-${photoVersion}`}
+              userId={id}
+              fullName={loadedFullName || "?"}
+              hasProfilePhoto={hasProfilePhoto}
+              size={64}
+            />
+            <div>
+              {photoError && <div className="text-danger small mb-1">{photoError}</div>}
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary me-2"
+                disabled={isUploadingPhoto}
+                onClick={() => photoInputRef.current?.click()}
+              >
+                <i className="bi bi-upload me-1" aria-hidden="true" />
+                {isUploadingPhoto ? "Uploading..." : hasProfilePhoto ? "Change Photo" : "Upload Photo"}
               </button>
-              <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/users")}>
-                Cancel
+              {hasProfilePhoto && (
+                <button type="button" className="btn btn-sm btn-outline-danger" onClick={handleRemovePhoto}>
+                  Remove
+                </button>
+              )}
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/gif"
+                className="d-none"
+                onChange={handlePhotoChange}
+              />
+            </div>
+          </div>
+        </FormSection>
+      )}
+
+      {isEditMode && id && canManage && (
+        <FormSection
+          icon="bi-key"
+          title="Reset Password"
+          description="Sets a new password for this user without needing their current one, and signs them out of every device. Use this if a user is locked out or an account may be compromised."
+        >
+          {resetPasswordError && <div className="alert alert-danger py-2">{resetPasswordError}</div>}
+          {resetPasswordSuccess && <div className="alert alert-success py-2">{resetPasswordSuccess}</div>}
+
+          <form onSubmit={handleResetPasswordSubmit(onAdminResetPassword)} noValidate className="row g-2 align-items-end">
+            <div className="col-md-6">
+              <label className="form-label small">New Password</label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                className={`form-control form-control-sm ${resetPasswordErrors.newPassword ? "is-invalid" : ""}`}
+                {...registerResetPassword("newPassword", {
+                  required: "A new password is required.",
+                  minLength: { value: 8, message: "Password must be at least 8 characters." },
+                })}
+              />
+              {resetPasswordErrors.newPassword && (
+                <div className="invalid-feedback">{resetPasswordErrors.newPassword.message}</div>
+              )}
+            </div>
+            <div className="col-md-3">
+              <button type="submit" className="btn btn-sm btn-outline-danger" disabled={isResettingPassword}>
+                {isResettingPassword ? "Resetting..." : "Reset Password"}
               </button>
             </div>
           </form>
-        </div>
-      </div>
+        </FormSection>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <FormSection icon="bi-person-badge" title="User Identity" description="Name, contact details, and login credentials.">
+          <div className="row g-3">
+            <div className="col-md-4">
+              <label className="form-label">Employee Code</label>
+              <input
+                className={`form-control ${errors.employeeCode ? "is-invalid" : ""}`}
+                disabled={isEditMode}
+                {...register("employeeCode", { required: "Employee code is required." })}
+              />
+              {errors.employeeCode && <div className="invalid-feedback">{errors.employeeCode.message}</div>}
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">First Name</label>
+              <input
+                className={`form-control ${errors.firstName ? "is-invalid" : ""}`}
+                {...register("firstName", { required: "First name is required." })}
+              />
+              {errors.firstName && <div className="invalid-feedback">{errors.firstName.message}</div>}
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">Last Name</label>
+              <input
+                className={`form-control ${errors.lastName ? "is-invalid" : ""}`}
+                {...register("lastName", { required: "Last name is required." })}
+              />
+              {errors.lastName && <div className="invalid-feedback">{errors.lastName.message}</div>}
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">Email</label>
+              <input
+                type="email"
+                className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                disabled={isEditMode}
+                {...register("email", { required: "Email is required.", ...emailPatternRule })}
+              />
+              {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">Mobile</label>
+              <input className="form-control" {...register("mobile")} />
+            </div>
+
+            {!isEditMode && (
+              <div className="col-md-6">
+                <label className="form-label">Temporary Password</label>
+                <input
+                  type="password"
+                  className={`form-control ${errors.password ? "is-invalid" : ""}`}
+                  {...register("password", {
+                    required: "Password is required.",
+                    minLength: { value: 8, message: "Password must be at least 8 characters." },
+                  })}
+                />
+                {errors.password && <div className="invalid-feedback">{errors.password.message}</div>}
+              </div>
+            )}
+          </div>
+        </FormSection>
+
+        <FormSection icon="bi-briefcase" title="Role & Assignment" description="Role, department, reporting line, and territory.">
+          <div className="row g-3">
+            <div className="col-md-6">
+              <label className="form-label">Role</label>
+              <select
+                className={`form-select ${errors.roleId ? "is-invalid" : ""}`}
+                {...register("roleId", { required: "A role must be selected." })}
+              >
+                <option value="">Select a role</option>
+                {roles.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+              {errors.roleId && <div className="invalid-feedback">{errors.roleId.message}</div>}
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">Department</label>
+              <select className="form-select" {...register("departmentId")}>
+                <option value="">None</option>
+                {departments.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">Reporting Manager</label>
+              <select className="form-select" {...register("reportingManagerId")}>
+                <option value="">None</option>
+                {managers.map((manager) => (
+                  <option key={manager.id} value={manager.id}>
+                    {manager.fullName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">Territory</label>
+              <select className="form-select" {...register("territoryId")}>
+                <option value="">None</option>
+                {territories.map((territory) => (
+                  <option key={territory.id} value={territory.id}>
+                    {territory.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {isEditMode && (
+              <div className="col-md-6 d-flex align-items-end">
+                <div className="form-check">
+                  <input id="isActive" type="checkbox" className="form-check-input" {...register("isActive")} />
+                  <label className="form-check-label" htmlFor="isActive">
+                    Active
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+        </FormSection>
+
+        <FormActionBar>
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save"}
+          </button>
+          <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/users")}>
+            Cancel
+          </button>
+        </FormActionBar>
+      </form>
     </div>
   );
 }

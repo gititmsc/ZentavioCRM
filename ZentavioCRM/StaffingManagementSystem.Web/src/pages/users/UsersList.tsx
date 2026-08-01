@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { userService, type ManagedUser, type UserSearchParams } from "@/services/userService";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { UserAvatar } from "@/components/users/UserAvatar";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
 import { Pagination } from "@/components/datatable/Pagination";
 import { usePagedList } from "@/hooks/usePagedList";
@@ -86,27 +87,32 @@ export default function UsersList() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h4 mb-0">Users</h1>
-        {canManage && (
-          <button type="button" className="btn btn-primary" onClick={() => navigate("/users/new")}>
-            <i className="bi bi-plus-lg me-1" aria-hidden="true" />
-            New User
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Users"
+        subtitle="People with access to this workspace."
+        actions={
+          canManage && (
+            <button type="button" className="btn btn-primary" onClick={() => navigate("/users/new")}>
+              <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+              New User
+            </button>
+          )
+        }
+      />
 
-      <form className="d-flex mb-3" style={{ maxWidth: 360 }} onSubmit={handleSearchSubmit}>
-        <input
-          className="form-control me-2"
-          placeholder="Search by name, code, email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button type="submit" className="btn btn-outline-secondary">
-          <i className="bi bi-search" aria-hidden="true" />
-        </button>
-      </form>
+      <div className="card shadow-sm border-0 p-3 mb-3">
+        <form className="d-flex" style={{ maxWidth: 360 }} onSubmit={handleSearchSubmit}>
+          <input
+            className="form-control me-2"
+            placeholder="Search by name, code, email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button type="submit" className="btn btn-outline-secondary">
+            <i className="bi bi-search" aria-hidden="true" />
+          </button>
+        </form>
+      </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 

@@ -5,6 +5,8 @@ import { salesOrderService, type SalesOrder } from "@/services/salesOrderService
 import { userService, type ManagedUser } from "@/services/userService";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { HistoryPanel } from "@/components/history/HistoryPanel";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
 
 const STATUS_BADGE: Record<string, string> = {
   Draft: "text-bg-secondary",
@@ -103,27 +105,34 @@ export default function SalesOrderDetail() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-start mb-4">
-        <div>
-          <div className="text-muted small">
+      <PageHeader
+        title={`Sales Order ${order.salesOrderNumber}`}
+        subtitle={
+          <>
             From quotation <Link to={`/quotations/${order.quotationId}`}>{order.quotationNumber}</Link>
-          </div>
-          <h1 className="h4 mb-0">Sales Order {order.salesOrderNumber}</h1>
-        </div>
-        {canEdit && order.status !== "Cancelled" && order.status !== "Delivered" && (
-          <button type="button" className="btn btn-outline-danger" onClick={handleCancel}>
-            Cancel Order
-          </button>
-        )}
-      </div>
+          </>
+        }
+        badge={<span className={`badge fs-6 ${STATUS_BADGE[order.status]}`}>{order.status}</span>}
+        backTo="/sales-orders"
+        backLabel="Back to Sales Orders"
+        actions={
+          <>
+            {canEdit && order.status !== "Cancelled" && order.status !== "Delivered" && (
+              <button type="button" className="btn btn-outline-danger" onClick={handleCancel}>
+                <i className="bi bi-x-circle me-1" aria-hidden="true" />
+                Cancel Order
+              </button>
+            )}
+          </>
+        }
+      />
 
       {actionError && <div className="alert alert-danger">{actionError}</div>}
 
       <div className="row g-4">
         <div className="col-lg-8">
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold">Order Details</div>
-            <div className="card-body row g-3">
+          <FormSection icon="bi-cart-check" title="Order Details" description="Customer, totals, and delivery expectations.">
+            <div className="row g-3">
               <div className="col-md-6">
                 <div className="text-muted small">Customer</div>
                 <div>
@@ -149,10 +158,9 @@ export default function SalesOrderDetail() {
                 </div>
               )}
             </div>
-          </div>
+          </FormSection>
 
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold">Line Items &amp; Delivery</div>
+          <FormSection icon="bi-truck" title="Line Items &amp; Delivery">
             <div className="table-responsive">
               <table className="table mb-0 align-middle">
                 <thead className="table-light">
@@ -199,60 +207,53 @@ export default function SalesOrderDetail() {
               </table>
             </div>
             {canDeliver && (
-              <div className="card-body pt-0">
+              <div className="mt-3">
                 <button type="button" className="btn btn-primary btn-sm" onClick={handleRecordDelivery}>
                   Record Delivery
                 </button>
               </div>
             )}
-          </div>
+          </FormSection>
 
           <HistoryPanel entityType="SalesOrder" entityId={order.id} />
         </div>
 
         <div className="col-lg-4">
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold">Status</div>
-            <div className="card-body">
-              <span className={`badge fs-6 ${STATUS_BADGE[order.status]}`}>{order.status}</span>
-            </div>
-          </div>
+          <FormSection icon="bi-flag" title="Status">
+            <span className={`badge fs-6 ${STATUS_BADGE[order.status]}`}>{order.status}</span>
+          </FormSection>
 
           {canAssign && (
-            <div className="card shadow-sm border-0 mb-4">
-              <div className="card-header bg-white fw-semibold">Assignment</div>
-              <div className="card-body">
-                <select
-                  className="form-select mb-2"
-                  value={assignToUserId}
-                  onChange={(e) => setAssignToUserId(e.target.value)}
-                >
-                  <option value="">Select a user</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.fullName}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="btn btn-primary w-100"
-                  disabled={!assignToUserId}
-                  onClick={handleAssign}
-                >
-                  Assign
-                </button>
-              </div>
-            </div>
+            <FormSection icon="bi-person-check" title="Assignment">
+              <select
+                className="form-select mb-2"
+                value={assignToUserId}
+                onChange={(e) => setAssignToUserId(e.target.value)}
+              >
+                <option value="">Select a user</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.fullName}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn btn-primary w-100"
+                disabled={!assignToUserId}
+                onClick={handleAssign}
+              >
+                Assign
+              </button>
+            </FormSection>
           )}
 
-          <div className="card shadow-sm border-0">
-            <div className="card-header bg-white fw-semibold">Meta</div>
-            <div className="card-body small text-muted">
+          <FormSection icon="bi-clock-history" title="Meta" className="mb-0">
+            <div className="small text-muted">
               <div>Created: {new Date(order.createdAtUtc).toLocaleString()}</div>
               {order.updatedAtUtc && <div>Updated: {new Date(order.updatedAtUtc).toLocaleString()}</div>}
             </div>
-          </div>
+          </FormSection>
         </div>
       </div>
     </div>

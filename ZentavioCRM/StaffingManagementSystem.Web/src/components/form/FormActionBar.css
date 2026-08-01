@@ -1,0 +1,19 @@
+.itm-form-action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.85rem 1.1rem;
+  margin-top: 0.25rem;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--itm-border);
+  border-radius: var(--itm-radius-card);
+  box-shadow: var(--itm-shadow-raised);
+}
+
+.itm-form-action-bar .btn-primary {
+  min-width: 120px;
+}

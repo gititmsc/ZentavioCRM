@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { roleService, type Role, type RoleSearchParams, type VisibilityScope } from "@/services/roleService";
 import { PermissionCodes } from "@/services/permissionCodes";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
 import { Pagination } from "@/components/datatable/Pagination";
 import { usePagedList } from "@/hooks/usePagedList";
@@ -129,27 +130,32 @@ export default function RolesList() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h4 mb-0">Roles</h1>
-        {canManage && (
-          <button type="button" className="btn btn-primary" onClick={() => navigate("/roles/new")}>
-            <i className="bi bi-plus-lg me-1" aria-hidden="true" />
-            New Role
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Roles"
+        subtitle="Permission sets assigned to users."
+        actions={
+          canManage && (
+            <button type="button" className="btn btn-primary" onClick={() => navigate("/roles/new")}>
+              <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+              New Role
+            </button>
+          )
+        }
+      />
 
-      <form className="d-flex mb-3" style={{ maxWidth: 360 }} onSubmit={handleSearchSubmit}>
-        <input
-          className="form-control me-2"
-          placeholder="Search roles..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button type="submit" className="btn btn-outline-secondary">
-          <i className="bi bi-search" aria-hidden="true" />
-        </button>
-      </form>
+      <div className="card shadow-sm border-0 p-3 mb-3">
+        <form className="d-flex" style={{ maxWidth: 360 }} onSubmit={handleSearchSubmit}>
+          <input
+            className="form-control me-2"
+            placeholder="Search roles..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button type="submit" className="btn btn-outline-secondary">
+            <i className="bi bi-search" aria-hidden="true" />
+          </button>
+        </form>
+      </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 

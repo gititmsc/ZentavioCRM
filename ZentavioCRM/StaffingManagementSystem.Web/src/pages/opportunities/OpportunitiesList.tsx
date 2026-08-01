@@ -8,6 +8,7 @@ import {
   type OpportunityStage,
 } from "@/services/opportunityService";
 import { PermissionCodes } from "@/services/permissionCodes";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
 import { Pagination } from "@/components/datatable/Pagination";
 import { usePagedList } from "@/hooks/usePagedList";
@@ -101,45 +102,50 @@ export default function OpportunitiesList() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="h4 mb-0">Opportunities</h1>
-        {canCreate && (
-          <button type="button" className="btn btn-primary" onClick={() => navigate("/opportunities/new")}>
-            <i className="bi bi-plus-lg me-1" aria-hidden="true" />
-            New Opportunity
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Opportunities"
+        subtitle="Deals in progress across your pipeline."
+        actions={
+          canCreate && (
+            <button type="button" className="btn btn-primary" onClick={() => navigate("/opportunities/new")}>
+              <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+              New Opportunity
+            </button>
+          )
+        }
+      />
 
-      <div className="d-flex gap-2 mb-3">
-        <form className="d-flex" style={{ maxWidth: 320 }} onSubmit={handleSearchSubmit}>
-          <input
-            className="form-control me-2"
-            placeholder="Search opportunities..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button type="submit" className="btn btn-outline-secondary">
-            <i className="bi bi-search" aria-hidden="true" />
-          </button>
-        </form>
+      <div className="card shadow-sm border-0 p-3 mb-3">
+        <div className="d-flex gap-2">
+          <form className="d-flex" style={{ maxWidth: 320 }} onSubmit={handleSearchSubmit}>
+            <input
+              className="form-control me-2"
+              placeholder="Search opportunities..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button type="submit" className="btn btn-outline-secondary">
+              <i className="bi bi-search" aria-hidden="true" />
+            </button>
+          </form>
 
-        <select
-          className="form-select"
-          style={{ maxWidth: 200 }}
-          value={stage}
-          onChange={(e) => {
-            setStage(e.target.value as OpportunityStage | "");
-            resetToFirstPage();
-          }}
-        >
-          <option value="">All stages</option>
-          {STAGES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+          <select
+            className="form-select"
+            style={{ maxWidth: 200 }}
+            value={stage}
+            onChange={(e) => {
+              setStage(e.target.value as OpportunityStage | "");
+              resetToFirstPage();
+            }}
+          >
+            <option value="">All stages</option>
+            {STAGES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}

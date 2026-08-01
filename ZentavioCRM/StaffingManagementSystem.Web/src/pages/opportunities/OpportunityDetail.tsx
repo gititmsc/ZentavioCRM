@@ -13,6 +13,8 @@ import { PermissionCodes } from "@/services/permissionCodes";
 import { HistoryPanel } from "@/components/history/HistoryPanel";
 import { DocumentsPanel } from "@/components/documents/DocumentsPanel";
 import { ActivityTimelinePanel } from "@/components/activities/ActivityTimelinePanel";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
 
 const QUOTATION_STATUS_BADGE: Record<string, string> = {
   Draft: "text-bg-secondary",
@@ -155,25 +157,29 @@ export default function OpportunityDetail() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-start mb-4">
-        <div>
-          <div className="text-muted small">{opportunity.opportunityNumber}</div>
-          <h1 className="h4 mb-0">{opportunity.name}</h1>
-        </div>
-        <div className="d-flex gap-2">
-          {canEdit && !isClosed && (
-            <Link to={`/opportunities/${opportunity.id}/edit`} className="btn btn-outline-secondary">
-              Edit
-            </Link>
-          )}
-          {canDelete && (
-            <button type="button" className="btn btn-outline-danger" disabled={isDeleting} onClick={handleDelete}>
-              <i className="bi bi-trash me-1" aria-hidden="true" />
-              {isDeleting ? "Deleting..." : "Delete"}
-            </button>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title={opportunity.name}
+        subtitle={opportunity.opportunityNumber}
+        badge={<span className="badge fs-6 text-bg-primary">{opportunity.stage}</span>}
+        backTo="/opportunities"
+        backLabel="Back to Opportunities"
+        actions={
+          <>
+            {canEdit && !isClosed && (
+              <Link to={`/opportunities/${opportunity.id}/edit`} className="btn btn-outline-secondary">
+                <i className="bi bi-pencil me-1" aria-hidden="true" />
+                Edit
+              </Link>
+            )}
+            {canDelete && (
+              <button type="button" className="btn btn-outline-danger" disabled={isDeleting} onClick={handleDelete}>
+                <i className="bi bi-trash me-1" aria-hidden="true" />
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            )}
+          </>
+        }
+      />
 
       {actionError && <div className="alert alert-danger">{actionError}</div>}
 
@@ -197,9 +203,8 @@ export default function OpportunityDetail() {
 
       <div className="row g-4">
         <div className="col-lg-8">
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold">Opportunity Details</div>
-            <div className="card-body row g-3">
+          <FormSection icon="bi-briefcase" title="Opportunity Details" description="Customer, deal value, and forecast specifics.">
+            <div className="row g-3">
               <div className="col-md-6">
                 <div className="text-muted small">Customer</div>
                 <div>
@@ -237,11 +242,10 @@ export default function OpportunityDetail() {
                 </div>
               )}
             </div>
-          </div>
+          </FormSection>
 
           {opportunity.lineItems.length > 0 && (
-            <div className="card shadow-sm border-0 mb-4">
-              <div className="card-header bg-white fw-semibold">Line Items</div>
+            <FormSection icon="bi-list-check" title="Line Items">
               <div className="table-responsive">
                 <table className="table mb-0">
                   <thead className="table-light">
@@ -266,12 +270,11 @@ export default function OpportunityDetail() {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </FormSection>
           )}
 
           {opportunity.contacts.length > 0 && (
-            <div className="card shadow-sm border-0 mb-4">
-              <div className="card-header bg-white fw-semibold">Buying Committee</div>
+            <FormSection icon="bi-people" title="Buying Committee">
               <div className="table-responsive">
                 <table className="table mb-0 align-middle">
                   <thead className="table-light">
@@ -299,13 +302,14 @@ export default function OpportunityDetail() {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </FormSection>
           )}
 
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
-              <span>Quotations</span>
-              {canCreateQuotation && (
+          <FormSection
+            icon="bi-receipt"
+            title="Quotations"
+            actions={
+              canCreateQuotation && (
                 <button
                   type="button"
                   className="btn btn-sm btn-outline-primary"
@@ -314,10 +318,11 @@ export default function OpportunityDetail() {
                   <i className="bi bi-plus-lg me-1" aria-hidden="true" />
                   Create Quotation
                 </button>
-              )}
-            </div>
+              )
+            }
+          >
             {quotations.length === 0 ? (
-              <div className="card-body text-muted small">
+              <div className="text-muted small">
                 No quotations yet — once you're ready to price this deal, create one to move it toward a sales order.
               </div>
             ) : (
@@ -347,7 +352,7 @@ export default function OpportunityDetail() {
                 </table>
               </div>
             )}
-          </div>
+          </FormSection>
 
           <ActivityTimelinePanel relatedToType="Opportunity" relatedToId={opportunity.id} users={users} />
 
@@ -357,67 +362,60 @@ export default function OpportunityDetail() {
         </div>
 
         <div className="col-lg-4">
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold">Stage</div>
-            <div className="card-body">
-              <div className="mb-3">
-                <span className="badge text-bg-primary fs-6">{opportunity.stage}</span>
-              </div>
-              {nextStages.length > 0 ? (
-                <div className="d-flex flex-wrap gap-2">
-                  {nextStages.map((stage) => (
-                    <button
-                      key={stage}
-                      type="button"
-                      className="btn btn-sm btn-outline-secondary"
-                      onClick={() => handleStageChange(stage)}
-                    >
-                      Move to {stage}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-muted small">No further stage changes available.</div>
-              )}
+          <FormSection icon="bi-flag" title="Stage">
+            <div className="mb-3">
+              <span className="badge text-bg-primary fs-6">{opportunity.stage}</span>
             </div>
-          </div>
+            {nextStages.length > 0 ? (
+              <div className="d-flex flex-wrap gap-2">
+                {nextStages.map((stage) => (
+                  <button
+                    key={stage}
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => handleStageChange(stage)}
+                  >
+                    Move to {stage}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-muted small">No further stage changes available.</div>
+            )}
+          </FormSection>
 
           {canAssign && !isClosed && (
-            <div className="card shadow-sm border-0 mb-4">
-              <div className="card-header bg-white fw-semibold">Assignment</div>
-              <div className="card-body">
-                <select
-                  className="form-select mb-2"
-                  value={assignToUserId}
-                  onChange={(e) => setAssignToUserId(e.target.value)}
-                >
-                  <option value="">Select a user</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.fullName}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="btn btn-primary w-100"
-                  disabled={!assignToUserId}
-                  onClick={handleAssign}
-                >
-                  Assign
-                </button>
-              </div>
-            </div>
+            <FormSection icon="bi-person-check" title="Assignment">
+              <select
+                className="form-select mb-2"
+                value={assignToUserId}
+                onChange={(e) => setAssignToUserId(e.target.value)}
+              >
+                <option value="">Select a user</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.fullName}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn btn-primary w-100"
+                disabled={!assignToUserId}
+                onClick={handleAssign}
+              >
+                Assign
+              </button>
+            </FormSection>
           )}
 
-          <div className="card shadow-sm border-0">
-            <div className="card-header bg-white fw-semibold">Meta</div>
-            <div className="card-body small text-muted">
+          <FormSection icon="bi-clock-history" title="Meta" className="mb-0">
+            <div className="small text-muted">
               <div>Created: {new Date(opportunity.createdAtUtc).toLocaleString()}</div>
               {opportunity.updatedAtUtc && <div>Updated: {new Date(opportunity.updatedAtUtc).toLocaleString()}</div>}
               {opportunity.closedAtUtc && <div>Closed: {new Date(opportunity.closedAtUtc).toLocaleString()}</div>}
             </div>
-          </div>
+          </FormSection>
         </div>
       </div>
     </div>

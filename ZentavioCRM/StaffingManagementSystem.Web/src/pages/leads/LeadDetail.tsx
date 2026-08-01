@@ -6,6 +6,8 @@ import { userService, type ManagedUser } from "@/services/userService";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { HistoryPanel } from "@/components/history/HistoryPanel";
 import { ActivityTimelinePanel } from "@/components/activities/ActivityTimelinePanel";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
 
 const NEXT_STATUSES: Record<LeadStatus, LeadStatus[]> = {
   New: ["Contacted", "Lost", "Junk"],
@@ -17,6 +19,18 @@ const NEXT_STATUSES: Record<LeadStatus, LeadStatus[]> = {
   Converted: [],
   Lost: [],
   Junk: [],
+};
+
+const STATUS_BADGE: Record<LeadStatus, string> = {
+  New: "text-bg-secondary",
+  Assigned: "text-bg-info",
+  Contacted: "text-bg-info",
+  Qualified: "text-bg-primary",
+  Nurturing: "text-bg-warning",
+  ProposalSent: "text-bg-warning",
+  Converted: "text-bg-success",
+  Lost: "text-bg-danger",
+  Junk: "text-bg-dark",
 };
 
 export default function LeadDetail() {
@@ -144,37 +158,41 @@ export default function LeadDetail() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-start mb-4">
-        <div>
-          <div className="text-muted small">{lead.leadNumber}</div>
-          <h1 className="h4 mb-0">{lead.companyName}</h1>
-        </div>
-        <div className="d-flex gap-2">
-          {canEdit && lead.status !== "Converted" && (
-            <Link to={`/leads/${lead.id}/edit`} className="btn btn-outline-secondary">
-              Edit
-            </Link>
-          )}
-          {canConvert && lead.status !== "Converted" && lead.status !== "Lost" && lead.status !== "Junk" && (
-            <>
-              <button type="button" className="btn btn-outline-success" onClick={handleConvert}>
-                <i className="bi bi-arrow-right-circle me-1" aria-hidden="true" />
-                Convert to Customer
+      <PageHeader
+        title={lead.companyName}
+        subtitle={lead.leadNumber}
+        badge={<span className={`badge fs-6 ${STATUS_BADGE[lead.status]}`}>{lead.status}</span>}
+        backTo="/leads"
+        backLabel="Back to Leads"
+        actions={
+          <>
+            {canEdit && lead.status !== "Converted" && (
+              <Link to={`/leads/${lead.id}/edit`} className="btn btn-outline-secondary">
+                <i className="bi bi-pencil me-1" aria-hidden="true" />
+                Edit
+              </Link>
+            )}
+            {canConvert && lead.status !== "Converted" && lead.status !== "Lost" && lead.status !== "Junk" && (
+              <>
+                <button type="button" className="btn btn-outline-success" onClick={handleConvert}>
+                  <i className="bi bi-arrow-right-circle me-1" aria-hidden="true" />
+                  Convert to Customer
+                </button>
+                <button type="button" className="btn btn-success" onClick={handleConvertToOpportunity}>
+                  <i className="bi bi-graph-up-arrow me-1" aria-hidden="true" />
+                  Convert to Opportunity
+                </button>
+              </>
+            )}
+            {canDelete && (
+              <button type="button" className="btn btn-outline-danger" disabled={isDeleting} onClick={handleDelete}>
+                <i className="bi bi-trash me-1" aria-hidden="true" />
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
-              <button type="button" className="btn btn-success" onClick={handleConvertToOpportunity}>
-                <i className="bi bi-graph-up-arrow me-1" aria-hidden="true" />
-                Convert to Opportunity
-              </button>
-            </>
-          )}
-          {canDelete && (
-            <button type="button" className="btn btn-outline-danger" disabled={isDeleting} onClick={handleDelete}>
-              <i className="bi bi-trash me-1" aria-hidden="true" />
-              {isDeleting ? "Deleting..." : "Delete"}
-            </button>
-          )}
-        </div>
-      </div>
+            )}
+          </>
+        }
+      />
 
       {actionError && <div className="alert alert-danger">{actionError}</div>}
 
@@ -198,9 +216,8 @@ export default function LeadDetail() {
 
       <div className="row g-4">
         <div className="col-lg-8">
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold">Lead Details</div>
-            <div className="card-body row g-3">
+          <FormSection icon="bi-info-circle" title="Lead Details" description="Contact info, source attribution, and deal specifics.">
+            <div className="row g-3">
               <div className="col-md-6">
                 <div className="text-muted small">Contact Name</div>
                 <div>{lead.contactName}</div>
@@ -282,7 +299,7 @@ export default function LeadDetail() {
                 </div>
               )}
             </div>
-          </div>
+          </FormSection>
 
           <ActivityTimelinePanel relatedToType="Lead" relatedToId={lead.id} users={users} />
 
@@ -292,66 +309,59 @@ export default function LeadDetail() {
         </div>
 
         <div className="col-lg-4">
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold">Status</div>
-            <div className="card-body">
-              <div className="mb-3">
-                <span className="badge text-bg-primary fs-6">{lead.status}</span>
-              </div>
-              {nextStatuses.length > 0 ? (
-                <div className="d-flex flex-wrap gap-2">
-                  {nextStatuses.map((status) => (
-                    <button
-                      key={status}
-                      type="button"
-                      className="btn btn-sm btn-outline-secondary"
-                      onClick={() => handleStatusChange(status)}
-                    >
-                      Move to {status}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-muted small">No further status changes available.</div>
-              )}
+          <FormSection icon="bi-flag" title="Status">
+            <div className="mb-3">
+              <span className={`badge fs-6 ${STATUS_BADGE[lead.status]}`}>{lead.status}</span>
             </div>
-          </div>
+            {nextStatuses.length > 0 ? (
+              <div className="d-flex flex-wrap gap-2">
+                {nextStatuses.map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => handleStatusChange(status)}
+                  >
+                    Move to {status}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-muted small">No further status changes available.</div>
+            )}
+          </FormSection>
 
           {canAssign && lead.status !== "Converted" && (
-            <div className="card shadow-sm border-0 mb-4">
-              <div className="card-header bg-white fw-semibold">Assignment</div>
-              <div className="card-body">
-                <select
-                  className="form-select mb-2"
-                  value={assignToUserId}
-                  onChange={(e) => setAssignToUserId(e.target.value)}
-                >
-                  <option value="">Select a user</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.fullName}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="btn btn-primary w-100"
-                  disabled={!assignToUserId}
-                  onClick={handleAssign}
-                >
-                  Assign
-                </button>
-              </div>
-            </div>
+            <FormSection icon="bi-person-check" title="Assignment">
+              <select
+                className="form-select mb-2"
+                value={assignToUserId}
+                onChange={(e) => setAssignToUserId(e.target.value)}
+              >
+                <option value="">Select a user</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.fullName}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn btn-primary w-100"
+                disabled={!assignToUserId}
+                onClick={handleAssign}
+              >
+                Assign
+              </button>
+            </FormSection>
           )}
 
-          <div className="card shadow-sm border-0">
-            <div className="card-header bg-white fw-semibold">Meta</div>
-            <div className="card-body small text-muted">
+          <FormSection icon="bi-clock-history" title="Meta" className="mb-0">
+            <div className="small text-muted">
               <div>Created: {new Date(lead.createdAtUtc).toLocaleString()}</div>
               {lead.updatedAtUtc && <div>Updated: {new Date(lead.updatedAtUtc).toLocaleString()}</div>}
             </div>
-          </div>
+          </FormSection>
         </div>
       </div>
     </div>

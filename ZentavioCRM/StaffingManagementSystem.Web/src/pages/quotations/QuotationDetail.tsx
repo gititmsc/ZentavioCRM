@@ -6,6 +6,8 @@ import { salesOrderService } from "@/services/salesOrderService";
 import { userService, type ManagedUser } from "@/services/userService";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { HistoryPanel } from "@/components/history/HistoryPanel";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
 
 const NEXT_STATUSES: Record<QuotationStatus, QuotationStatus[]> = {
   Draft: ["Sent"],
@@ -127,26 +129,33 @@ export default function QuotationDetail() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-start mb-4">
-        <div>
-          <div className="text-muted small">
+      <PageHeader
+        title={`Quotation for ${quotation.customerName}`}
+        subtitle={
+          <>
             {quotation.quotationNumber} &middot; Version {quotation.version}
-          </div>
-          <h1 className="h4 mb-0">Quotation for {quotation.customerName}</h1>
-        </div>
-        <div className="d-flex gap-2">
-          {canEdit && isDraft && (
-            <Link to={`/quotations/${quotation.id}/edit`} className="btn btn-outline-secondary">
-              Edit
-            </Link>
-          )}
-          {canCreate && (
-            <button type="button" className="btn btn-outline-secondary" onClick={handleNewVersion}>
-              New Version
-            </button>
-          )}
-        </div>
-      </div>
+          </>
+        }
+        badge={<span className={`badge fs-6 ${STATUS_BADGE[quotation.status]}`}>{quotation.status}</span>}
+        backTo="/quotations"
+        backLabel="Back to Quotations"
+        actions={
+          <>
+            {canEdit && isDraft && (
+              <Link to={`/quotations/${quotation.id}/edit`} className="btn btn-outline-secondary">
+                <i className="bi bi-pencil me-1" aria-hidden="true" />
+                Edit
+              </Link>
+            )}
+            {canCreate && (
+              <button type="button" className="btn btn-outline-secondary" onClick={handleNewVersion}>
+                <i className="bi bi-file-earmark-plus me-1" aria-hidden="true" />
+                New Version
+              </button>
+            )}
+          </>
+        }
+      />
 
       {actionError && <div className="alert alert-danger">{actionError}</div>}
 
@@ -162,9 +171,8 @@ export default function QuotationDetail() {
 
       <div className="row g-4">
         <div className="col-lg-8">
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold">Quotation Details</div>
-            <div className="card-body row g-3">
+          <FormSection icon="bi-file-earmark-text" title="Quotation Details" description="Opportunity, customer, validity, and terms.">
+            <div className="row g-3">
               <div className="col-md-6">
                 <div className="text-muted small">Opportunity</div>
                 <div>
@@ -198,10 +206,9 @@ export default function QuotationDetail() {
                 </div>
               )}
             </div>
-          </div>
+          </FormSection>
 
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold">Line Items</div>
+          <FormSection icon="bi-list-check" title="Line Items">
             <div className="table-responsive">
               <table className="table mb-0">
                 <thead className="table-light">
@@ -248,72 +255,65 @@ export default function QuotationDetail() {
                 </tfoot>
               </table>
             </div>
-          </div>
+          </FormSection>
 
           <HistoryPanel entityType="Quotation" entityId={quotation.id} />
         </div>
 
         <div className="col-lg-4">
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-white fw-semibold">Status</div>
-            <div className="card-body">
-              <div className="mb-3">
-                <span className={`badge fs-6 ${STATUS_BADGE[quotation.status]}`}>{quotation.status}</span>
-              </div>
-              {nextStatuses.length > 0 ? (
-                <div className="d-flex flex-wrap gap-2">
-                  {nextStatuses.map((status) => (
-                    <button
-                      key={status}
-                      type="button"
-                      className="btn btn-sm btn-outline-secondary"
-                      onClick={() => handleStatusChange(status)}
-                    >
-                      Mark {status}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-muted small">No further status changes available.</div>
-              )}
+          <FormSection icon="bi-flag" title="Status">
+            <div className="mb-3">
+              <span className={`badge fs-6 ${STATUS_BADGE[quotation.status]}`}>{quotation.status}</span>
             </div>
-          </div>
+            {nextStatuses.length > 0 ? (
+              <div className="d-flex flex-wrap gap-2">
+                {nextStatuses.map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => handleStatusChange(status)}
+                  >
+                    Mark {status}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-muted small">No further status changes available.</div>
+            )}
+          </FormSection>
 
           {canAssign && (
-            <div className="card shadow-sm border-0 mb-4">
-              <div className="card-header bg-white fw-semibold">Assignment</div>
-              <div className="card-body">
-                <select
-                  className="form-select mb-2"
-                  value={assignToUserId}
-                  onChange={(e) => setAssignToUserId(e.target.value)}
-                >
-                  <option value="">Select a user</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.fullName}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="btn btn-primary w-100"
-                  disabled={!assignToUserId}
-                  onClick={handleAssign}
-                >
-                  Assign
-                </button>
-              </div>
-            </div>
+            <FormSection icon="bi-person-check" title="Assignment">
+              <select
+                className="form-select mb-2"
+                value={assignToUserId}
+                onChange={(e) => setAssignToUserId(e.target.value)}
+              >
+                <option value="">Select a user</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.fullName}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="btn btn-primary w-100"
+                disabled={!assignToUserId}
+                onClick={handleAssign}
+              >
+                Assign
+              </button>
+            </FormSection>
           )}
 
-          <div className="card shadow-sm border-0">
-            <div className="card-header bg-white fw-semibold">Meta</div>
-            <div className="card-body small text-muted">
+          <FormSection icon="bi-clock-history" title="Meta" className="mb-0">
+            <div className="small text-muted">
               <div>Created: {new Date(quotation.createdAtUtc).toLocaleString()}</div>
               {quotation.updatedAtUtc && <div>Updated: {new Date(quotation.updatedAtUtc).toLocaleString()}</div>}
             </div>
-          </div>
+          </FormSection>
         </div>
       </div>
     </div>

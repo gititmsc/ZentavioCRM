@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { roleService, type PermissionCatalog, type SaveRoleRequest, type VisibilityScope } from "@/services/roleService";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
+import { FormActionBar } from "@/components/form/FormActionBar";
 
 const VISIBILITY_SCOPE_OPTIONS: { value: VisibilityScope; label: string; description: string }[] = [
   { value: "Own", label: "Own records only", description: "Users with this role only see Leads/Customers/Opportunities assigned to (or created by) them." },
@@ -86,14 +89,19 @@ export default function RoleForm() {
 
   return (
     <div>
-      <h1 className="h4 mb-4">{isEditMode ? "Edit Role" : "New Role"}</h1>
+      <PageHeader
+        title={isEditMode ? "Edit Role" : "New Role"}
+        subtitle={isEditMode ? "Update this role's details and permissions." : "Define a new role and its permissions."}
+        backTo="/roles"
+        backLabel="Back to Roles"
+      />
 
-      <div className="card shadow-sm border-0" style={{ maxWidth: 720 }}>
-        <div className="card-body">
-          {serverError && <div className="alert alert-danger">{serverError}</div>}
+      {serverError && <div className="alert alert-danger">{serverError}</div>}
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className="mb-3">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <FormSection icon="bi-briefcase" title="Role Details" description="Name, description, and record visibility.">
+          <div className="row g-3">
+            <div className="col-md-6">
               <label className="form-label">Role Name</label>
               <input
                 className={`form-control ${errors.name ? "is-invalid" : ""}`}
@@ -102,12 +110,7 @@ export default function RoleForm() {
               {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
             </div>
 
-            <div className="mb-4">
-              <label className="form-label">Description</label>
-              <textarea className="form-control" rows={2} {...register("description")} />
-            </div>
-
-            <div className="mb-4">
+            <div className="col-md-6">
               <label className="form-label">Record Visibility</label>
               <select className="form-select" {...register("visibilityScope")}>
                 {VISIBILITY_SCOPE_OPTIONS.map((option) => (
@@ -121,42 +124,48 @@ export default function RoleForm() {
               </div>
             </div>
 
-            <label className="form-label">Permissions</label>
-            <div className="row g-3 mb-4">
-              {Object.entries(catalog).map(([module, codes]) => (
-                <div className="col-md-6" key={module}>
-                  <div className="border rounded p-3 h-100">
-                    <div className="fw-semibold mb-2">{module}</div>
-                    {codes.map((code) => (
-                      <div className="form-check" key={code}>
-                        <input
-                          id={`perm-${code}`}
-                          type="checkbox"
-                          className="form-check-input"
-                          checked={selectedCodes.has(code)}
-                          onChange={() => toggleCode(code)}
-                        />
-                        <label className="form-check-label" htmlFor={`perm-${code}`}>
-                          {code.split(".")[1]}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div className="col-12">
+              <label className="form-label">Description</label>
+              <textarea className="form-control" rows={2} {...register("description")} />
             </div>
+          </div>
+        </FormSection>
 
-            <div className="d-flex gap-2">
-              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save"}
-              </button>
-              <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/roles")}>
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+        <FormSection icon="bi-shield-lock" title="Permissions" description="What users with this role are allowed to do.">
+          <div className="row g-3">
+            {Object.entries(catalog).map(([module, codes]) => (
+              <div className="col-md-6" key={module}>
+                <div className="border rounded p-3 h-100">
+                  <div className="fw-semibold mb-2">{module}</div>
+                  {codes.map((code) => (
+                    <div className="form-check" key={code}>
+                      <input
+                        id={`perm-${code}`}
+                        type="checkbox"
+                        className="form-check-input"
+                        checked={selectedCodes.has(code)}
+                        onChange={() => toggleCode(code)}
+                      />
+                      <label className="form-check-label" htmlFor={`perm-${code}`}>
+                        {code.split(".")[1]}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </FormSection>
+
+        <FormActionBar>
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save"}
+          </button>
+          <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/roles")}>
+            Cancel
+          </button>
+        </FormActionBar>
+      </form>
     </div>
   );
 }

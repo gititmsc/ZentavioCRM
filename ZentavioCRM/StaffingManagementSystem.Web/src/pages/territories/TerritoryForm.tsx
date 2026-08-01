@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { territoryService, type Territory, type SaveTerritoryRequest } from "@/services/territoryService";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
+import { FormActionBar } from "@/components/form/FormActionBar";
 
 export default function TerritoryForm() {
   const { id } = useParams<{ id: string }>();
@@ -67,14 +70,19 @@ export default function TerritoryForm() {
 
   return (
     <div>
-      <h1 className="h4 mb-4">{isEditMode ? "Edit Territory" : "New Territory"}</h1>
+      <PageHeader
+        title={isEditMode ? "Edit Territory" : "New Territory"}
+        subtitle={isEditMode ? "Update this territory's name and hierarchy." : "Add a new sales territory."}
+        backTo="/territories"
+        backLabel="Back to Territories"
+      />
 
-      <div className="card shadow-sm border-0" style={{ maxWidth: 560 }}>
-        <div className="card-body">
-          {serverError && <div className="alert alert-danger">{serverError}</div>}
+      {serverError && <div className="alert alert-danger">{serverError}</div>}
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className="mb-3">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <FormSection icon="bi-geo-alt" title="Territory Details" description="Name, hierarchy, and status.">
+          <div className="row g-3">
+            <div className="col-md-6">
               <label className="form-label" htmlFor="name">
                 Territory Name
               </label>
@@ -86,7 +94,7 @@ export default function TerritoryForm() {
               {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
             </div>
 
-            <div className="mb-3">
+            <div className="col-md-6">
               <label className="form-label" htmlFor="parentTerritoryId">
                 Parent Territory
               </label>
@@ -100,24 +108,26 @@ export default function TerritoryForm() {
               </select>
             </div>
 
-            <div className="form-check mb-4">
-              <input id="isActive" type="checkbox" className="form-check-input" {...register("isActive")} />
-              <label className="form-check-label" htmlFor="isActive">
-                Active
-              </label>
+            <div className="col-md-6 d-flex align-items-end">
+              <div className="form-check">
+                <input id="isActive" type="checkbox" className="form-check-input" {...register("isActive")} />
+                <label className="form-check-label" htmlFor="isActive">
+                  Active
+                </label>
+              </div>
             </div>
+          </div>
+        </FormSection>
 
-            <div className="d-flex gap-2">
-              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save"}
-              </button>
-              <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/territories")}>
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+        <FormActionBar>
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save"}
+          </button>
+          <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/territories")}>
+            Cancel
+          </button>
+        </FormActionBar>
+      </form>
     </div>
   );
 }
