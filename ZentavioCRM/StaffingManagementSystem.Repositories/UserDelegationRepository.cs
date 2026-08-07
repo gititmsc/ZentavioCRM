@@ -28,6 +28,10 @@ namespace ZentavioCRM.Repositories
                 .OrderByDescending(d => d.StartDateUtc)
                 .ToListAsync();
 
+        public async Task<UserDelegation> GetForReverseAsync(Guid delegatorUserId, Guid delegateUserId)
+            => await WithUsers()
+                .FirstOrDefaultAsync(d => d.DelegateUserId == delegatorUserId && d.DelegatorUserId == delegateUserId);
+
         public async Task<IReadOnlyList<UserDelegation>> GetActiveForDelegateAsync(Guid delegateUserId, DateTime nowUtc)
             => await _dbContext.UserDelegations
                 .Where(d => d.DelegateUserId == delegateUserId && d.StartDateUtc <= nowUtc && d.EndDateUtc >= nowUtc)

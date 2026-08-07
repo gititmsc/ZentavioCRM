@@ -15,5 +15,7 @@ namespace ZentavioCRM.Repositories.Interfaces
         Task AddAsync(UserDelegation delegation);
 
         Task DeleteAsync(UserDelegation delegation);
+
+        Task<UserDelegation> GetForReverseAsync(Guid delegatorUserId, Guid delegateUserId);
     }
 }

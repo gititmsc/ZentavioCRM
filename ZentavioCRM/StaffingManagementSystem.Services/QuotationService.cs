@@ -77,6 +77,11 @@ namespace ZentavioCRM.Services
                 return ApiResponse<QuotationDto>.FailureResponse("The selected opportunity does not exist.");
             }
 
+            if (opportunity.Stage is OpportunityStage.ClosedWon or OpportunityStage.ClosedLost)
+            {
+                return ApiResponse<QuotationDto>.FailureResponse("Quotations cannot be created for a closed opportunity.");
+            }
+
             var lineItems = BuildLineItems(request.LineItems);
             var (subtotal, taxTotal, grandTotal) = SumTotals(lineItems);
 
@@ -118,6 +123,17 @@ namespace ZentavioCRM.Services
             {
                 return ApiResponse<QuotationDto>.FailureResponse(
                     "This quotation has already been sent and can no longer be edited directly — create a new version instead.");
+            }
+
+            var opportunity = await _opportunityRepository.GetByIdAsync(quotation.OpportunityId);
+            if (opportunity is null)
+            {
+                return ApiResponse<QuotationDto>.FailureResponse("The related opportunity no longer exists.");
+            }
+
+            if (opportunity.Stage is OpportunityStage.ClosedWon or OpportunityStage.ClosedLost)
+            {
+                return ApiResponse<QuotationDto>.FailureResponse("Quotations cannot be edited for a closed opportunity.");
             }
 
             var lineItems = BuildLineItems(request.LineItems);
@@ -211,6 +227,17 @@ namespace ZentavioCRM.Services
             if (source is null)
             {
                 return ApiResponse<QuotationDto>.FailureResponse("Quotation not found.");
+            }
+
+            var opportunity = await _opportunityRepository.GetByIdAsync(source.OpportunityId);
+            if (opportunity is null)
+            {
+                return ApiResponse<QuotationDto>.FailureResponse("The related opportunity no longer exists.");
+            }
+
+            if (opportunity.Stage is OpportunityStage.ClosedWon or OpportunityStage.ClosedLost)
+            {
+                return ApiResponse<QuotationDto>.FailureResponse("Quotations cannot be recreated for a closed opportunity.");
             }
 
             var clonedLineItems = source.LineItems.Select(li => new QuotationLineItem

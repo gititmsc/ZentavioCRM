@@ -42,6 +42,7 @@ export default function QuotationForm() {
   const [opportunityName, setOpportunityName] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isClosedOpportunity, setIsClosedOpportunity] = useState(false);
 
   const {
     register,
@@ -61,11 +62,21 @@ export default function QuotationForm() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: "lineItems" });
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "lineItems",
+  });
   const watchedLineItems = watch("lineItems");
   const computedTotal = watchedLineItems.reduce(
-    (sum, item) => sum + lineTotal(item.quantity, item.unitPrice, item.discountPercent, item.taxPercent),
-    0
+    (sum, item) =>
+      sum +
+      lineTotal(
+        item.quantity,
+        item.unitPrice,
+        item.discountPercent,
+        item.taxPercent,
+      ),
+    0,
   );
 
   useEffect(() => {
@@ -75,12 +86,16 @@ export default function QuotationForm() {
         opportunityService.search({ pageSize: 200 }),
       ]);
       if (usersResult.success && usersResult.data) setUsers(usersResult.data);
-      if (opportunitiesResult.success && opportunitiesResult.data) setOpportunities(opportunitiesResult.data.items);
+      if (opportunitiesResult.success && opportunitiesResult.data)
+        setOpportunities(opportunitiesResult.data.items);
+
+      let selectedOpportunityId = searchParams.get("opportunityId") ?? "";
 
       if (isEditMode && id) {
         const existing = await quotationService.getById(id);
         if (existing.success && existing.data) {
           const q = existing.data;
+          selectedOpportunityId = q.opportunityId;
           setOpportunityName(q.opportunityName);
           reset({
             opportunityId: q.opportunityId,
@@ -97,6 +112,23 @@ export default function QuotationForm() {
             })),
           });
         }
+      }
+
+      const selectedOpportunity = opportunitiesResult.success
+        ? opportunitiesResult.data?.items.find(
+            (opportunity) => opportunity.id === selectedOpportunityId,
+          )
+        : undefined;
+      const closed =
+        selectedOpportunity?.stage === "ClosedWon" ||
+        selectedOpportunity?.stage === "ClosedLost";
+      setIsClosedOpportunity(closed);
+      if (closed) {
+        setServerError(
+          "Quotations cannot be created or edited for a closed opportunity.",
+        );
+      } else {
+        setServerError(null);
       }
 
       setIsLoading(false);
@@ -121,7 +153,9 @@ export default function QuotationForm() {
       return;
     }
 
-    navigate(isEditMode && id ? `/quotations/${id}` : `/quotations/${result.data!.id}`);
+    navigate(
+      isEditMode && id ? `/quotations/${id}` : `/quotations/${result.data!.id}`,
+    );
   };
 
   if (isLoading) {
@@ -146,36 +180,65 @@ export default function QuotationForm() {
       {serverError && <div className="alert alert-danger">{serverError}</div>}
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
-        <FormSection icon="bi-file-earmark-text" title="Quotation Details" description="Opportunity, validity, and ownership.">
+        <FormSection
+          icon="bi-file-earmark-text"
+          title="Quotation Details"
+          description="Opportunity, validity, and ownership."
+        >
           <div className="row g-3">
             <div className="col-md-6">
               <label className="form-label">Opportunity</label>
               {isEditMode ? (
-                <input className="form-control" value={opportunityName ?? ""} disabled readOnly />
+                <input
+                  className="form-control"
+                  value={opportunityName ?? ""}
+                  disabled
+                  readOnly
+                />
               ) : (
                 <select
                   className={`form-select ${errors.opportunityId ? "is-invalid" : ""}`}
-                  {...register("opportunityId", { required: "An opportunity must be selected." })}
+                  {...register("opportunityId", {
+                    required: "An opportunity must be selected.",
+                  })}
                 >
                   <option value="">Select an opportunity</option>
-                  {opportunities.map((opportunity) => (
-                    <option key={opportunity.id} value={opportunity.id}>
-                      {opportunity.name} — {opportunity.customerName}
-                    </option>
-                  ))}
+                  {opportunities
+                    .filter(
+                      (opportunity) =>
+                        opportunity.stage !== "ClosedWon" &&
+                        opportunity.stage !== "ClosedLost",
+                    )
+                    .map((opportunity) => (
+                      <option key={opportunity.id} value={opportunity.id}>
+                        {opportunity.name} — {opportunity.customerName}
+                      </option>
+                    ))}
                 </select>
               )}
-              {errors.opportunityId && <div className="invalid-feedback">{errors.opportunityId.message}</div>}
+              {errors.opportunityId && (
+                <div className="invalid-feedback">
+                  {errors.opportunityId.message}
+                </div>
+              )}
             </div>
 
             <div className="col-md-3">
               <label className="form-label">Valid Until</label>
-              <input type="date" className="form-control" {...register("validUntil")} />
+              <input
+                type="date"
+                className="form-control"
+                {...register("validUntil")}
+              />
             </div>
 
             <div className="col-md-3">
               <label className="form-label">Owner</label>
-              <select className="form-select" {...register("assignedToUserId")} disabled={isEditMode}>
+              <select
+                className="form-select"
+                {...register("assignedToUserId")}
+                disabled={isEditMode}
+              >
                 <option value="">Unassigned</option>
                 {users.map((user) => (
                   <option key={user.id} value={user.id}>
@@ -187,16 +250,28 @@ export default function QuotationForm() {
           </div>
         </FormSection>
 
-        <FormSection icon="bi-journal-text" title="Terms & Notes" description="Terms & conditions and internal notes.">
+        <FormSection
+          icon="bi-journal-text"
+          title="Terms & Notes"
+          description="Terms & conditions and internal notes."
+        >
           <div className="row g-3">
             <div className="col-12">
               <label className="form-label">Terms &amp; Conditions</label>
-              <textarea className="form-control" rows={3} {...register("termsAndConditions")} />
+              <textarea
+                className="form-control"
+                rows={3}
+                {...register("termsAndConditions")}
+              />
             </div>
 
             <div className="col-12">
               <label className="form-label">Notes</label>
-              <textarea className="form-control" rows={2} {...register("notes")} />
+              <textarea
+                className="form-control"
+                rows={2}
+                {...register("notes")}
+              />
             </div>
           </div>
         </FormSection>
@@ -226,10 +301,14 @@ export default function QuotationForm() {
                       errors.lineItems?.[index]?.productName ? "is-invalid" : ""
                     }`}
                     placeholder="Product/service"
-                    {...register(`lineItems.${index}.productName`, { required: "Required" })}
+                    {...register(`lineItems.${index}.productName`, {
+                      required: "Required",
+                    })}
                   />
                   {errors.lineItems?.[index]?.productName && (
-                    <div className="invalid-feedback">Product/service name is required.</div>
+                    <div className="invalid-feedback">
+                      Product/service name is required.
+                    </div>
                   )}
                 </div>
                 <div className="col-md-2">
@@ -239,7 +318,9 @@ export default function QuotationForm() {
                     step="0.01"
                     className="form-control form-control-sm"
                     placeholder="Qty"
-                    {...register(`lineItems.${index}.quantity`, { valueAsNumber: true })}
+                    {...register(`lineItems.${index}.quantity`, {
+                      valueAsNumber: true,
+                    })}
                   />
                 </div>
                 <div className="col-md-2">
@@ -249,7 +330,9 @@ export default function QuotationForm() {
                     step="0.01"
                     className="form-control form-control-sm"
                     placeholder="Unit price"
-                    {...register(`lineItems.${index}.unitPrice`, { valueAsNumber: true })}
+                    {...register(`lineItems.${index}.unitPrice`, {
+                      valueAsNumber: true,
+                    })}
                   />
                 </div>
                 <div className="col-md-2">
@@ -259,7 +342,9 @@ export default function QuotationForm() {
                     step="0.01"
                     className="form-control form-control-sm"
                     placeholder="Discount %"
-                    {...register(`lineItems.${index}.discountPercent`, { valueAsNumber: true })}
+                    {...register(`lineItems.${index}.discountPercent`, {
+                      valueAsNumber: true,
+                    })}
                   />
                 </div>
                 <div className="col-md-1">
@@ -269,7 +354,9 @@ export default function QuotationForm() {
                     step="0.01"
                     className="form-control form-control-sm"
                     placeholder="Tax %"
-                    {...register(`lineItems.${index}.taxPercent`, { valueAsNumber: true })}
+                    {...register(`lineItems.${index}.taxPercent`, {
+                      valueAsNumber: true,
+                    })}
                   />
                 </div>
                 <div className="col-md-1 text-end small text-muted">
@@ -277,12 +364,16 @@ export default function QuotationForm() {
                     watchedLineItems[index]?.quantity,
                     watchedLineItems[index]?.unitPrice,
                     watchedLineItems[index]?.discountPercent,
-                    watchedLineItems[index]?.taxPercent
+                    watchedLineItems[index]?.taxPercent,
                   ).toLocaleString()}
                 </div>
                 <div className="col-md-1 text-end">
                   {fields.length > 1 && (
-                    <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => remove(index)}>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() => remove(index)}
+                    >
                       <i className="bi bi-trash" aria-hidden="true" />
                     </button>
                   )}
@@ -297,10 +388,18 @@ export default function QuotationForm() {
         </FormSection>
 
         <FormActionBar>
-          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isSubmitting || isClosedOpportunity}
+          >
             {isSubmitting ? "Saving..." : "Save"}
           </button>
-          <button type="button" className="btn btn-outline-secondary" onClick={() => navigate(backTo)}>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={() => navigate(backTo)}
+          >
             Cancel
           </button>
         </FormActionBar>

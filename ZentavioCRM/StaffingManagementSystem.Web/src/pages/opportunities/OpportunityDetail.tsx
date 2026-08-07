@@ -160,19 +160,31 @@ export default function OpportunityDetail() {
       <PageHeader
         title={opportunity.name}
         subtitle={opportunity.opportunityNumber}
-        badge={<span className="badge fs-6 text-bg-primary">{opportunity.stage}</span>}
+        badge={
+          <span className="badge fs-6 text-bg-primary">
+            {opportunity.stage}
+          </span>
+        }
         backTo="/opportunities"
         backLabel="Back to Opportunities"
         actions={
           <>
             {canEdit && !isClosed && (
-              <Link to={`/opportunities/${opportunity.id}/edit`} className="btn btn-outline-secondary">
+              <Link
+                to={`/opportunities/${opportunity.id}/edit`}
+                className="btn btn-outline-secondary"
+              >
                 <i className="bi bi-pencil me-1" aria-hidden="true" />
                 Edit
               </Link>
             )}
             {canDelete && (
-              <button type="button" className="btn btn-outline-danger" disabled={isDeleting} onClick={handleDelete}>
+              <button
+                type="button"
+                className="btn btn-outline-danger"
+                disabled={isDeleting}
+                onClick={handleDelete}
+              >
                 <i className="bi bi-trash me-1" aria-hidden="true" />
                 {isDeleting ? "Deleting..." : "Delete"}
               </button>
@@ -183,10 +195,13 @@ export default function OpportunityDetail() {
 
       {actionError && <div className="alert alert-danger">{actionError}</div>}
 
-      {opportunity.stage === "ClosedWon" && <div className="alert alert-success">This opportunity was won.</div>}
+      {opportunity.stage === "ClosedWon" && (
+        <div className="alert alert-success">This opportunity was won.</div>
+      )}
       {opportunity.stage === "ClosedLost" && (
         <div className="alert alert-danger">
-          This opportunity was lost{opportunity.lostReason ? `: ${opportunity.lostReason}` : "."}
+          This opportunity was lost
+          {opportunity.lostReason ? `: ${opportunity.lostReason}` : "."}
         </div>
       )}
 
@@ -196,19 +211,27 @@ export default function OpportunityDetail() {
             <strong>Next Step:</strong> {opportunity.nextStep}
           </div>
           {opportunity.nextStepDate && (
-            <span className="text-nowrap ms-3">Due {new Date(opportunity.nextStepDate).toLocaleDateString()}</span>
+            <span className="text-nowrap ms-3">
+              Due {new Date(opportunity.nextStepDate).toLocaleDateString()}
+            </span>
           )}
         </div>
       )}
 
       <div className="row g-4">
         <div className="col-lg-8">
-          <FormSection icon="bi-briefcase" title="Opportunity Details" description="Customer, deal value, and forecast specifics.">
+          <FormSection
+            icon="bi-briefcase"
+            title="Opportunity Details"
+            description="Customer, deal value, and forecast specifics."
+          >
             <div className="row g-3">
               <div className="col-md-6">
                 <div className="text-muted small">Customer</div>
                 <div>
-                  <Link to={`/customers/${opportunity.customerId}/edit`}>{opportunity.customerName}</Link>
+                  <Link to={`/customers/${opportunity.customerId}/edit`}>
+                    {opportunity.customerName}
+                  </Link>
                 </div>
               </div>
               <div className="col-md-6">
@@ -221,11 +244,21 @@ export default function OpportunityDetail() {
               </div>
               <div className="col-md-6">
                 <div className="text-muted small">Probability</div>
-                <div>{opportunity.probability != null ? `${opportunity.probability}%` : "—"}</div>
+                <div>
+                  {opportunity.probability != null
+                    ? `${opportunity.probability}%`
+                    : "—"}
+                </div>
               </div>
               <div className="col-md-6">
                 <div className="text-muted small">Expected Close Date</div>
-                <div>{opportunity.expectedCloseDate ? new Date(opportunity.expectedCloseDate).toLocaleDateString() : "—"}</div>
+                <div>
+                  {opportunity.expectedCloseDate
+                    ? new Date(
+                        opportunity.expectedCloseDate,
+                      ).toLocaleDateString()
+                    : "—"}
+                </div>
               </div>
               <div className="col-md-6">
                 <div className="text-muted small">Products</div>
@@ -262,9 +295,15 @@ export default function OpportunityDetail() {
                       <tr key={li.id}>
                         <td>{li.productName}</td>
                         <td className="text-end">{li.quantity}</td>
-                        <td className="text-end">{li.unitPrice.toLocaleString()}</td>
-                        <td className="text-end">{li.discountPercent ? `${li.discountPercent}%` : "—"}</td>
-                        <td className="text-end fw-semibold">{li.lineTotal.toLocaleString()}</td>
+                        <td className="text-end">
+                          {li.unitPrice.toLocaleString()}
+                        </td>
+                        <td className="text-end">
+                          {li.discountPercent ? `${li.discountPercent}%` : "—"}
+                        </td>
+                        <td className="text-end fw-semibold">
+                          {li.lineTotal.toLocaleString()}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -288,13 +327,23 @@ export default function OpportunityDetail() {
                     {opportunity.contacts.map((c) => (
                       <tr key={c.id}>
                         <td>
-                          <Link to={`/customers/${opportunity.customerId}/edit`}>{c.contactPersonName}</Link>
+                          <Link
+                            to={`/customers/${opportunity.customerId}/edit`}
+                          >
+                            {c.contactPersonName}
+                          </Link>
                           {c.contactPersonDesignation && (
-                            <div className="text-muted small">{c.contactPersonDesignation}</div>
+                            <div className="text-muted small">
+                              {c.contactPersonDesignation}
+                            </div>
                           )}
                         </td>
                         <td>
-                          <span className={`badge ${CONTACT_ROLE_BADGE[c.role]}`}>{CONTACT_ROLE_LABEL[c.role]}</span>
+                          <span
+                            className={`badge ${CONTACT_ROLE_BADGE[c.role]}`}
+                          >
+                            {CONTACT_ROLE_LABEL[c.role]}
+                          </span>
                         </td>
                         <td className="text-muted small">{c.notes ?? "—"}</td>
                       </tr>
@@ -309,11 +358,14 @@ export default function OpportunityDetail() {
             icon="bi-receipt"
             title="Quotations"
             actions={
-              canCreateQuotation && (
+              canCreateQuotation &&
+              !isClosed && (
                 <button
                   type="button"
                   className="btn btn-sm btn-outline-primary"
-                  onClick={() => navigate(`/quotations/new?opportunityId=${opportunity.id}`)}
+                  onClick={() =>
+                    navigate(`/quotations/new?opportunityId=${opportunity.id}`)
+                  }
                 >
                   <i className="bi bi-plus-lg me-1" aria-hidden="true" />
                   Create Quotation
@@ -323,7 +375,8 @@ export default function OpportunityDetail() {
           >
             {quotations.length === 0 ? (
               <div className="text-muted small">
-                No quotations yet — once you're ready to price this deal, create one to move it toward a sales order.
+                No quotations yet — once you're ready to price this deal, create
+                one to move it toward a sales order.
               </div>
             ) : (
               <div className="table-responsive">
@@ -337,14 +390,26 @@ export default function OpportunityDetail() {
                   </thead>
                   <tbody>
                     {quotations.map((q) => (
-                      <tr key={q.id} role="button" onClick={() => navigate(`/quotations/${q.id}`)}>
+                      <tr
+                        key={q.id}
+                        role="button"
+                        onClick={() => navigate(`/quotations/${q.id}`)}
+                      >
                         <td>
                           {q.quotationNumber}
-                          {q.version > 1 && <span className="text-muted"> v{q.version}</span>}
+                          {q.version > 1 && (
+                            <span className="text-muted"> v{q.version}</span>
+                          )}
                         </td>
-                        <td className="text-end">{q.grandTotal.toLocaleString()}</td>
+                        <td className="text-end">
+                          {q.grandTotal.toLocaleString()}
+                        </td>
                         <td>
-                          <span className={`badge ${QUOTATION_STATUS_BADGE[q.status]}`}>{q.status}</span>
+                          <span
+                            className={`badge ${QUOTATION_STATUS_BADGE[q.status]}`}
+                          >
+                            {q.status}
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -354,7 +419,11 @@ export default function OpportunityDetail() {
             )}
           </FormSection>
 
-          <ActivityTimelinePanel relatedToType="Opportunity" relatedToId={opportunity.id} users={users} />
+          <ActivityTimelinePanel
+            relatedToType="Opportunity"
+            relatedToId={opportunity.id}
+            users={users}
+          />
 
           <DocumentsPanel entityType="Opportunity" entityId={opportunity.id} />
 
@@ -364,7 +433,9 @@ export default function OpportunityDetail() {
         <div className="col-lg-4">
           <FormSection icon="bi-flag" title="Stage">
             <div className="mb-3">
-              <span className="badge text-bg-primary fs-6">{opportunity.stage}</span>
+              <span className="badge text-bg-primary fs-6">
+                {opportunity.stage}
+              </span>
             </div>
             {nextStages.length > 0 ? (
               <div className="d-flex flex-wrap gap-2">
@@ -380,7 +451,9 @@ export default function OpportunityDetail() {
                 ))}
               </div>
             ) : (
-              <div className="text-muted small">No further stage changes available.</div>
+              <div className="text-muted small">
+                No further stage changes available.
+              </div>
             )}
           </FormSection>
 
@@ -411,9 +484,19 @@ export default function OpportunityDetail() {
 
           <FormSection icon="bi-clock-history" title="Meta" className="mb-0">
             <div className="small text-muted">
-              <div>Created: {new Date(opportunity.createdAtUtc).toLocaleString()}</div>
-              {opportunity.updatedAtUtc && <div>Updated: {new Date(opportunity.updatedAtUtc).toLocaleString()}</div>}
-              {opportunity.closedAtUtc && <div>Closed: {new Date(opportunity.closedAtUtc).toLocaleString()}</div>}
+              <div>
+                Created: {new Date(opportunity.createdAtUtc).toLocaleString()}
+              </div>
+              {opportunity.updatedAtUtc && (
+                <div>
+                  Updated: {new Date(opportunity.updatedAtUtc).toLocaleString()}
+                </div>
+              )}
+              {opportunity.closedAtUtc && (
+                <div>
+                  Closed: {new Date(opportunity.closedAtUtc).toLocaleString()}
+                </div>
+              )}
             </div>
           </FormSection>
         </div>
