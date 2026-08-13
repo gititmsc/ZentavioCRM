@@ -8,6 +8,7 @@ import {
   TOKEN_STORAGE_KEY,
   REFRESH_TOKEN_STORAGE_KEY,
   USER_STORAGE_KEY,
+  AUTH_STATE_STORAGE_KEY,
   getToken,
   getRefreshToken,
   clearSession,
@@ -58,11 +59,14 @@ interface LoginResponseData {
 /** Attempts to sign the user in via the Staffing Management System API. */
 async function login(request: LoginRequest): Promise<ApiResponse<AuthResult>> {
   try {
-    const response = await apiClient.post<ApiResponse<LoginResponseData>>("/api/auth/login", {
-      email: request.email,
-      password: request.password,
-      rememberMe: request.rememberMe,
-    });
+    const response = await apiClient.post<ApiResponse<LoginResponseData>>(
+      "/api/auth/login",
+      {
+        email: request.email,
+        password: request.password,
+        rememberMe: request.rememberMe,
+      },
+    );
 
     if (!response.data.success || !response.data.data) {
       return {
@@ -94,10 +98,18 @@ async function login(request: LoginRequest): Promise<ApiResponse<AuthResult>> {
 }
 
 function persistSession(result: AuthResult, rememberMe: boolean): void {
+  const userPayload = JSON.stringify(result.user);
   const storage = rememberMe ? window.localStorage : window.sessionStorage;
+
   storage.setItem(TOKEN_STORAGE_KEY, result.token);
   storage.setItem(REFRESH_TOKEN_STORAGE_KEY, result.refreshToken);
-  storage.setItem(USER_STORAGE_KEY, JSON.stringify(result.user));
+  storage.setItem(USER_STORAGE_KEY, userPayload);
+
+  // Written to both storages regardless of rememberMe — it carries no token, just a marker other
+  // tabs can see via the "storage" event so AuthContext can sync sign-in/sign-out across tabs.
+  for (const s of [window.localStorage, window.sessionStorage]) {
+    s.setItem(AUTH_STATE_STORAGE_KEY, "signed-in");
+  }
 }
 
 function getStoredUser(): AuthUser | null {

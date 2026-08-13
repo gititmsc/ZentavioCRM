@@ -46,6 +46,12 @@ namespace ZentavioCRM.Services
                 return ApiResponse<UserDelegationDto>.FailureResponse("Selected delegate does not exist.");
             }
 
+            var reverseCheck = await _delegationRepository.GetForReverseAsync(currentUserId, request.DelegateUserId);
+            if (reverseCheck is not null)
+            {
+                return ApiResponse<UserDelegationDto>.FailureResponse("Reverse delegation is not allowed. The selected users are already assigned to each other.");
+            }
+
             var delegation = new UserDelegation
             {
                 DelegatorUserId = currentUserId,

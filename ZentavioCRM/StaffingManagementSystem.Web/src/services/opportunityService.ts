@@ -114,6 +114,72 @@ export interface SaveOpportunityRequest {
   contacts: SaveOpportunityContactRequest[];
 }
 
+function normalizeOpportunityRequest(
+  request: SaveOpportunityRequest,
+): SaveOpportunityRequest {
+  const normalizeEmptyString = (value: string | null | undefined) => {
+    if (value == null) return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  };
+
+  const normalizeNumber = (
+    value: number | string | null | undefined,
+    fallback: number | null,
+  ): number | null => {
+    if (value == null || value === "") return fallback;
+    if (typeof value === "number") return value;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? Number(trimmed) : fallback;
+  };
+
+  return {
+    ...request,
+    name: request.name?.trim() ?? "",
+    customerId: request.customerId?.trim() ?? "",
+    value: normalizeNumber(
+      request.value as number | string | null | undefined,
+      null,
+    ),
+    currencyCode: normalizeEmptyString(request.currencyCode),
+    probability: normalizeNumber(
+      request.probability as number | string | null | undefined,
+      null,
+    ),
+    products: normalizeEmptyString(request.products),
+    competitors: normalizeEmptyString(request.competitors),
+    expectedCloseDate: normalizeEmptyString(request.expectedCloseDate),
+    assignedToUserId: normalizeEmptyString(request.assignedToUserId),
+    notes: normalizeEmptyString(request.notes),
+    nextStep: normalizeEmptyString(request.nextStep),
+    nextStepDate: normalizeEmptyString(request.nextStepDate),
+    lineItems: (request.lineItems ?? []).map((lineItem) => ({
+      ...lineItem,
+      productName: lineItem.productName?.trim() ?? "",
+      quantity:
+        normalizeNumber(
+          lineItem.quantity as number | string | null | undefined,
+          1,
+        ) ?? 1,
+      unitPrice:
+        normalizeNumber(
+          lineItem.unitPrice as number | string | null | undefined,
+          0,
+        ) ?? 0,
+      discountPercent: normalizeNumber(
+        lineItem.discountPercent as number | string | null | undefined,
+        null,
+      ),
+    })),
+    contacts: (request.contacts ?? [])
+      .filter((contact) => contact.contactPersonId)
+      .map((contact) => ({
+        ...contact,
+        notes: normalizeEmptyString(contact.notes),
+      })),
+  };
+}
+
 export interface OpportunitySearchParams {
   search?: string;
   stage?: OpportunityStage;
@@ -126,14 +192,25 @@ export interface OpportunitySearchParams {
 }
 
 const search = (params: OpportunitySearchParams) =>
-  callApi<PagedResult<OpportunityListItem>>(apiClient.get("/api/opportunities", { params }));
+  callApi<PagedResult<OpportunityListItem>>(
+    apiClient.get("/api/opportunities", { params }),
+  );
 
-const getById = (id: string) => callApi<Opportunity>(apiClient.get(`/api/opportunities/${id}`));
+const getById = (id: string) =>
+  callApi<Opportunity>(apiClient.get(`/api/opportunities/${id}`));
 
-const create = (request: SaveOpportunityRequest) => callApi<Opportunity>(apiClient.post("/api/opportunities", request));
+const create = (request: SaveOpportunityRequest) =>
+  callApi<Opportunity>(
+    apiClient.post("/api/opportunities", normalizeOpportunityRequest(request)),
+  );
 
 const update = (id: string, request: SaveOpportunityRequest) =>
-  callApi<Opportunity>(apiClient.put(`/api/opportunities/${id}`, request));
+  callApi<Opportunity>(
+    apiClient.put(
+      `/api/opportunities/${id}`,
+      normalizeOpportunityRequest(request),
+    ),
+  );
 
 const updateStage = (id: string, stage: OpportunityStage, reason?: string) =>
   callApi<Opportunity>(apiClient.patch(`/api/opportunities/${id}/stage`, { stage, reason }));

@@ -121,6 +121,7 @@ app.UseSwaggerUI(c =>
 
 app.UseHttpsRedirection();
 app.UseCors("FrontendPolicy");
+app.UseMiddleware<ExceptionHandlingMiddleware>();  // keeps CORS headers on error responses instead of a bare, header-less 500
 app.UseMiddleware<TenantResolutionMiddleware>();   // resolves which tenant DB this request targets
 app.UseAuthentication();   // must run before UseAuthorization so HttpContext.User is populated
 app.UseAuthorization();
