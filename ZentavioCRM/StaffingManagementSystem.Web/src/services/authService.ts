@@ -99,15 +99,16 @@ async function login(request: LoginRequest): Promise<ApiResponse<AuthResult>> {
 
 function persistSession(result: AuthResult, rememberMe: boolean): void {
   const userPayload = JSON.stringify(result.user);
-  const storages = rememberMe
-    ? [window.localStorage, window.sessionStorage]
-    : [window.localStorage, window.sessionStorage];
+  const storage = rememberMe ? window.localStorage : window.sessionStorage;
 
-  for (const storage of storages) {
-    storage.setItem(TOKEN_STORAGE_KEY, result.token);
-    storage.setItem(REFRESH_TOKEN_STORAGE_KEY, result.refreshToken);
-    storage.setItem(USER_STORAGE_KEY, userPayload);
-    storage.setItem(AUTH_STATE_STORAGE_KEY, "signed-in");
+  storage.setItem(TOKEN_STORAGE_KEY, result.token);
+  storage.setItem(REFRESH_TOKEN_STORAGE_KEY, result.refreshToken);
+  storage.setItem(USER_STORAGE_KEY, userPayload);
+
+  // Written to both storages regardless of rememberMe — it carries no token, just a marker other
+  // tabs can see via the "storage" event so AuthContext can sync sign-in/sign-out across tabs.
+  for (const s of [window.localStorage, window.sessionStorage]) {
+    s.setItem(AUTH_STATE_STORAGE_KEY, "signed-in");
   }
 }
 

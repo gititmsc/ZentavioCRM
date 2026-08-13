@@ -35,16 +35,15 @@ export function getRefreshToken(): string | null {
   );
 }
 
-/** Overwrites the access + refresh token in both storage areas so the same session is available
- * in the current tab and in a newly opened tab. */
+/** Overwrites the access + refresh token in whichever storage the session already lives in
+ * (localStorage for a "Remember Me" login, sessionStorage otherwise). */
 export function persistRefreshedTokens(
   token: string,
   refreshToken: string,
 ): void {
-  for (const storage of [window.localStorage, window.sessionStorage]) {
-    storage.setItem(TOKEN_STORAGE_KEY, token);
-    storage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
-  }
+  const storage = getActiveStorage();
+  storage.setItem(TOKEN_STORAGE_KEY, token);
+  storage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
 }
 
 export function clearSession(): void {
