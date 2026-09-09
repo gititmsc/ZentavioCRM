@@ -21,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/quotations", icon: "bi-file-earmark-text", label: "Quotations", requiresAnyOf: [PermissionCodes.QuotationsView] },
   { to: "/sales-orders", icon: "bi-cart-check", label: "Sales Orders", requiresAnyOf: [PermissionCodes.SalesOrdersView] },
   { to: "/customers", icon: "bi-building", label: "Customers", requiresAnyOf: [PermissionCodes.CustomersView] },
+  { to: "/products", icon: "bi-box-seam", label: "Product Catalog", requiresAnyOf: [PermissionCodes.ProductsView] },
   { to: "/departments", icon: "bi-diagram-3", label: "Departments", requiresAnyOf: [PermissionCodes.DepartmentsView] },
   { to: "/territories", icon: "bi-map", label: "Territories", requiresAnyOf: [PermissionCodes.TerritoriesView] },
   { to: "/users", icon: "bi-people-fill", label: "Users", requiresAnyOf: [PermissionCodes.UsersView] },

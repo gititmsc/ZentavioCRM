@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { opportunityService, type OpportunityContactRole, type SaveOpportunityRequest } from "@/services/opportunityService";
 import { userService, type ManagedUser } from "@/services/userService";
 import { customerService, type CustomerListItem, type ContactPerson } from "@/services/customerService";
+import { productService, type Product } from "@/services/productService";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FormSection } from "@/components/form/FormSection";
 import { FormActionBar } from "@/components/form/FormActionBar";
@@ -40,6 +41,7 @@ export default function OpportunityForm() {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [customers, setCustomers] = useState<CustomerListItem[]>([]);
   const [customerContacts, setCustomerContacts] = useState<ContactPerson[]>([]);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -83,12 +85,14 @@ export default function OpportunityForm() {
 
   useEffect(() => {
     (async () => {
-      const [usersResult, customersResult] = await Promise.all([
+      const [usersResult, customersResult, productsResult] = await Promise.all([
         userService.getAll(),
         customerService.search({ pageSize: 200 }),
+        productService.getAllActive(),
       ]);
       if (usersResult.success && usersResult.data) setUsers(usersResult.data);
       if (customersResult.success && customersResult.data) setCustomers(customersResult.data.items);
+      if (productsResult.success && productsResult.data) setCatalogProducts(productsResult.data);
 
       if (isEditMode && id) {
         const existing = await opportunityService.getById(id);
@@ -309,6 +313,26 @@ export default function OpportunityForm() {
               <div className="row g-2 align-items-end">
                 <div className="col-md-4">
                   <label className="form-label small">Product/Service</label>
+                  {catalogProducts.length > 0 && (
+                    <select
+                      className="form-select form-select-sm mb-1"
+                      value=""
+                      onChange={(e) => {
+                        const product = catalogProducts.find((p) => p.id === e.target.value);
+                        if (product) {
+                          setValue(`lineItems.${index}.productName`, product.name);
+                          setValue(`lineItems.${index}.unitPrice`, product.unitPrice);
+                        }
+                      }}
+                    >
+                      <option value="">Pick from catalog...</option>
+                      {catalogProducts.map((product) => (
+                        <option key={product.id} value={product.id}>
+                          {product.sku} — {product.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <input
                     className={`form-control form-control-sm ${
                       errors.lineItems?.[index]?.productName ? "is-invalid" : ""

@@ -20,6 +20,7 @@ namespace ZentavioCRM.Repositories.Extensions
             services.AddScoped<IOpportunityRepository, OpportunityRepository>();
             services.AddScoped<IQuotationRepository, QuotationRepository>();
             services.AddScoped<ISalesOrderRepository, SalesOrderRepository>();
+            services.AddScoped<IProductRepository, ProductRepository>();
             services.AddScoped<IActivityRepository, ActivityRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();

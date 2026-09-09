@@ -8,6 +8,7 @@ import {
 } from "@/services/quotationService";
 import { userService, type ManagedUser } from "@/services/userService";
 import { opportunityService, type OpportunityListItem } from "@/services/opportunityService";
+import { productService, type Product } from "@/services/productService";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FormSection } from "@/components/form/FormSection";
 import { FormActionBar } from "@/components/form/FormActionBar";
@@ -39,6 +40,7 @@ export default function QuotationForm() {
 
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [opportunities, setOpportunities] = useState<OpportunityListItem[]>([]);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [opportunityName, setOpportunityName] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +52,7 @@ export default function QuotationForm() {
     reset,
     control,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<QuotationFormValues>({
     defaultValues: {
@@ -81,13 +84,15 @@ export default function QuotationForm() {
 
   useEffect(() => {
     (async () => {
-      const [usersResult, opportunitiesResult] = await Promise.all([
+      const [usersResult, opportunitiesResult, productsResult] = await Promise.all([
         userService.getAll(),
         opportunityService.search({ pageSize: 200 }),
+        productService.getAllActive(),
       ]);
       if (usersResult.success && usersResult.data) setUsers(usersResult.data);
       if (opportunitiesResult.success && opportunitiesResult.data)
         setOpportunities(opportunitiesResult.data.items);
+      if (productsResult.success && productsResult.data) setCatalogProducts(productsResult.data);
 
       let selectedOpportunityId = searchParams.get("opportunityId") ?? "";
 
@@ -296,6 +301,27 @@ export default function QuotationForm() {
               <div className="row g-2 align-items-end">
                 <div className="col-md-3">
                   <label className="form-label small">Product/Service</label>
+                  {catalogProducts.length > 0 && (
+                    <select
+                      className="form-select form-select-sm mb-1"
+                      value=""
+                      onChange={(e) => {
+                        const product = catalogProducts.find((p) => p.id === e.target.value);
+                        if (product) {
+                          setValue(`lineItems.${index}.productName`, product.name);
+                          setValue(`lineItems.${index}.unitPrice`, product.unitPrice);
+                          setValue(`lineItems.${index}.taxPercent`, product.taxPercent);
+                        }
+                      }}
+                    >
+                      <option value="">Pick from catalog...</option>
+                      {catalogProducts.map((product) => (
+                        <option key={product.id} value={product.id}>
+                          {product.sku} — {product.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <input
                     className={`form-control form-control-sm ${
                       errors.lineItems?.[index]?.productName ? "is-invalid" : ""

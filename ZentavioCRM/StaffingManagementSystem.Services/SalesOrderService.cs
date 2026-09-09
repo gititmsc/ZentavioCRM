@@ -2,6 +2,7 @@ using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.DTOs.SalesOrders;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Security;
 using ZentavioCRM.Repositories.Interfaces;
 using ZentavioCRM.Services.Interfaces;
 
@@ -16,27 +17,43 @@ namespace ZentavioCRM.Services
         private readonly IQuotationRepository _quotationRepository;
         private readonly IAuditLogService _auditLogService;
         private readonly INotificationService _notificationService;
+        private readonly IAccessScopeService _accessScopeService;
 
         public SalesOrderService(
             ISalesOrderRepository salesOrderRepository,
             IQuotationRepository quotationRepository,
             IAuditLogService auditLogService,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IAccessScopeService accessScopeService)
         {
             _salesOrderRepository = salesOrderRepository;
             _quotationRepository = quotationRepository;
             _auditLogService = auditLogService;
             _notificationService = notificationService;
+            _accessScopeService = accessScopeService;
+        }
+
+        /// <summary>In-memory record-visibility check for a single already-fetched record's assignment/ownership. Returns true (no restriction) when currentUserId is null, since that only happens for internal/system callers, never an authenticated HTTP request.</summary>
+        private async Task<bool> CanAccessAsync(Guid? currentUserId, Guid? assignedToUserId, Guid? createdByUserId)
+        {
+            if (currentUserId is null)
+            {
+                return true;
+            }
+
+            var scope = await _accessScopeService.GetForUserAsync(currentUserId.Value);
+            return scope.CanSee(assignedToUserId, createdByUserId);
         }
 
         public async Task<PagedResult<SalesOrderListItemDto>> SearchAsync(
             string? search, SalesOrderStatus? status, Guid? customerId, int page, int pageSize,
-            string? sortBy = null, bool sortDescending = true)
+            Guid? currentUserId = null, string? sortBy = null, bool sortDescending = true)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize is < 1 or > 200 ? 20 : pageSize;
 
-            var (items, totalCount) = await _salesOrderRepository.SearchAsync(search, status, customerId, page, pageSize, sortBy, sortDescending);
+            AccessScope? accessScope = currentUserId is null ? null : await _accessScopeService.GetForUserAsync(currentUserId.Value);
+            var (items, totalCount) = await _salesOrderRepository.SearchAsync(search, status, customerId, page, pageSize, accessScope, sortBy, sortDescending);
 
             return new PagedResult<SalesOrderListItemDto>
             {
@@ -47,18 +64,31 @@ namespace ZentavioCRM.Services
             };
         }
 
-        public async Task<ApiResponse<SalesOrderDto>> GetByIdAsync(Guid id)
+        public async Task<ApiResponse<SalesOrderDto>> GetByIdAsync(Guid id, Guid? currentUserId = null)
         {
             var salesOrder = await _salesOrderRepository.GetByIdAsync(id);
-            return salesOrder is null
-                ? ApiResponse<SalesOrderDto>.FailureResponse("Sales order not found.")
-                : ApiResponse<SalesOrderDto>.SuccessResponse(Map(salesOrder));
+            if (salesOrder is null)
+            {
+                return ApiResponse<SalesOrderDto>.FailureResponse("Sales order not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, salesOrder.AssignedToUserId, salesOrder.CreatedByUserId))
+            {
+                return ApiResponse<SalesOrderDto>.FailureResponse("Sales order not found.");
+            }
+
+            return ApiResponse<SalesOrderDto>.SuccessResponse(Map(salesOrder));
         }
 
         public async Task<ApiResponse<SalesOrderDto>> ConvertFromQuotationAsync(ConvertQuotationToSalesOrderRequest request, Guid? currentUserId)
         {
             var quotation = await _quotationRepository.GetByIdAsync(request.QuotationId);
             if (quotation is null)
+            {
+                return ApiResponse<SalesOrderDto>.FailureResponse("Quotation not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, quotation.AssignedToUserId, quotation.CreatedByUserId))
             {
                 return ApiResponse<SalesOrderDto>.FailureResponse("Quotation not found.");
             }
@@ -123,6 +153,11 @@ namespace ZentavioCRM.Services
                 return ApiResponse<SalesOrderDto>.FailureResponse("Sales order not found.");
             }
 
+            if (!await CanAccessAsync(currentUserId, salesOrder.AssignedToUserId, salesOrder.CreatedByUserId))
+            {
+                return ApiResponse<SalesOrderDto>.FailureResponse("Sales order not found.");
+            }
+
             if (salesOrder.Status == SalesOrderStatus.Cancelled)
             {
                 return ApiResponse<SalesOrderDto>.FailureResponse("This sales order has been cancelled and can no longer be edited.");
@@ -147,6 +182,11 @@ namespace ZentavioCRM.Services
                 return ApiResponse<SalesOrderDto>.FailureResponse("Sales order not found.");
             }
 
+            if (!await CanAccessAsync(currentUserId, salesOrder.AssignedToUserId, salesOrder.CreatedByUserId))
+            {
+                return ApiResponse<SalesOrderDto>.FailureResponse("Sales order not found.");
+            }
+
             salesOrder.AssignedToUserId = request.UserId;
             salesOrder.UpdatedAtUtc = DateTime.UtcNow;
 
@@ -167,6 +207,11 @@ namespace ZentavioCRM.Services
         {
             var salesOrder = await _salesOrderRepository.GetByIdAsync(id);
             if (salesOrder is null)
+            {
+                return ApiResponse<SalesOrderDto>.FailureResponse("Sales order not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, salesOrder.AssignedToUserId, salesOrder.CreatedByUserId))
             {
                 return ApiResponse<SalesOrderDto>.FailureResponse("Sales order not found.");
             }
@@ -232,6 +277,11 @@ namespace ZentavioCRM.Services
         {
             var salesOrder = await _salesOrderRepository.GetByIdAsync(id);
             if (salesOrder is null)
+            {
+                return ApiResponse<SalesOrderDto>.FailureResponse("Sales order not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, salesOrder.AssignedToUserId, salesOrder.CreatedByUserId))
             {
                 return ApiResponse<SalesOrderDto>.FailureResponse("Sales order not found.");
             }

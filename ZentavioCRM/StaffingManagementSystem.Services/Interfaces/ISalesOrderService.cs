@@ -9,9 +9,9 @@ namespace ZentavioCRM.Services.Interfaces
         /// <param name="sortBy">Column key (case-insensitive): salesOrderNumber, quotationNumber, customerName, grandTotal, orderDate, expectedDeliveryDate, status, createdAtUtc. Unrecognized/null falls back to createdAtUtc.</param>
         Task<PagedResult<SalesOrderListItemDto>> SearchAsync(
             string? search, SalesOrderStatus? status, Guid? customerId, int page, int pageSize,
-            string? sortBy = null, bool sortDescending = true);
+            Guid? currentUserId = null, string? sortBy = null, bool sortDescending = true);
 
-        Task<ApiResponse<SalesOrderDto>> GetByIdAsync(Guid id);
+        Task<ApiResponse<SalesOrderDto>> GetByIdAsync(Guid id, Guid? currentUserId = null);
 
         /// <summary>Converts an Accepted quotation into a new Sales Order, copying its line items as a pricing snapshot.</summary>
         Task<ApiResponse<SalesOrderDto>> ConvertFromQuotationAsync(ConvertQuotationToSalesOrderRequest request, Guid? currentUserId);

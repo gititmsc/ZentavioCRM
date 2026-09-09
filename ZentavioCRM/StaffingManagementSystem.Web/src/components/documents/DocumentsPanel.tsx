@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { documentService, type DocumentFile } from "@/services/documentService";
+import { FormSection } from "@/components/form/FormSection";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -51,48 +52,50 @@ export function DocumentsPanel({ entityType, entityId }: { entityType: string; e
   };
 
   return (
-    <div className="card shadow-sm border-0 mt-4">
-      <div className="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
-        <span>Documents</span>
-        <button
-          type="button"
-          className="btn btn-sm btn-outline-primary"
-          disabled={isUploading}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <i className="bi bi-upload me-1" aria-hidden="true" />
-          {isUploading ? "Uploading..." : "Upload"}
-        </button>
-        <input ref={fileInputRef} type="file" className="d-none" onChange={handleFileChange} />
-      </div>
-      <div className="card-body">
-        {error && <div className="alert alert-danger py-2">{error}</div>}
-        {isLoading && <div className="text-muted small">Loading...</div>}
-        {!isLoading && documents.length === 0 && <div className="text-muted small">No files attached yet.</div>}
-        <ul className="list-unstyled mb-0">
-          {documents.map((doc) => (
-            <li key={doc.id} className="d-flex justify-content-between align-items-center border-bottom py-2">
-              <div>
-                <button
-                  type="button"
-                  className="btn btn-link p-0 text-decoration-none"
-                  onClick={() => documentService.download(doc.id, doc.fileName)}
-                >
-                  <i className="bi bi-file-earmark me-1" aria-hidden="true" />
-                  {doc.fileName}
-                </button>
-                <div className="text-muted small">
-                  {formatSize(doc.sizeBytes)} &middot; {doc.uploadedByUserName ?? "System"} &middot;{" "}
-                  {new Date(doc.createdAtUtc).toLocaleString()}
-                </div>
-              </div>
-              <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(doc.id)}>
-                <i className="bi bi-trash" aria-hidden="true" />
+    <FormSection
+      icon="bi-paperclip"
+      title="Documents"
+      actions={
+        <>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-primary"
+            disabled={isUploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <i className="bi bi-upload me-1" aria-hidden="true" />
+            {isUploading ? "Uploading..." : "Upload"}
+          </button>
+          <input ref={fileInputRef} type="file" className="d-none" onChange={handleFileChange} />
+        </>
+      }
+    >
+      {error && <div className="alert alert-danger py-2">{error}</div>}
+      {isLoading && <div className="text-muted small">Loading...</div>}
+      {!isLoading && documents.length === 0 && <div className="text-muted small">No files attached yet.</div>}
+      <ul className="list-unstyled mb-0">
+        {documents.map((doc) => (
+          <li key={doc.id} className="d-flex justify-content-between align-items-center border-bottom py-2">
+            <div>
+              <button
+                type="button"
+                className="btn btn-link p-0 text-decoration-none"
+                onClick={() => documentService.download(doc.id, doc.fileName)}
+              >
+                <i className="bi bi-file-earmark me-1" aria-hidden="true" />
+                {doc.fileName}
               </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
+              <div className="text-muted small">
+                {formatSize(doc.sizeBytes)} &middot; {doc.uploadedByUserName ?? "System"} &middot;{" "}
+                {new Date(doc.createdAtUtc).toLocaleString()}
+              </div>
+            </div>
+            <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(doc.id)}>
+              <i className="bi bi-trash" aria-hidden="true" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </FormSection>
   );
 }

@@ -9,9 +9,9 @@ namespace ZentavioCRM.Services.Interfaces
         /// <param name="sortBy">Column key (case-insensitive): quotationNumber, opportunityName, customerName, grandTotal, validUntil, assignedToUserName, status, createdAtUtc. Unrecognized/null falls back to createdAtUtc.</param>
         Task<PagedResult<QuotationListItemDto>> SearchAsync(
             string? search, QuotationStatus? status, Guid? opportunityId, Guid? customerId, int page, int pageSize,
-            string? sortBy = null, bool sortDescending = true);
+            Guid? currentUserId = null, string? sortBy = null, bool sortDescending = true);
 
-        Task<ApiResponse<QuotationDto>> GetByIdAsync(Guid id);
+        Task<ApiResponse<QuotationDto>> GetByIdAsync(Guid id, Guid? currentUserId = null);
 
         Task<ApiResponse<QuotationDto>> CreateAsync(CreateQuotationRequest request, Guid? currentUserId);
 

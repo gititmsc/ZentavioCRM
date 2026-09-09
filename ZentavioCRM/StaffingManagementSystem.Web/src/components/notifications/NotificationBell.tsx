@@ -88,11 +88,30 @@ export function NotificationBell() {
 
       {isOpen && (
         <div
-          className="card shadow position-absolute end-0 mt-2"
-          style={{ width: 360, zIndex: 1050, maxHeight: 420, overflowY: "auto" }}
+          className="position-absolute end-0 mt-2"
+          style={{
+            width: 360,
+            zIndex: 1050,
+            maxHeight: 420,
+            overflowY: "auto",
+            background: "var(--itm-card-bg)",
+            border: "1px solid var(--itm-border)",
+            borderRadius: "var(--itm-radius-card)",
+            boxShadow: "var(--itm-shadow-raised)",
+          }}
         >
-          <div className="card-header bg-white d-flex justify-content-between align-items-center">
-            <span className="fw-semibold">Notifications</span>
+          <div
+            className="d-flex justify-content-between align-items-center"
+            style={{
+              padding: "0.85rem 1.1rem",
+              borderBottom: "1px solid var(--itm-border)",
+              background: "linear-gradient(180deg, #fbfdff 0%, #f6f9fc 100%)",
+            }}
+          >
+            <span className="fw-semibold" style={{ fontSize: "0.9rem" }}>
+              <i className="bi bi-bell me-2 text-muted" aria-hidden="true" />
+              Notifications
+            </span>
             <button type="button" className="btn btn-sm btn-link p-0" onClick={handleMarkAllRead}>
               Mark all read
             </button>
@@ -105,7 +124,8 @@ export function NotificationBell() {
               <button
                 key={n.id}
                 type="button"
-                className={`list-group-item list-group-item-action ${n.isRead ? "" : "bg-light"}`}
+                className="list-group-item list-group-item-action border-0 border-bottom"
+                style={{ background: n.isRead ? "transparent" : "color-mix(in srgb, var(--itm-accent) 6%, white)" }}
                 onClick={() => handleNotificationClick(n)}
               >
                 <div className="small">{n.message}</div>

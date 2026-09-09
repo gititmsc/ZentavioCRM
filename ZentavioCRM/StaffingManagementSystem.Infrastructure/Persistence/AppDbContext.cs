@@ -54,6 +54,8 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<SalesOrderLineItem> SalesOrderLineItems => Set<SalesOrderLineItem>();
 
+        public DbSet<Product> Products => Set<Product>();
+
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
         public DbSet<Notification> Notifications => Set<Notification>();

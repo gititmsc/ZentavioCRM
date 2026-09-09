@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Security;
 using ZentavioCRM.Infrastructure.Persistence;
 using ZentavioCRM.Repositories.Interfaces;
 
@@ -26,7 +27,7 @@ namespace ZentavioCRM.Repositories
 
         public async Task<(IReadOnlyList<Quotation> Items, int TotalCount)> SearchAsync(
             string? search, QuotationStatus? status, Guid? opportunityId, Guid? customerId, int page, int pageSize,
-            string? sortBy = null, bool sortDescending = true)
+            AccessScope? accessScope = null, string? sortBy = null, bool sortDescending = true)
         {
             var query = _dbContext.Quotations
                 .Include(q => q.Opportunity)
@@ -58,6 +59,8 @@ namespace ZentavioCRM.Repositories
                 query = query.Where(q => q.CustomerId == customerId);
             }
 
+            query = ApplyAccessScope(query, accessScope);
+
             var totalCount = await query.CountAsync();
 
             var items = await ApplySort(query, sortBy, sortDescending)
@@ -87,6 +90,32 @@ namespace ZentavioCRM.Repositories
                 "status" => sortDescending ? query.OrderByDescending(q => q.Status) : query.OrderBy(q => q.Status),
                 _ => sortDescending ? query.OrderByDescending(q => q.CreatedAtUtc) : query.OrderBy(q => q.CreatedAtUtc),
             };
+        }
+
+        /// <summary>Shared Own/Team/All + delegation filter, matching IOpportunityRepository's ApplyAccessScope.</summary>
+        private static IQueryable<Quotation> ApplyAccessScope(IQueryable<Quotation> query, AccessScope? accessScope)
+        {
+            if (accessScope is null || accessScope.Scope == VisibilityScope.All)
+            {
+                return query;
+            }
+
+            var currentUserId = accessScope.UserId;
+            // .ToHashSet() materializes to a concrete HashSet<Guid> (ICollection<Guid>) — EF Core's
+            // Contains -> SQL IN translation is resolved from the compile-time type, and the source
+            // properties are declared as IReadOnlySet<Guid>, which isn't covered by that translation.
+            var teamIds = accessScope.TeamUserIds.ToHashSet();
+            var delegatedIds = accessScope.DelegatedFromUserIds.ToHashSet();
+
+            return accessScope.Scope == VisibilityScope.Team
+                ? query.Where(q =>
+                    (q.AssignedToUserId != null && teamIds.Contains(q.AssignedToUserId.Value)) ||
+                    (q.AssignedToUserId == null && q.CreatedByUserId != null && teamIds.Contains(q.CreatedByUserId.Value)) ||
+                    (q.AssignedToUserId != null && delegatedIds.Contains(q.AssignedToUserId.Value)))
+                : query.Where(q =>
+                    q.AssignedToUserId == currentUserId ||
+                    (q.AssignedToUserId == null && q.CreatedByUserId == currentUserId) ||
+                    (q.AssignedToUserId != null && delegatedIds.Contains(q.AssignedToUserId.Value)));
         }
 
         public async Task<IReadOnlyList<Quotation>> GetVersionsAsync(string quotationNumber)

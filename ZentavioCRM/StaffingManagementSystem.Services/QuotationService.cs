@@ -2,6 +2,7 @@ using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.DTOs.Quotations;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Security;
 using ZentavioCRM.Repositories.Interfaces;
 using ZentavioCRM.Services.Interfaces;
 
@@ -26,27 +27,43 @@ namespace ZentavioCRM.Services
         private readonly IOpportunityRepository _opportunityRepository;
         private readonly IAuditLogService _auditLogService;
         private readonly INotificationService _notificationService;
+        private readonly IAccessScopeService _accessScopeService;
 
         public QuotationService(
             IQuotationRepository quotationRepository,
             IOpportunityRepository opportunityRepository,
             IAuditLogService auditLogService,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IAccessScopeService accessScopeService)
         {
             _quotationRepository = quotationRepository;
             _opportunityRepository = opportunityRepository;
             _auditLogService = auditLogService;
             _notificationService = notificationService;
+            _accessScopeService = accessScopeService;
+        }
+
+        /// <summary>In-memory record-visibility check for a single already-fetched Quotation. Returns true (no restriction) when currentUserId is null, since that only happens for internal/system callers, never an authenticated HTTP request.</summary>
+        private async Task<bool> CanAccessAsync(Guid? currentUserId, Quotation quotation)
+        {
+            if (currentUserId is null)
+            {
+                return true;
+            }
+
+            var scope = await _accessScopeService.GetForUserAsync(currentUserId.Value);
+            return scope.CanSee(quotation.AssignedToUserId, quotation.CreatedByUserId);
         }
 
         public async Task<PagedResult<QuotationListItemDto>> SearchAsync(
             string? search, QuotationStatus? status, Guid? opportunityId, Guid? customerId, int page, int pageSize,
-            string? sortBy = null, bool sortDescending = true)
+            Guid? currentUserId = null, string? sortBy = null, bool sortDescending = true)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize is < 1 or > 200 ? 20 : pageSize;
 
-            var (items, totalCount) = await _quotationRepository.SearchAsync(search, status, opportunityId, customerId, page, pageSize, sortBy, sortDescending);
+            AccessScope? accessScope = currentUserId is null ? null : await _accessScopeService.GetForUserAsync(currentUserId.Value);
+            var (items, totalCount) = await _quotationRepository.SearchAsync(search, status, opportunityId, customerId, page, pageSize, accessScope, sortBy, sortDescending);
 
             return new PagedResult<QuotationListItemDto>
             {
@@ -57,10 +74,15 @@ namespace ZentavioCRM.Services
             };
         }
 
-        public async Task<ApiResponse<QuotationDto>> GetByIdAsync(Guid id)
+        public async Task<ApiResponse<QuotationDto>> GetByIdAsync(Guid id, Guid? currentUserId = null)
         {
             var quotation = await _quotationRepository.GetByIdAsync(id);
             if (quotation is null)
+            {
+                return ApiResponse<QuotationDto>.FailureResponse("Quotation not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, quotation))
             {
                 return ApiResponse<QuotationDto>.FailureResponse("Quotation not found.");
             }
@@ -119,6 +141,11 @@ namespace ZentavioCRM.Services
                 return ApiResponse<QuotationDto>.FailureResponse("Quotation not found.");
             }
 
+            if (!await CanAccessAsync(currentUserId, quotation))
+            {
+                return ApiResponse<QuotationDto>.FailureResponse("Quotation not found.");
+            }
+
             if (quotation.Status != QuotationStatus.Draft)
             {
                 return ApiResponse<QuotationDto>.FailureResponse(
@@ -159,6 +186,11 @@ namespace ZentavioCRM.Services
         {
             var quotation = await _quotationRepository.GetByIdAsync(id);
             if (quotation is null)
+            {
+                return ApiResponse<QuotationDto>.FailureResponse("Quotation not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, quotation))
             {
                 return ApiResponse<QuotationDto>.FailureResponse("Quotation not found.");
             }
@@ -204,6 +236,11 @@ namespace ZentavioCRM.Services
                 return ApiResponse<QuotationDto>.FailureResponse("Quotation not found.");
             }
 
+            if (!await CanAccessAsync(currentUserId, quotation))
+            {
+                return ApiResponse<QuotationDto>.FailureResponse("Quotation not found.");
+            }
+
             quotation.AssignedToUserId = request.UserId;
             quotation.UpdatedAtUtc = DateTime.UtcNow;
 
@@ -225,6 +262,11 @@ namespace ZentavioCRM.Services
         {
             var source = await _quotationRepository.GetByIdAsync(id);
             if (source is null)
+            {
+                return ApiResponse<QuotationDto>.FailureResponse("Quotation not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, source))
             {
                 return ApiResponse<QuotationDto>.FailureResponse("Quotation not found.");
             }
@@ -284,6 +326,11 @@ namespace ZentavioCRM.Services
         {
             var quotation = await _quotationRepository.GetByIdAsync(id);
             if (quotation is null)
+            {
+                return ApiResponse<bool>.FailureResponse("Quotation not found.");
+            }
+
+            if (!await CanAccessAsync(currentUserId, quotation))
             {
                 return ApiResponse<bool>.FailureResponse("Quotation not found.");
             }

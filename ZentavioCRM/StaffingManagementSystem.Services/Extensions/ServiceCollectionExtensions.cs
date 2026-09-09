@@ -21,6 +21,7 @@ namespace ZentavioCRM.Services.Extensions
             services.AddScoped<IOpportunityService, OpportunityService>();
             services.AddScoped<IQuotationService, QuotationService>();
             services.AddScoped<ISalesOrderService, SalesOrderService>();
+            services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IActivityService, ActivityService>();
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IAuditLogService, AuditLogService>();

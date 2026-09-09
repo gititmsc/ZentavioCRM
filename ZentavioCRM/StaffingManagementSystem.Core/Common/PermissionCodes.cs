@@ -55,6 +55,11 @@ namespace ZentavioCRM.Core.Common
         // dead SalesOrders.Delete permission previously existed here with no endpoint behind it;
         // removed rather than built out, since deleting a Sales Order isn't a desired capability.
 
+        public const string ProductsView = "Products.View";
+        public const string ProductsCreate = "Products.Create";
+        public const string ProductsEdit = "Products.Edit";
+        public const string ProductsDelete = "Products.Delete";
+
         /// <summary>All codes, keyed by module, used by the seeder and the admin role grant.</summary>
         public static readonly IReadOnlyDictionary<string, string[]> ByModule = new Dictionary<string, string[]>
         {
@@ -67,6 +72,7 @@ namespace ZentavioCRM.Core.Common
             ["Opportunities"] = [OpportunitiesView, OpportunitiesCreate, OpportunitiesEdit, OpportunitiesDelete, OpportunitiesAssign],
             ["Quotations"] = [QuotationsView, QuotationsCreate, QuotationsEdit, QuotationsDelete, QuotationsAssign],
             ["SalesOrders"] = [SalesOrdersView, SalesOrdersCreate, SalesOrdersEdit, SalesOrdersAssign],
+            ["Products"] = [ProductsView, ProductsCreate, ProductsEdit, ProductsDelete],
         };
 
         public static IEnumerable<string> All => ByModule.Values.SelectMany(codes => codes);

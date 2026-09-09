@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Security;
 using ZentavioCRM.Infrastructure.Persistence;
 using ZentavioCRM.Repositories.Interfaces;
 
@@ -26,7 +27,7 @@ namespace ZentavioCRM.Repositories
 
         public async Task<(IReadOnlyList<SalesOrder> Items, int TotalCount)> SearchAsync(
             string? search, SalesOrderStatus? status, Guid? customerId, int page, int pageSize,
-            string? sortBy = null, bool sortDescending = true)
+            AccessScope? accessScope = null, string? sortBy = null, bool sortDescending = true)
         {
             var query = _dbContext.SalesOrders
                 .Include(so => so.Quotation)
@@ -51,6 +52,8 @@ namespace ZentavioCRM.Repositories
             {
                 query = query.Where(so => so.CustomerId == customerId);
             }
+
+            query = ApplyAccessScope(query, accessScope);
 
             var totalCount = await query.CountAsync();
 
@@ -79,6 +82,32 @@ namespace ZentavioCRM.Repositories
                 "status" => sortDescending ? query.OrderByDescending(so => so.Status) : query.OrderBy(so => so.Status),
                 _ => sortDescending ? query.OrderByDescending(so => so.CreatedAtUtc) : query.OrderBy(so => so.CreatedAtUtc),
             };
+        }
+
+        /// <summary>Shared Own/Team/All + delegation filter, matching IOpportunityRepository's ApplyAccessScope.</summary>
+        private static IQueryable<SalesOrder> ApplyAccessScope(IQueryable<SalesOrder> query, AccessScope? accessScope)
+        {
+            if (accessScope is null || accessScope.Scope == VisibilityScope.All)
+            {
+                return query;
+            }
+
+            var currentUserId = accessScope.UserId;
+            // .ToHashSet() materializes to a concrete HashSet<Guid> (ICollection<Guid>) — EF Core's
+            // Contains -> SQL IN translation is resolved from the compile-time type, and the source
+            // properties are declared as IReadOnlySet<Guid>, which isn't covered by that translation.
+            var teamIds = accessScope.TeamUserIds.ToHashSet();
+            var delegatedIds = accessScope.DelegatedFromUserIds.ToHashSet();
+
+            return accessScope.Scope == VisibilityScope.Team
+                ? query.Where(so =>
+                    (so.AssignedToUserId != null && teamIds.Contains(so.AssignedToUserId.Value)) ||
+                    (so.AssignedToUserId == null && so.CreatedByUserId != null && teamIds.Contains(so.CreatedByUserId.Value)) ||
+                    (so.AssignedToUserId != null && delegatedIds.Contains(so.AssignedToUserId.Value)))
+                : query.Where(so =>
+                    so.AssignedToUserId == currentUserId ||
+                    (so.AssignedToUserId == null && so.CreatedByUserId == currentUserId) ||
+                    (so.AssignedToUserId != null && delegatedIds.Contains(so.AssignedToUserId.Value)));
         }
 
         public async Task<string> GetNextSalesOrderNumberAsync()

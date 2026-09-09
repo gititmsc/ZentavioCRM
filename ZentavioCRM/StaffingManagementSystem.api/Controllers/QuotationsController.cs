@@ -33,7 +33,7 @@ namespace ZentavioCRM.Api.Controllers
             [FromQuery] string? sortBy = null,
             [FromQuery] bool sortDescending = true)
         {
-            var result = await _quotationService.SearchAsync(search, status, opportunityId, customerId, page, pageSize, sortBy, sortDescending);
+            var result = await _quotationService.SearchAsync(search, status, opportunityId, customerId, page, pageSize, User.GetUserId(), sortBy, sortDescending);
             return Ok(ApiResponse<PagedResult<QuotationListItemDto>>.SuccessResponse(result));
         }
 
@@ -41,7 +41,7 @@ namespace ZentavioCRM.Api.Controllers
         [Authorize(Policy = PermissionCodes.QuotationsView)]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var result = await _quotationService.GetByIdAsync(id);
+            var result = await _quotationService.GetByIdAsync(id, User.GetUserId());
             return result.Success ? Ok(result) : NotFound(result);
         }
 

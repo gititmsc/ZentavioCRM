@@ -8,6 +8,7 @@ import {
 } from "@/services/activityService";
 import type { ManagedUser } from "@/services/userService";
 import { DocumentsPanel } from "@/components/documents/DocumentsPanel";
+import { FormSection } from "@/components/form/FormSection";
 
 const ACTIVITY_TYPES: ActivityType[] = ["Call", "Email", "Meeting", "Task", "Note", "Visit", "WhatsApp", "Sms"];
 
@@ -88,9 +89,7 @@ export function ActivityTimelinePanel({
   };
 
   return (
-    <div className="card shadow-sm border-0">
-      <div className="card-header bg-white fw-semibold">Timeline</div>
-      <div className="card-body">
+    <FormSection icon="bi-list-check" title="Timeline" description="Calls, notes, tasks, and other activity on this record.">
         <div className="d-flex gap-2 mb-2">
           <select
             className="form-select"
@@ -245,7 +244,6 @@ export function ActivityTimelinePanel({
             );
           })}
         </ul>
-      </div>
-    </div>
+    </FormSection>
   );
 }

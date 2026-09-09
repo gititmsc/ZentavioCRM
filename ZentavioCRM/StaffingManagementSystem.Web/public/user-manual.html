@@ -368,7 +368,7 @@
     <p class="manual-cover__sub">Everything currently implemented, explained for end users and mapped for test coverage.</p>
     <div class="manual-cover__meta">
       <span><strong>Version:</strong> 1.0</span>
-      <span><strong>Covers build as of:</strong> July 2026</span>
+      <span><strong>Covers build as of:</strong> August 2026</span>
       <span><strong>Prepared for:</strong> End users &amp; QA</span>
       <span><strong>Prepared by:</strong> ITMusketeers Consultancy Services</span>
     </div>
@@ -382,18 +382,19 @@
       <li><strong>End users</strong> get a plain-language walk-through of every screen: what it's for, what each field means, and the steps to complete common tasks.</li>
       <li><strong>QA testers</strong> get the same walk-through plus two extra layers highlighted throughout in colored boxes: orange <strong>QA Focus</strong> boxes calling out specific things worth testing (edge cases, mismatches between what the screen offers and what the server actually allows), and red <strong>Known Gap</strong> boxes documenting things that are not yet built or behave differently than you might expect &mdash; these are not bugs to re-report, they're documented current behavior, useful as a checklist when triaging new findings.</li>
     </ul>
-    <p>Section <a href="#permissions-reference">14, Permissions Reference</a> lists every permission code in the system. Section <a href="#qa-focus-summary">16, Known Limitations &amp; Test Focus Summary</a> collects every QA/Gap box in the manual into one master checklist.</p>
+    <p>Section <a href="#permissions-reference">16, Permissions Reference</a> lists every permission code in the system. Section <a href="#qa-focus-summary">18, Known Limitations &amp; Test Focus Summary</a> collects every QA/Gap box in the manual into one master checklist.</p>
 
     <div class="manual-toc">
       <h2>Contents</h2>
       <ol>
         <li><a href="#overview">System Overview</a></li>
-        <li><a href="#getting-started">Getting Started (Login, Dashboard, Navigation)</a></li>
+        <li><a href="#getting-started">Getting Started (Login, Dashboard, Navigation, Lists &amp; Search)</a></li>
         <li><a href="#my-profile">My Profile (Photo &amp; Out-of-Office Delegation)</a></li>
         <li><a href="#leads">Leads</a></li>
         <li><a href="#opportunities">Opportunities</a></li>
         <li><a href="#quotations">Quotations</a></li>
         <li><a href="#sales-orders">Sales Orders</a></li>
+        <li><a href="#products">Product Catalog</a></li>
         <li><a href="#customers">Customers</a></li>
         <li><a href="#departments">Departments</a></li>
         <li><a href="#territories">Territories</a></li>
@@ -411,7 +412,7 @@
     <section class="module" id="overview">
       <h2 class="module-title">1. System Overview</h2>
       <p>ZentavioCRM is a sales-pipeline CRM covering the full customer-acquisition lifecycle: a <strong>Lead</strong> comes in, gets qualified, converts into a <strong>Customer</strong> and/or an <strong>Opportunity</strong>, an <strong>Opportunity</strong> produces one or more <strong>Quotations</strong>, an accepted <strong>Quotation</strong> becomes a <strong>Sales Order</strong>, and a Sales Order tracks delivery until complete. Around this pipeline sit administrative modules (Users, Roles, Departments, Territories) and supporting features (Activities, Documents, Notifications, Audit History).</p>
-      <p>Access to every module is controlled by <strong>permissions</strong> assigned to a user's <strong>Role</strong>. On top of that, a Role also carries a <strong>Visibility Scope</strong> (Own / Team / All) that controls <em>which records</em> a user can see within Leads, Customers and Opportunities &mdash; see <a href="#roles-permissions">section 12</a> for full details, since this is one of the most important behaviors to understand and to test.</p>
+      <p>Access to every module is controlled by <strong>permissions</strong> assigned to a user's <strong>Role</strong>. On top of that, a Role also carries a <strong>Visibility Scope</strong> (Own / Team / All) that controls <em>which records</em> a user can see within Leads, Customers, Opportunities, Quotations and Sales Orders &mdash; see <a href="#roles-permissions">section 13</a> for full details, since this is one of the most important behaviors to understand and to test.</p>
       <table>
         <tr><th style="width:22%">Concept</th><th>What it means here</th></tr>
         <tr><td>Lead</td><td>An unqualified prospect captured from a source (website, referral, campaign, etc.)</td></tr>
@@ -445,7 +446,7 @@
       </div>
 
       <h3>2.3 Navigation</h3>
-      <p>The left sidebar lists every module the signed-in user has permission to view; a module the user lacks permission for simply does not appear as a menu item (it is not just visually disabled &mdash; the underlying pages and API calls are also blocked, see <a href="#roles-permissions">section 12</a>).</p>
+      <p>The left sidebar lists every module the signed-in user has permission to view; a module the user lacks permission for simply does not appear as a menu item (it is not just visually disabled &mdash; the underlying pages and API calls are also blocked, see <a href="#roles-permissions">section 13</a>).</p>
       <table>
         <tr><th>Menu item</th><th>Route</th><th>Shown when user has permission</th></tr>
         <tr><td>Dashboard</td><td><code>/dashboard</code></td><td>always shown</td></tr>
@@ -454,12 +455,28 @@
         <tr><td>Quotations</td><td><code>/quotations</code></td><td><span class="perm-pill">Quotations.View</span></td></tr>
         <tr><td>Sales Orders</td><td><code>/sales-orders</code></td><td><span class="perm-pill">SalesOrders.View</span></td></tr>
         <tr><td>Customers</td><td><code>/customers</code></td><td><span class="perm-pill">Customers.View</span></td></tr>
+        <tr><td>Product Catalog</td><td><code>/products</code></td><td><span class="perm-pill">Products.View</span></td></tr>
         <tr><td>Departments</td><td><code>/departments</code></td><td><span class="perm-pill">Departments.View</span></td></tr>
         <tr><td>Territories</td><td><code>/territories</code></td><td><span class="perm-pill">Territories.View</span></td></tr>
         <tr><td>Users</td><td><code>/users</code></td><td><span class="perm-pill">Users.View</span></td></tr>
         <tr><td>Roles</td><td><code>/roles</code></td><td><span class="perm-pill">Roles.View</span></td></tr>
       </table>
-      <p>The bell icon in the top bar shows unread notifications (see <a href="#notifications-reminders">section 13</a>). Clicking your name/avatar in the top-right opens <a href="#my-profile">My Profile</a>. A <strong>User Manual</strong> link sits at the bottom-left of the sidebar at all times, opening this document in a new tab.</p>
+      <p>The bell icon in the top bar shows unread notifications (see <a href="#notifications-reminders">section 14</a>). Clicking your name/avatar in the top-right opens <a href="#my-profile">My Profile</a>. A <strong>User Manual</strong> link sits at the bottom-left of the sidebar at all times, opening this document in a new tab.</p>
+
+      <h3>2.4 List Screens &mdash; Search, Sorting &amp; Pagination</h3>
+      <p>Every list screen in the app (Leads, Opportunities, Quotations, Sales Orders, Customers, Product Catalog, Departments, Territories, Users, Roles) shares the same grid behavior:</p>
+      <ol class="steps">
+        <li>Results are fetched a page at a time from the server &mdash; the list is never "load everything and filter in the browser." A page-size dropdown (10/20/50/100, screen-dependent) at the bottom controls how many rows load per page, alongside page-number navigation.</li>
+        <li>Any column with a clickable header can be sorted by clicking it; clicking again reverses the direction. The active sort column shows an up/down arrow indicator. Sorting, like paging, is performed on the server against the full result set &mdash; not just the rows currently on screen.</li>
+        <li>Typing in the search box and submitting resets the list back to page 1 (so you don't end up looking at "page 4" of a much smaller filtered result set).</li>
+      </ol>
+      <div class="callout qa">
+        <span class="callout-title">QA Focus &mdash; pagination &amp; sorting</span>
+        <ul style="margin:4px 0 0;">
+          <li>Sort and filter combinations are independent server-side query parameters &mdash; verify a sort applied on page 2 stays applied after changing the page size, and that switching sort column resets back to page 1 (it does, to avoid landing on an out-of-range page).</li>
+          <li>Every list still respects the viewer's Visibility Scope (where applicable, see <a href="#roles-permissions">section 13</a>) and any other filters on that screen &mdash; the total count shown reflects the filtered/scoped set, not the whole table.</li>
+        </ul>
+      </div>
     </section>
 
     <!-- ============================================================ -->
@@ -504,7 +521,7 @@
         <span class="callout-title">Behavior</span>
         Changing your password signs you out of every <strong>other</strong> device/session, but keeps you signed in here &mdash; the page silently swaps in a fresh session behind the scenes so you don't need to log back in yourself.
       </div>
-      <p>If you don't know your current password, use <strong>Forgot Password?</strong> on the login screen (see <a href="#getting-started">section 2.1</a>) instead, or ask an administrator with <span class="perm-pill">Users.Manage</span> to reset it for you from the Users screen (see <a href="#users">section 11</a>).</p>
+      <p>If you don't know your current password, use <strong>Forgot Password?</strong> on the login screen (see <a href="#getting-started">section 2.1</a>) instead, or ask an administrator with <span class="perm-pill">Users.Manage</span> to reset it for you from the Users screen (see <a href="#users">section 12</a>).</p>
     </section>
 
     <!-- ============================================================ -->
@@ -527,7 +544,7 @@
         <tr><td>Territory (legacy free text)</td><td>Older free-text field, kept for backward compatibility with CSV import/export</td></tr>
         <tr><td>Territory (structured)</td><td>Optional link to a <a href="#territories">Territory</a> record &mdash; the two Territory fields are independent; a lead can have either, both, or neither</td></tr>
         <tr><td>Status</td><td>See status flow below</td></tr>
-        <tr><td>Next Follow-Up Date</td><td>Drives the follow-up reminder &mdash; see <a href="#notifications-reminders">section 13</a></td></tr>
+        <tr><td>Next Follow-Up Date</td><td>Drives the follow-up reminder &mdash; see <a href="#notifications-reminders">section 14</a></td></tr>
         <tr><td>Lead Score</td><td>0&ndash;100, calculated automatically (see below), read-only</td></tr>
       </table>
 
@@ -597,12 +614,12 @@
 
     <!-- ============================================================ -->
     <section class="module" id="quotations">
-      <h2 class="module-title">6. Quotations <span class="tag">Not visibility-scoped</span></h2>
+      <h2 class="module-title">6. Quotations <span class="tag">Own / Team / All scoped</span></h2>
       <p class="module-route">Route: <code>/quotations</code> &middot; Permissions: <span class="perm-pill">Quotations.View</span> <span class="perm-pill">Quotations.Create</span> <span class="perm-pill">Quotations.Edit</span> <span class="perm-pill">Quotations.Delete</span> <span class="perm-pill">Quotations.Assign</span></p>
       <p>A Quotation is a versioned, priced proposal tied to exactly one Opportunity. Totals (subtotal, tax, grand total) are computed automatically from its line items, which additionally carry a tax percentage (unlike Opportunity line items).</p>
       <div class="callout rule">
-        <span class="callout-title">Important behavior</span>
-        Unlike Leads, Customers and Opportunities, Quotations are <strong>not</strong> subject to Own/Team/All Visibility Scope. Anyone holding <span class="perm-pill">Quotations.View</span> can see every quotation in the system regardless of who created or is assigned to it.
+        <span class="callout-title">Behavior &mdash; Visibility Scope</span>
+        Quotations are subject to Own/Team/All Visibility Scope the same way Leads, Customers and Opportunities are (see <a href="#roles-permissions">section 13.2</a>) &mdash; a user restricted to Own or Team only sees quotations assigned to or created by themselves (or their team), both in the list screen and when opening one directly. Ownership follows the quotation's own Assigned To/created-by fields, which default from the parent Opportunity at creation time but can be reassigned independently afterward.
       </div>
 
       <h3>6.1 Status flow (strictly enforced)</h3>
@@ -621,9 +638,13 @@
 
     <!-- ============================================================ -->
     <section class="module" id="sales-orders">
-      <h2 class="module-title">7. Sales Orders <span class="tag">Not visibility-scoped</span></h2>
+      <h2 class="module-title">7. Sales Orders <span class="tag">Own / Team / All scoped</span></h2>
       <p class="module-route">Route: <code>/sales-orders</code> &middot; Permissions: <span class="perm-pill">SalesOrders.View</span> <span class="perm-pill">SalesOrders.Create</span> <span class="perm-pill">SalesOrders.Edit</span> <span class="perm-pill">SalesOrders.Assign</span></p>
       <p>A Sales Order is created only by converting an Accepted Quotation &mdash; there is no standalone "New Sales Order" screen. Its pricing (subtotal/tax/total, line items) is a permanent <strong>snapshot</strong> taken at conversion time; later changes to the source quotation never retroactively change an already-created order. One Quotation can produce at most one Sales Order.</p>
+      <div class="callout rule">
+        <span class="callout-title">Behavior &mdash; Visibility Scope</span>
+        Like Quotations, Sales Orders are subject to Own/Team/All Visibility Scope (see <a href="#roles-permissions">section 13.2</a>). Converting a Quotation into a Sales Order also checks that the person converting it can see the source Quotation under their own scope &mdash; you cannot convert a quotation you wouldn't otherwise be able to open.
+      </div>
 
       <h3>7.1 Status flow</h3>
       <p>Draft/Confirmed (set automatically at creation) &rarr; Partially Delivered &rarr; Delivered, or Cancelled at any point before full delivery. Partially Delivered and Delivered are calculated automatically from recorded deliveries &mdash; there is no manual "set status" action for those two.</p>
@@ -638,8 +659,43 @@
     </section>
 
     <!-- ============================================================ -->
+    <section class="module" id="products">
+      <h2 class="module-title">8. Product Catalog</h2>
+      <p class="module-route">Route: <code>/products</code> &middot; Permissions: <span class="perm-pill">Products.View</span> <span class="perm-pill">Products.Create</span> <span class="perm-pill">Products.Edit</span> <span class="perm-pill">Products.Delete</span></p>
+      <p>The Product Catalog is a shared master list of sellable Products and Services &mdash; not scoped by Own/Team/All, the same as Departments, Territories, Users and Roles below. It exists as a convenience: picking a catalog entry from a dropdown while building an Opportunity or Quotation line item autofills the product name and unit price (and, on Quotations, tax %) instead of typing them by hand every time. A picked entry only copies its current values onto that line at that moment &mdash; line items don't keep a live link back to the catalog row, so editing or deleting a catalog entry later never changes line items that already used it.</p>
+
+      <h3>8.1 Fields</h3>
+      <table>
+        <tr><th>Field</th><th>Notes</th></tr>
+        <tr><td>SKU</td><td>Required, unique across the catalog</td></tr>
+        <tr><td>Name</td><td>Required</td></tr>
+        <tr><td>Type</td><td>Product or Service &mdash; Service reveals two extra fields (Duration, Billing Type) on the form</td></tr>
+        <tr><td>Category / Brand</td><td>Optional free text, both filterable/searchable on the list screen</td></tr>
+        <tr><td>Unit of Measure</td><td>Optional free text, e.g. "Each", "Hour", "License"</td></tr>
+        <tr><td>Unit Price</td><td>Required &mdash; the value copied onto a line item when picked</td></tr>
+        <tr><td>Cost</td><td>Optional, internal reference only</td></tr>
+        <tr><td>Tax %</td><td>Optional; copied onto a Quotation line item's Tax % when picked (Opportunity line items have no tax field, so it's not copied there)</td></tr>
+        <tr><td>Description</td><td>Optional free text</td></tr>
+        <tr><td>Duration (minutes) / Billing Type</td><td>Service-only; Billing Type is free text, e.g. "One-Time", "Hourly", "Monthly", "Annual"</td></tr>
+        <tr><td>Active</td><td>Inactive items no longer appear in the "pick from catalog" dropdown, but existing line items that already used them are unaffected</td></tr>
+      </table>
+
+      <h3>8.2 Everyday actions</h3>
+      <ol class="steps">
+        <li><strong>Create/Edit</strong> &mdash; <span class="perm-pill">Products.Create</span> / <span class="perm-pill">Products.Edit</span>. SKU must be unique; saving with a SKU already in use is rejected with a clear message.</li>
+        <li><strong>Delete</strong> &mdash; <span class="perm-pill">Products.Delete</span>. Safe at any time &mdash; since line items only ever copy values from a catalog entry rather than referencing it by ID, deleting one never affects an Opportunity or Quotation that already used it.</li>
+        <li><strong>Pick from catalog</strong> &mdash; on any Opportunity or Quotation line item row, an optional dropdown above the Product/Service field lists active catalog entries by SKU and name; selecting one fills in the name and price (and tax %, on Quotations) but leaves the row otherwise fully editable, or you can ignore the dropdown and type a one-off line item exactly as before.</li>
+      </ol>
+
+      <div class="callout gap">
+        <span class="callout-title">Known Gap &mdash; scoped down from the original design</span>
+        This release ships the core catalog only. Price Books (customer- or region-specific pricing), multi-currency price lists, per-jurisdiction tax configuration, and structured tagging were all part of the original design brief but are not built &mdash; Tax % and Cost above are simple flat fields, not a rules engine, and every user with catalog access sees the same single price per item.
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
     <section class="module" id="customers">
-      <h2 class="module-title">8. Customers <span class="tag">Own / Team / All scoped</span></h2>
+      <h2 class="module-title">9. Customers <span class="tag">Own / Team / All scoped</span></h2>
       <p class="module-route">Route: <code>/customers</code> &middot; Permissions: <span class="perm-pill">Customers.View</span> <span class="perm-pill">Customers.Create</span> <span class="perm-pill">Customers.Edit</span> <span class="perm-pill">Customers.Delete</span></p>
       <p>The Customer record ("Customer Master") is the central account record: legal/display name, type, industry, financials, tags, and health status, plus unlimited child <strong>Contacts</strong> and <strong>Addresses</strong>.</p>
 
@@ -657,7 +713,7 @@
       </table>
 
       <h3>8.2 Contacts (unlimited per customer)</h3>
-      <p>Name, designation, department, email, mobile, WhatsApp, LinkedIn, whether they are the primary contact and/or a decision maker, preferred contact method, and <strong>Date of Birth</strong> / <strong>Anniversary Date</strong>, which drive the reminder notifications described in <a href="#notifications-reminders">section 13</a>.</p>
+      <p>Name, designation, department, email, mobile, WhatsApp, LinkedIn, whether they are the primary contact and/or a decision maker, preferred contact method, and <strong>Date of Birth</strong> / <strong>Anniversary Date</strong>, which drive the reminder notifications described in <a href="#notifications-reminders">section 14</a>.</p>
 
       <h3>8.3 Addresses (unlimited per customer)</h3>
       <p>Type (Billing, Shipping, Registered Office, Branch Office, Warehouse, Site), address lines, city/state/country/postal code, and a primary flag.</p>
@@ -682,9 +738,9 @@
 
     <!-- ============================================================ -->
     <section class="module" id="departments">
-      <h2 class="module-title">9. Departments</h2>
+      <h2 class="module-title">10. Departments</h2>
       <p class="module-route">Route: <code>/departments</code> &middot; Permissions: <span class="perm-pill">Departments.View</span> <span class="perm-pill">Departments.Manage</span></p>
-      <p>A simple, optionally hierarchical (parent/child) organizational grouping. Every user can optionally belong to one department. Department membership is what <strong>Team</strong> Visibility Scope uses to decide who counts as "your team" &mdash; see <a href="#roles-permissions">section 12</a>.</p>
+      <p>A simple, optionally hierarchical (parent/child) organizational grouping. Every user can optionally belong to one department. Department membership is what <strong>Team</strong> Visibility Scope uses to decide who counts as "your team" &mdash; see <a href="#roles-permissions">section 13</a>.</p>
       <ol class="steps">
         <li><strong>Create/Edit</strong> &mdash; name (must be unique) and an optional parent department.</li>
         <li><strong>Delete</strong> &mdash; blocked if any user is currently assigned to the department; reassign or remove those users first.</li>
@@ -694,7 +750,7 @@
 
     <!-- ============================================================ -->
     <section class="module" id="territories">
-      <h2 class="module-title">10. Territories</h2>
+      <h2 class="module-title">11. Territories</h2>
       <p class="module-route">Route: <code>/territories</code> &middot; Permissions: <span class="perm-pill">Territories.View</span> <span class="perm-pill">Territories.Manage</span></p>
       <p>A structured, optionally hierarchical territory list, assignable to both Users and Leads. This is a newer, structured replacement direction for the older free-text Territory field on Leads &mdash; both fields exist side by side today (see <a href="#leads">section 4</a>) and neither is required.</p>
       <div class="callout rule">
@@ -710,14 +766,14 @@
 
     <!-- ============================================================ -->
     <section class="module" id="users">
-      <h2 class="module-title">11. Users</h2>
+      <h2 class="module-title">12. Users</h2>
       <p class="module-route">Route: <code>/users</code> &middot; Viewing the list/detail: any signed-in user &middot; Create/Edit: <span class="perm-pill">Users.Manage</span></p>
       <p>Every login account: employee code, name, email, mobile, role, department, reporting manager, territory, and profile photo.</p>
       <table>
         <tr><th>Field</th><th>Notes</th></tr>
         <tr><td>Employee Code</td><td>Required, unique, cannot be changed after creation</td></tr>
         <tr><td>Email</td><td>Required, unique, format-validated, cannot be changed after creation, stored lower-cased</td></tr>
-        <tr><td>Role</td><td>Required &mdash; determines permissions and Visibility Scope, see <a href="#roles-permissions">section 12</a></td></tr>
+        <tr><td>Role</td><td>Required &mdash; determines permissions and Visibility Scope, see <a href="#roles-permissions">section 13</a></td></tr>
         <tr><td>Department</td><td>Optional &mdash; drives "Team" scope membership</td></tr>
         <tr><td>Reporting Manager</td><td>Optional; a user cannot be set as their own manager</td></tr>
         <tr><td>Territory</td><td>Optional</td></tr>
@@ -743,7 +799,7 @@
 
     <!-- ============================================================ -->
     <section class="module" id="roles-permissions">
-      <h2 class="module-title">12. Roles, Permissions &amp; Visibility Scope</h2>
+      <h2 class="module-title">13. Roles, Permissions &amp; Visibility Scope</h2>
       <p class="module-route">Route: <code>/roles</code> &middot; Permissions: <span class="perm-pill">Roles.View</span> <span class="perm-pill">Roles.Manage</span></p>
       <p>A Role bundles a set of module permissions plus one Visibility Scope, and is assigned to one or more Users. This is the single mechanism controlling both <em>what</em> a user can do and <em>which records</em> they can see.</p>
 
@@ -758,8 +814,8 @@
         Built-in roles (such as Admin) are marked as System Roles and cannot be renamed, edited, or deleted &mdash; the Edit/Delete controls are hidden for them in the UI, and the API independently rejects any attempt to modify or delete a system role even via a direct call.
       </div>
 
-      <h3>12.2 Visibility Scope &mdash; Own / Team / All</h3>
-      <p>This setting on the Role controls which <strong>Leads, Customers, and Opportunities</strong> a user can see and act on. It does not affect Quotations, Sales Orders, Departments, Territories, Users, or Roles &mdash; those modules are governed by permissions alone.</p>
+      <h3>13.2 Visibility Scope &mdash; Own / Team / All</h3>
+      <p>This setting on the Role controls which <strong>Leads, Customers, Opportunities, Quotations, and Sales Orders</strong> a user can see and act on. It does not affect the Product Catalog, Departments, Territories, Users, or Roles &mdash; those modules are governed by permissions alone, with no per-record ownership concept.</p>
       <table>
         <tr><th>Scope</th><th>What the user can see</th></tr>
         <tr><td><strong>Own</strong></td><td>Only records assigned to them, or &mdash; if unassigned &mdash; records they created</td></tr>
@@ -779,7 +835,7 @@
 
     <!-- ============================================================ -->
     <section class="module" id="notifications-reminders">
-      <h2 class="module-title">13. Notifications &amp; Reminders</h2>
+      <h2 class="module-title">14. Notifications &amp; Reminders</h2>
       <p>The bell icon in the top bar shows a live unread count and a dropdown of recent notifications. Clicking an unread notification marks it read and, where applicable, opens the related record.</p>
 
       <h3>13.1 What generates a notification</h3>
@@ -801,7 +857,7 @@
 
     <!-- ============================================================ -->
     <section class="module" id="shared-features">
-      <h2 class="module-title">14. Activities, Documents &amp; History</h2>
+      <h2 class="module-title">15. Activities, Documents &amp; History</h2>
       <p>These three panels appear embedded on Lead, Opportunity, and/or Customer detail screens rather than as their own top-level menu items. They are available to any signed-in user &mdash; there is no dedicated permission gate on them today.</p>
 
       <h3>14.1 Activities</h3>
@@ -820,7 +876,7 @@
 
     <!-- ============================================================ -->
     <section class="module" id="permissions-reference">
-      <h2 class="module-title">15. Permissions Reference</h2>
+      <h2 class="module-title">16. Permissions Reference</h2>
       <p>Full list of every permission code in the system, grouped by module. Use this table when configuring a Role or when writing permission-boundary test cases.</p>
       <table>
         <tr><th>Module</th><th>Permission codes</th></tr>
@@ -833,6 +889,7 @@
         <tr><td>Opportunities</td><td><span class="perm-pill">Opportunities.View</span> <span class="perm-pill">Opportunities.Create</span> <span class="perm-pill">Opportunities.Edit</span> <span class="perm-pill">Opportunities.Delete</span> <span class="perm-pill">Opportunities.Assign</span></td></tr>
         <tr><td>Quotations</td><td><span class="perm-pill">Quotations.View</span> <span class="perm-pill">Quotations.Create</span> <span class="perm-pill">Quotations.Edit</span> <span class="perm-pill">Quotations.Delete</span> <span class="perm-pill">Quotations.Assign</span></td></tr>
         <tr><td>Sales Orders</td><td><span class="perm-pill">SalesOrders.View</span> <span class="perm-pill">SalesOrders.Create</span> <span class="perm-pill">SalesOrders.Edit</span> <span class="perm-pill">SalesOrders.Assign</span></td></tr>
+        <tr><td>Product Catalog</td><td><span class="perm-pill">Products.View</span> <span class="perm-pill">Products.Create</span> <span class="perm-pill">Products.Edit</span> <span class="perm-pill">Products.Delete</span></td></tr>
       </table>
       <p style="font-size:0.82rem;color:var(--itm-muted);">* Not actually enforced server-side today &mdash; any signed-in user can list/view users regardless of this permission, since assignment dropdowns throughout the app need the user directory. There is intentionally no SalesOrders.Delete &mdash; see section 7.</p>
       <p>Modules with <strong>no</strong> dedicated permission code &mdash; open to any signed-in user regardless of role: Dashboard, My Profile / Delegation, Activities, Documents, Audit History/Notifications.</p>
@@ -840,30 +897,32 @@
 
     <!-- ============================================================ -->
     <section class="module" id="glossary">
-      <h2 class="module-title">16. Glossary of Statuses &amp; Fields</h2>
+      <h2 class="module-title">17. Glossary of Statuses &amp; Fields</h2>
       <table>
         <tr><th>Term</th><th>Meaning</th></tr>
         <tr><td>Lead Status</td><td>New, Assigned, Contacted, Qualified, Nurturing, Proposal Sent, Converted, Lost, Junk</td></tr>
         <tr><td>Opportunity Stage</td><td>Qualification, Discovery, Proposal, Negotiation, Verbal Commit, Closed Won, Closed Lost</td></tr>
         <tr><td>Quotation Status</td><td>Draft, Sent, Accepted, Rejected, Expired</td></tr>
         <tr><td>Sales Order Status</td><td>Draft/Confirmed, Partially Delivered, Delivered, Cancelled</td></tr>
+        <tr><td>Product Catalog Type</td><td>Product or Service &mdash; Service unlocks Duration and Billing Type fields</td></tr>
         <tr><td>Customer Type</td><td>Prospect, Individual, Business, Vendor, Partner, Supplier, Distributor, Dealer, Franchise, Consultant</td></tr>
         <tr><td>Customer Rating vs. Health Status</td><td>Rating = a deal-quality label (Hot/Warm/Cold); Health Status = a separate relationship-health indicator (Hot/Warm/Cold/At Risk)</td></tr>
-        <tr><td>Visibility Scope</td><td>Own / Team / All &mdash; see section 12.2</td></tr>
-        <tr><td>Territory (legacy) vs. Territory (structured)</td><td>Two independent fields on Lead/User &mdash; see sections 4 and 10</td></tr>
+        <tr><td>Visibility Scope</td><td>Own / Team / All &mdash; see section 13.2. Applies to Leads, Customers, Opportunities, Quotations, and Sales Orders.</td></tr>
+        <tr><td>Territory (legacy) vs. Territory (structured)</td><td>Two independent fields on Lead/User &mdash; see sections 4 and 11</td></tr>
       </table>
     </section>
 
     <!-- ============================================================ -->
     <section class="module" id="qa-focus-summary">
-      <h2 class="module-title">17. Known Limitations &amp; Test Focus Summary</h2>
+      <h2 class="module-title">18. Known Limitations &amp; Test Focus Summary</h2>
       <p>A single checklist gathering every orange/red callout in this manual, for quick reference during test planning.</p>
       <ul>
         <li>Fixed: access tokens (15-minute lifetime) now renew automatically via a background refresh token, with a clear "please log in again" message once the refresh token itself expires or is revoked &mdash; instead of failing silently.</li>
         <li>Fixed: Forgot Password now sends a real, single-use, 60-minute email link; signed-in users can also change their own password from My Profile, and Users.Manage admins can reset any user's password from that user's edit screen.</li>
         <li>Lead status transitions are enforced loosely on the server (only terminal-state and reason-required rules) even though the UI presents a stricter flow &mdash; test both the UI paths and out-of-sequence transitions directly. (Opportunity stage transitions, by contrast, are now fully enforced server-side to match the UI's linear pipeline.)</li>
-        <li>Visibility Scope (Own/Team/All) applies only to Leads, Customers, Opportunities, and the Dashboard's summary counts &mdash; not to Quotations or Sales Orders.</li>
+        <li>Fixed: Visibility Scope (Own/Team/All) now also applies to Quotations and Sales Orders, matching Leads/Customers/Opportunities and the Dashboard's summary counts &mdash; previously those two modules ignored scope and were visible in full to anyone holding the View permission.</li>
         <li>Out-of-scope records return a generic "not found," never "forbidden" &mdash; don't conflate the two when triaging.</li>
+        <li>The Product Catalog ships with core fields only (SKU, name, type, category, brand, UOM, price, cost, tax %, and Service-only duration/billing type). Price Books, multi-currency pricing, per-jurisdiction tax rules, and structured tagging from the original design brief are not built.</li>
         <li>Deleting a Customer with existing Opportunities, or a Quotation with an existing Sales Order, is expected to fail ungracefully (a raw database error) rather than a friendly validation message, since those two delete operations don't pre-check dependents. (Deleting an Opportunity with existing Quotations is now a friendly, pre-checked error instead.)</li>
         <li>Customers and Quotations each have a working Delete API but no Delete button in the UI (Leads and Opportunities now have one, on their detail screens). Sales Orders have no delete feature at all, by design.</li>
         <li>Editing a Customer or an Opportunity fully replaces their child collections (Contacts/Addresses, or Line Items/Buying Committee) &mdash; removing a row and saving is a permanent delete of that row.</li>

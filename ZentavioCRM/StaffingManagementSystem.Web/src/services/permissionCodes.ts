@@ -43,4 +43,9 @@ export const PermissionCodes = {
   SalesOrdersCreate: "SalesOrders.Create",
   SalesOrdersEdit: "SalesOrders.Edit",
   SalesOrdersAssign: "SalesOrders.Assign",
+
+  ProductsView: "Products.View",
+  ProductsCreate: "Products.Create",
+  ProductsEdit: "Products.Edit",
+  ProductsDelete: "Products.Delete",
 } as const;

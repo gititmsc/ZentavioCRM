@@ -131,6 +131,21 @@ END
 GO
 
 -- ============================================================================
+-- Products permissions — added after the initial batch (same top-up pattern used for
+-- Opportunities/Quotations/SalesOrders/Territories above).
+-- ============================================================================
+INSERT INTO dbo.Permissions (Id, Code, Name, Module)
+SELECT v.Id, v.Code, v.Name, v.Module
+FROM (VALUES
+    ('10000000-0000-0000-0000-000000000022', N'Products.View',   N'View',   N'Products'),
+    ('10000000-0000-0000-0000-000000000023', N'Products.Create', N'Create', N'Products'),
+    ('10000000-0000-0000-0000-000000000024', N'Products.Edit',   N'Edit',   N'Products'),
+    ('10000000-0000-0000-0000-000000000025', N'Products.Delete', N'Delete', N'Products')
+) AS v(Id, Code, Name, Module)
+WHERE NOT EXISTS (SELECT 1 FROM dbo.Permissions p WHERE p.Id = v.Id);
+GO
+
+-- ============================================================================
 -- Roles
 -- ============================================================================
 DECLARE @AdminRoleId2 UNIQUEIDENTIFIER = '20000000-0000-0000-0000-000000000001';
@@ -173,7 +188,8 @@ WHERE p.Code IN (
     N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert',
     N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Delete', N'Opportunities.Assign',
     N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Delete', N'Quotations.Assign',
-    N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign'
+    N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign',
+    N'Products.View', N'Products.Create', N'Products.Edit', N'Products.Delete'
 )
 AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SalesManagerRoleId3 AND rp.PermissionId = p.Id);
 
@@ -185,14 +201,15 @@ WHERE p.Code IN (
     N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Assign', N'Leads.Convert',
     N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Assign',
     N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Assign',
-    N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign'
+    N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign',
+    N'Products.View', N'Products.Create', N'Products.Edit'
 )
 AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SalesExecutiveRoleId3 AND rp.PermissionId = p.Id);
 
 -- Support Agent: read-only.
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT @SupportAgentRoleId3, p.Id FROM dbo.Permissions p
-WHERE p.Code IN (N'Customers.View', N'Leads.View', N'Opportunities.View', N'Quotations.View', N'SalesOrders.View')
+WHERE p.Code IN (N'Customers.View', N'Leads.View', N'Opportunities.View', N'Quotations.View', N'SalesOrders.View', N'Products.View')
 AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SupportAgentRoleId3 AND rp.PermissionId = p.Id);
 GO
 

@@ -5,6 +5,8 @@ import { UserAvatar } from "@/components/users/UserAvatar";
 import { userService, type ManagedUser } from "@/services/userService";
 import { delegationService, type UserDelegation, type SaveUserDelegationRequest } from "@/services/delegationService";
 import { persistRefreshedTokens } from "@/services/authStorage";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { FormSection } from "@/components/form/FormSection";
 
 /** yyyy-MM-dd for a native <input type="date">. */
 function toDateInputValue(value: string): string {
@@ -180,45 +182,39 @@ export default function MyProfile() {
 
   return (
     <div>
-      <h1 className="h4 mb-4">My Profile</h1>
+      <PageHeader title="My Profile" subtitle="Manage your account, security, and delegation settings." />
 
-      <div className="card shadow-sm border-0 mb-4" style={{ maxWidth: 780 }}>
-        <div className="card-body">
-          <h2 className="h6 fw-semibold mb-3">Profile Photo</h2>
-          <div className="d-flex align-items-center gap-3">
-            <UserAvatar key={`${user.id}-${photoVersion}`} userId={user.id} fullName={user.fullName} hasProfilePhoto={hasProfilePhoto} size={72} />
-            <div>
-              {photoError && <div className="text-danger small mb-1">{photoError}</div>}
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-primary me-2"
-                disabled={isUploadingPhoto}
-                onClick={() => photoInputRef.current?.click()}
-              >
-                <i className="bi bi-upload me-1" aria-hidden="true" />
-                {isUploadingPhoto ? "Uploading..." : hasProfilePhoto ? "Change Photo" : "Upload Photo"}
+      <FormSection icon="bi-person-circle" title="Profile Photo">
+        <div className="d-flex align-items-center gap-3">
+          <UserAvatar key={`${user.id}-${photoVersion}`} userId={user.id} fullName={user.fullName} hasProfilePhoto={hasProfilePhoto} size={72} />
+          <div>
+            {photoError && <div className="text-danger small mb-1">{photoError}</div>}
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary me-2"
+              disabled={isUploadingPhoto}
+              onClick={() => photoInputRef.current?.click()}
+            >
+              <i className="bi bi-upload me-1" aria-hidden="true" />
+              {isUploadingPhoto ? "Uploading..." : hasProfilePhoto ? "Change Photo" : "Upload Photo"}
+            </button>
+            {hasProfilePhoto && (
+              <button type="button" className="btn btn-sm btn-outline-danger" onClick={handleRemovePhoto}>
+                Remove
               </button>
-              {hasProfilePhoto && (
-                <button type="button" className="btn btn-sm btn-outline-danger" onClick={handleRemovePhoto}>
-                  Remove
-                </button>
-              )}
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/gif"
-                className="d-none"
-                onChange={handlePhotoChange}
-              />
-            </div>
+            )}
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/gif"
+              className="d-none"
+              onChange={handlePhotoChange}
+            />
           </div>
         </div>
-      </div>
+      </FormSection>
 
-      <div className="card shadow-sm border-0 mb-4" style={{ maxWidth: 780 }}>
-        <div className="card-body">
-          <h2 className="h6 fw-semibold mb-3">Change Password</h2>
-
+      <FormSection icon="bi-shield-lock" title="Change Password" description="Choose a strong password you don't use elsewhere.">
           {passwordError && <div className="alert alert-danger py-2">{passwordError}</div>}
           {passwordSuccess && <div className="alert alert-success py-2">{passwordSuccess}</div>}
 
@@ -272,17 +268,13 @@ export default function MyProfile() {
               </button>
             </div>
           </form>
-        </div>
-      </div>
+      </FormSection>
 
-      <div className="card shadow-sm border-0" style={{ maxWidth: 780 }}>
-        <div className="card-body">
-          <h2 className="h6 fw-semibold mb-1">Out of Office / Delegation</h2>
-          <p className="text-muted small mb-3">
-            While active, your delegate will see your assigned Leads, Customers, and Opportunities, and will receive
-            your due-date reminders instead of you.
-          </p>
-
+      <FormSection
+        icon="bi-calendar2-week"
+        title="Out of Office / Delegation"
+        description="While active, your delegate will see your assigned Leads, Customers, and Opportunities, and will receive your due-date reminders instead of you."
+      >
           {delegationError && <div className="alert alert-danger py-2">{delegationError}</div>}
 
           <form onSubmit={handleSubmit(onCreateDelegation)} noValidate className="row g-2 align-items-end mb-4">
@@ -370,8 +362,7 @@ export default function MyProfile() {
               </tbody>
             </table>
           )}
-        </div>
-      </div>
+      </FormSection>
     </div>
   );
 }

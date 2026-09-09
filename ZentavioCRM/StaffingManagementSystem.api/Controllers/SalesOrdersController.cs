@@ -32,7 +32,7 @@ namespace ZentavioCRM.Api.Controllers
             [FromQuery] string? sortBy = null,
             [FromQuery] bool sortDescending = true)
         {
-            var result = await _salesOrderService.SearchAsync(search, status, customerId, page, pageSize, sortBy, sortDescending);
+            var result = await _salesOrderService.SearchAsync(search, status, customerId, page, pageSize, User.GetUserId(), sortBy, sortDescending);
             return Ok(ApiResponse<PagedResult<SalesOrderListItemDto>>.SuccessResponse(result));
         }
 
@@ -40,7 +40,7 @@ namespace ZentavioCRM.Api.Controllers
         [Authorize(Policy = PermissionCodes.SalesOrdersView)]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var result = await _salesOrderService.GetByIdAsync(id);
+            var result = await _salesOrderService.GetByIdAsync(id, User.GetUserId());
             return result.Success ? Ok(result) : NotFound(result);
         }
 

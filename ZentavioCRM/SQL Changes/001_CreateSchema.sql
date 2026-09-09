@@ -961,3 +961,36 @@ BEGIN
     CREATE INDEX IX_PasswordResetTokens_UserId ON dbo.PasswordResetTokens (UserId);
 END
 GO
+
+-- ============================================================================
+-- Products (Product & Service Catalog — SRS Phase 5. A sellable catalog entry, either a
+-- physical/orderable Product or a billable Service (see ProductType.cs); used as a convenience
+-- picker when building Opportunity/Quotation line items instead of free-text entry.)
+-- ============================================================================
+IF OBJECT_ID(N'dbo.Products', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Products
+    (
+        Id               UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Products_Id DEFAULT NEWID(),
+        Sku              NVARCHAR(50)     NOT NULL,
+        Name             NVARCHAR(200)    NOT NULL,
+        Type             INT              NOT NULL,
+        Category         NVARCHAR(100)    NULL,
+        Brand            NVARCHAR(100)    NULL,
+        UnitOfMeasure    NVARCHAR(50)     NULL,
+        UnitPrice        DECIMAL(18,2)    NOT NULL,
+        Cost             DECIMAL(18,2)    NULL,
+        TaxPercent       DECIMAL(5,2)     NULL,
+        Description      NVARCHAR(2000)   NULL,
+        DurationMinutes  INT              NULL,
+        BillingType      NVARCHAR(50)     NULL,
+        IsActive         BIT              NOT NULL CONSTRAINT DF_Products_IsActive DEFAULT (1),
+        CreatedAtUtc     DATETIME2        NOT NULL,
+        UpdatedAtUtc     DATETIME2        NULL,
+        CONSTRAINT PK_Products PRIMARY KEY CLUSTERED (Id)
+    );
+
+    CREATE UNIQUE INDEX IX_Products_Sku ON dbo.Products (Sku);
+    CREATE INDEX IX_Products_Name ON dbo.Products (Name);
+END
+GO

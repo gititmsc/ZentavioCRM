@@ -25,6 +25,8 @@ import QuotationForm from "@/pages/quotations/QuotationForm";
 import QuotationDetail from "@/pages/quotations/QuotationDetail";
 import SalesOrdersList from "@/pages/salesorders/SalesOrdersList";
 import SalesOrderDetail from "@/pages/salesorders/SalesOrderDetail";
+import ProductsList from "@/pages/products/ProductsList";
+import ProductForm from "@/pages/products/ProductForm";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { MainLayout } from "@/layouts/MainLayout";
 
@@ -83,6 +85,10 @@ export function AppRoutes() {
 
         <Route path="/sales-orders" element={<SalesOrdersList />} />
         <Route path="/sales-orders/:id" element={<SalesOrderDetail />} />
+
+        <Route path="/products" element={<ProductsList />} />
+        <Route path="/products/new" element={<ProductForm />} />
+        <Route path="/products/:id/edit" element={<ProductForm />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />
