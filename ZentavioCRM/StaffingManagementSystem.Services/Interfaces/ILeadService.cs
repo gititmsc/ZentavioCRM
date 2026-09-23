@@ -29,6 +29,9 @@ namespace ZentavioCRM.Services.Interfaces
         /// <summary>Non-blocking pre-flight check for possible duplicate Leads/Customers by email or mobile — the frontend surfaces matches as a dismissible warning, it never blocks the save.</summary>
         Task<DuplicateCheckResultDto> CheckDuplicatesAsync(string? email, string? mobile, Guid? excludeLeadId);
 
+        /// <summary>Customers whose company name matches <paramref name="term"/> — powers the "select an existing customer" picker on the Lead form. Returns an empty list for a null/blank/too-short term. Results are restricted to <paramref name="currentUserId"/>'s Own/Team/All visibility scope, same as every other search in this app.</summary>
+        Task<IReadOnlyList<CustomerLookupDto>> LookupCustomersByNameAsync(string? term, Guid? currentUserId = null);
+
         Task<string> ExportCsvAsync();
 
         Task<ImportResultDto> ImportCsvAsync(string csvContent, Guid? currentUserId);

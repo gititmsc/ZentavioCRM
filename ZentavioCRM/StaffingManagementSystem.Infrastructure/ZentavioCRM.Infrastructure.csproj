@@ -28,8 +28,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Read at runtime by TenantProvisioningService to build each new tenant's database. -->
-    <EmbeddedResource Include="Persistence\Scripts\*.sql" />
+    <!-- Read at runtime by TenantProvisioningService to build each new tenant's database.
+         Physically these files live in the solution-level "SQL Changes" folder alongside every
+         other SQL script (see SQL Changes/001_CreateSchema.sql's header comment) — only these
+         two specific files are embedded into this assembly; the Link keeps them showing under
+         Persistence/Scripts in Solution Explorer and preserves the embedded resource name that
+         TenantProvisioningService.ReadEmbeddedSql looks up by filename suffix. -->
+    <EmbeddedResource Include="..\SQL Changes\TenantSchema.sql" Link="Persistence\Scripts\TenantSchema.sql" />
+    <EmbeddedResource Include="..\SQL Changes\TenantRbacSeed.sql" Link="Persistence\Scripts\TenantRbacSeed.sql" />
   </ItemGroup>
 
 </Project>

@@ -40,6 +40,8 @@ export interface ApiResponse<T> {
   message: string;
   data?: T;
   errors?: string[];
+  /** Field-keyed validation messages (e.g. { "companyName": ["..."] }), when the failure came from ASP.NET Core's automatic model validation rather than this app's own ApiResponse envelope. Populated by callApi — see apiHelpers.ts. Lets forms highlight the specific offending field instead of only showing a generic banner. */
+  fieldErrors?: Record<string, string[]>;
 }
 
 interface LoginResponseData {

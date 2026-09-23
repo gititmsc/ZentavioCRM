@@ -80,6 +80,14 @@ namespace ZentavioCRM.Api.Controllers
             return Ok(ApiResponse<DuplicateCheckResultDto>.SuccessResponse(result));
         }
 
+        [HttpGet("customer-lookup")]
+        [Authorize(Policy = PermissionCodes.LeadsView)]
+        public async Task<IActionResult> CustomerLookup([FromQuery] string? search)
+        {
+            var result = await _leadService.LookupCustomersByNameAsync(search, User.GetUserId());
+            return Ok(ApiResponse<IReadOnlyList<CustomerLookupDto>>.SuccessResponse(result));
+        }
+
         [HttpPatch("{id:guid}/status")]
         [Authorize(Policy = PermissionCodes.LeadsEdit)]
         public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateLeadStatusRequest request)

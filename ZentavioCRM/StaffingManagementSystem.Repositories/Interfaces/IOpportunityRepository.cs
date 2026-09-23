@@ -31,5 +31,8 @@ namespace ZentavioCRM.Repositories.Interfaces
 
         /// <summary>Replaces every buying-committee row on the opportunity with the given set (same full-replace convention as line items).</summary>
         Task ReplaceContactsAsync(Guid opportunityId, IEnumerable<OpportunityContact> contacts);
+
+        /// <summary>Count of opportunities against this customer — used to block deleting a Customer that still has deals on it (Opportunity.CustomerId is a Restrict FK, so this would otherwise surface as a raw DB error).</summary>
+        Task<int> CountForCustomerAsync(Guid customerId);
     }
 }

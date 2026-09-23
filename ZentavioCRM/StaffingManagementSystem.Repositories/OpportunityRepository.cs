@@ -184,5 +184,8 @@ namespace ZentavioCRM.Repositories
 
             await _dbContext.SaveChangesAsync();
         }
+
+        public Task<int> CountForCustomerAsync(Guid customerId)
+            => _dbContext.Opportunities.CountAsync(o => o.CustomerId == customerId);
     }
 }

@@ -32,6 +32,7 @@ export default function CustomersList() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const canCreate = hasPermission(PermissionCodes.CustomersCreate);
+  const canDelete = hasPermission(PermissionCodes.CustomersDelete);
 
   const [search, setSearch] = useState("");
 
@@ -65,6 +66,18 @@ export default function CustomersList() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     resetToFirstPage();
+  };
+
+  const handleDelete = async (customer: CustomerListItem) => {
+    if (!window.confirm(`Delete "${customer.displayName}"? This cannot be undone.`)) {
+      return;
+    }
+    const result = await customerService.remove(customer.id);
+    if (!result.success) {
+      window.alert(result.message || "Unable to delete this customer.");
+      return;
+    }
+    reload();
   };
 
   const columns: DataTableColumn<CustomerListItem>[] = [
@@ -109,6 +122,26 @@ export default function CustomersList() {
         </span>
       ),
     },
+    ...(canDelete
+      ? [
+          {
+            header: "",
+            align: "end" as const,
+            render: (customer: CustomerListItem) => (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-danger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(customer);
+                }}
+              >
+                Delete
+              </button>
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (

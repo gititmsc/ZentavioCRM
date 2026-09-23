@@ -30,6 +30,10 @@ namespace ZentavioCRM.Repositories.Interfaces
         /// <summary>Customers whose Email or Phone matches either given value — used for the lead duplicate-check.</summary>
         Task<IReadOnlyList<Customer>> FindByEmailOrPhoneAsync(string? email, string? phone);
 
+        /// <summary>Top <paramref name="limit"/> customers (with Contacts loaded) whose DisplayName or LegalName contains the term — used by the Lead form's "select an existing customer" picker.</summary>
+        /// <param name="accessScope">When non-null and Scope != All, restricts results to records the scope's user is allowed to see (Own/Team, plus any active delegations) — same as <see cref="SearchAsync"/>.</param>
+        Task<IReadOnlyList<Customer>> SearchByNameAsync(string term, int limit, AccessScope? accessScope = null);
+
         /// <summary>Every customer, no paging — used for CSV export. SMB-scale data volumes.</summary>
         Task<IReadOnlyList<Customer>> GetAllAsync();
 
@@ -41,5 +45,11 @@ namespace ZentavioCRM.Repositories.Interfaces
 
         /// <summary>Persists changes to a single contact — used to stamp the reminder-sent-year fields after a birthday/anniversary notification is sent.</summary>
         Task UpdateContactAsync(ContactPerson contact);
+
+        /// <summary>A single contact by id, untracked by any parent Customer include — used to look up the lead-linked contact before updating it.</summary>
+        Task<ContactPerson?> GetContactByIdAsync(Guid contactId);
+
+        /// <summary>Adds a single new contact to a customer (unlike <see cref="ReplaceContactsAsync"/>, leaves the customer's other contacts untouched). The contact's CustomerId must already be set by the caller; CreatedAtUtc and Id are populated by this method.</summary>
+        Task AddContactAsync(ContactPerson contact);
     }
 }

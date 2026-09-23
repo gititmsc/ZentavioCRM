@@ -38,5 +38,8 @@ namespace ZentavioCRM.Repositories.Interfaces
 
         /// <summary>Open leads assigned to the user whose NextFollowUpDate has passed and haven't had a reminder sent yet.</summary>
         Task<IReadOnlyList<Lead>> GetDueForFollowUpReminderAsync(Guid userId, DateTime nowUtc);
+
+        /// <summary>Count of leads that reference this customer, either via ConvertedCustomerId or LinkedCustomerId — used to block deleting a Customer that's still tied to a lead.</summary>
+        Task<int> CountForCustomerAsync(Guid customerId);
     }
 }

@@ -19,8 +19,9 @@
 
     New tenants no longer need this run by hand: POST /api/platform/tenants
     (TenantProvisioningService) creates a fresh tenant database and applies this same schema
-    automatically, from an embedded copy at
-    StaffingManagementSystem.Infrastructure/Persistence/Scripts/TenantSchema.sql.
+    automatically, from an embedded copy at "SQL Changes/TenantSchema.sql" (embedded into
+    StaffingManagementSystem.Infrastructure via a Link in its .csproj — see
+    ZentavioCRM.Infrastructure.csproj).
     Keep this file and that embedded copy in sync when the schema changes — this file is the
     human-readable reference and the one to use for manually building a one-off dev database;
     the embedded copy is what actually runs in code.
@@ -525,6 +526,51 @@ IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL
    AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Leads_TerritoryId' AND object_id = OBJECT_ID(N'dbo.Leads'))
 BEGIN
     CREATE INDEX IX_Leads_TerritoryId ON dbo.Leads (TerritoryId);
+END
+GO
+
+-- Leads.LinkedCustomerId — optional link to a pre-existing Customer, set when a Lead is created
+-- (or edited) by picking a company-name match from the "existing customer" picker instead of
+-- typing a brand-new one. Distinct from ConvertedCustomerId (only ever set by the Convert action).
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL AND COL_LENGTH('dbo.Leads', 'LinkedCustomerId') IS NULL
+BEGIN
+    ALTER TABLE dbo.Leads ADD LinkedCustomerId UNIQUEIDENTIFIER NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL
+   AND COL_LENGTH('dbo.Leads', 'LinkedCustomerId') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Leads_LinkedCustomer')
+BEGIN
+    ALTER TABLE dbo.Leads ADD CONSTRAINT FK_Leads_LinkedCustomer FOREIGN KEY (LinkedCustomerId) REFERENCES dbo.Customers (Id) ON DELETE SET NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Leads_LinkedCustomerId' AND object_id = OBJECT_ID(N'dbo.Leads'))
+BEGIN
+    CREATE INDEX IX_Leads_LinkedCustomerId ON dbo.Leads (LinkedCustomerId);
+END
+GO
+
+-- Leads.LinkedContactId — optional link to a specific ContactPerson on LinkedCustomer, set when
+-- a Lead is auto-matched (or manually matched) to one existing contact. Lets edits to the Lead's
+-- ContactName/Email/Mobile fields update that same contact instead of creating duplicates.
+-- Deliberately NOT a foreign key: dbo.ContactPersons already cascade-deletes from dbo.Customers,
+-- and dbo.Leads.LinkedCustomerId already SET NULLs from dbo.Customers directly, so a LinkedContactId
+-- FK (a second, longer SET NULL path into Leads via ContactPersons) hits SQL Server's "multiple
+-- cascade paths" restriction (Msg 1785). LeadService.SyncLinkedContactAsync already tolerates a
+-- missing/stale LinkedContactId gracefully, so this stays an application-enforced reference only.
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL AND COL_LENGTH('dbo.Leads', 'LinkedContactId') IS NULL
+BEGIN
+    ALTER TABLE dbo.Leads ADD LinkedContactId UNIQUEIDENTIFIER NULL;
+END
+GO
+
+IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Leads_LinkedContactId' AND object_id = OBJECT_ID(N'dbo.Leads'))
+BEGIN
+    CREATE INDEX IX_Leads_LinkedContactId ON dbo.Leads (LinkedContactId);
 END
 GO
 

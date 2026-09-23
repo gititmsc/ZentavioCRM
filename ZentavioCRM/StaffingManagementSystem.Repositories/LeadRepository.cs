@@ -18,7 +18,11 @@ namespace ZentavioCRM.Repositories
         }
 
         public Task<Lead?> GetByIdAsync(Guid id)
-            => _dbContext.Leads.Include(l => l.AssignedToUser).Include(l => l.TerritoryRef).FirstOrDefaultAsync(l => l.Id == id);
+            => _dbContext.Leads
+                .Include(l => l.AssignedToUser)
+                .Include(l => l.TerritoryRef)
+                .Include(l => l.LinkedCustomer)
+                .FirstOrDefaultAsync(l => l.Id == id);
 
         public async Task<(IReadOnlyList<Lead> Items, int TotalCount)> SearchAsync(
             string? search, LeadStatus? status, Guid? assignedToUserId, int page, int pageSize,
@@ -188,5 +192,8 @@ namespace ZentavioCRM.Repositories
                     l.FollowUpReminderSentAtUtc == null &&
                     l.NextFollowUpDate != null && l.NextFollowUpDate <= nowUtc)
                 .ToListAsync();
+
+        public Task<int> CountForCustomerAsync(Guid customerId)
+            => _dbContext.Leads.CountAsync(l => l.ConvertedCustomerId == customerId || l.LinkedCustomerId == customerId);
     }
 }

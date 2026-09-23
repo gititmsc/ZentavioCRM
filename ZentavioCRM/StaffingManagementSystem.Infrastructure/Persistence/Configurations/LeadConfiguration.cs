@@ -50,6 +50,23 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
                 .HasForeignKey(l => l.ConvertedCustomerId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            builder.HasOne(l => l.LinkedCustomer)
+                .WithMany()
+                .HasForeignKey(l => l.LinkedCustomerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // NOTE: this configures EF's model/graph shape only — there is deliberately NO matching
+            // database-level FOREIGN KEY constraint for LinkedContactId (see SQL Changes/TenantSchema.sql).
+            // dbo.ContactPersons already cascade-deletes from dbo.Customers, and LinkedCustomerId above
+            // already SET NULLs from dbo.Customers directly, so a real FK here would be a second,
+            // longer SET NULL path into Leads that SQL Server refuses to create ("multiple cascade
+            // paths", Msg 1785). LeadService.SyncLinkedContactAsync tolerates a stale/missing
+            // LinkedContactId gracefully, so this stays an application-enforced reference only.
+            builder.HasOne(l => l.LinkedContact)
+                .WithMany()
+                .HasForeignKey(l => l.LinkedContactId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             builder.HasOne(l => l.TerritoryRef)
                 .WithMany()
                 .HasForeignKey(l => l.TerritoryId)
@@ -58,6 +75,8 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
             builder.HasIndex(l => l.Status);
             builder.HasIndex(l => l.AssignedToUserId);
             builder.HasIndex(l => l.TerritoryId);
+            builder.HasIndex(l => l.LinkedCustomerId);
+            builder.HasIndex(l => l.LinkedContactId);
         }
     }
 }

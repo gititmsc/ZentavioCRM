@@ -133,5 +133,8 @@ namespace ZentavioCRM.Repositories
             _dbContext.SalesOrderLineItems.UpdateRange(lineItems);
             await _dbContext.SaveChangesAsync();
         }
+
+        public Task<int> CountForCustomerAsync(Guid customerId)
+            => _dbContext.SalesOrders.CountAsync(so => so.CustomerId == customerId);
     }
 }

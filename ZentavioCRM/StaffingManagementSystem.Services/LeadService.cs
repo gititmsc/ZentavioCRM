@@ -112,12 +112,15 @@ namespace ZentavioCRM.Services
                 Status = request.AssignedToUserId is null ? LeadStatus.New : LeadStatus.Assigned,
                 Notes = request.Notes,
                 NextFollowUpDate = request.NextFollowUpDate,
+                LinkedCustomerId = request.LinkedCustomerId,
+                LinkedContactId = request.LinkedContactId,
                 CreatedByUserId = currentUserId,
                 CreatedAtUtc = DateTime.UtcNow,
             };
             lead.LeadScore = ComputeLeadScore(lead);
 
             await _leadRepository.AddAsync(lead);
+            await SyncLinkedContactAsync(lead);
             await _auditLogService.LogAsync(EntityType, lead.Id, "Created", $"Lead {lead.LeadNumber} created.", currentUserId);
 
             var created = await _leadRepository.GetByIdAsync(lead.Id);
@@ -203,6 +206,8 @@ namespace ZentavioCRM.Services
             lead.Territory = request.Territory;
             lead.TerritoryId = request.TerritoryId;
             lead.Notes = request.Notes;
+            lead.LinkedCustomerId = request.LinkedCustomerId;
+            lead.LinkedContactId = request.LinkedContactId;
 
             if (lead.NextFollowUpDate != request.NextFollowUpDate)
             {
@@ -226,6 +231,7 @@ namespace ZentavioCRM.Services
             lead.LeadScore = ComputeLeadScore(lead);
 
             await _leadRepository.UpdateAsync(lead);
+            await SyncLinkedContactAsync(lead);
             await _auditLogService.LogAsync(EntityType, id, "Updated", "Lead details updated.", currentUserId);
             if (reassigned)
             {
@@ -371,6 +377,41 @@ namespace ZentavioCRM.Services
             }));
 
             return new DuplicateCheckResultDto { Matches = matches };
+        }
+
+        private const int CustomerLookupLimit = 8;
+
+        public async Task<IReadOnlyList<CustomerLookupDto>> LookupCustomersByNameAsync(string? term, Guid? currentUserId = null)
+        {
+            if (string.IsNullOrWhiteSpace(term) || term.Trim().Length < 2)
+            {
+                return [];
+            }
+
+            AccessScope? accessScope = currentUserId is null ? null : await _accessScopeService.GetForUserAsync(currentUserId.Value);
+            var customers = await _customerRepository.SearchByNameAsync(term.Trim(), CustomerLookupLimit, accessScope);
+
+            return customers.Select(c => new CustomerLookupDto
+            {
+                Id = c.Id,
+                CustomerNumber = c.CustomerNumber,
+                DisplayName = c.DisplayName,
+                LegalName = c.LegalName,
+                Industry = c.Industry,
+                Email = c.Email,
+                Phone = c.Phone,
+                Contacts = c.Contacts
+                    .OrderByDescending(cp => cp.IsPrimary)
+                    .Select(cp => new CustomerLookupContactDto
+                    {
+                        Id = cp.Id,
+                        FullName = cp.FullName,
+                        Email = cp.Email,
+                        Mobile = cp.Mobile,
+                        IsPrimary = cp.IsPrimary,
+                    })
+                    .ToList(),
+            }).ToList();
         }
 
         private static readonly string[] ExportHeaders =
@@ -556,7 +597,14 @@ namespace ZentavioCRM.Services
                 return ApiResponse<ConvertLeadResultDto>.FailureResponse($"A {lead.Status} lead cannot be converted.");
             }
 
-            var customer = await CreateCustomerFromLeadAsync(lead, request.DisplayName, request.AssignToUserId);
+            // If this lead was created (or edited) with a link to a pre-existing customer, reuse
+            // that customer instead of creating a duplicate — falls back to creating a new one if
+            // the linked customer was since deleted.
+            var linkedCustomer = lead.LinkedCustomerId is not null
+                ? await _customerRepository.GetByIdAsync(lead.LinkedCustomerId.Value)
+                : null;
+            var customer = linkedCustomer ?? await CreateCustomerFromLeadAsync(lead, request.DisplayName, request.AssignToUserId);
+            var reusedExisting = linkedCustomer is not null;
 
             lead.Status = LeadStatus.Converted;
             lead.ConvertedCustomerId = customer.Id;
@@ -564,7 +612,12 @@ namespace ZentavioCRM.Services
             lead.UpdatedAtUtc = DateTime.UtcNow;
 
             await _leadRepository.UpdateAsync(lead);
-            await _auditLogService.LogAsync(EntityType, id, "Converted", $"Converted to customer {customer.CustomerNumber}.", currentUserId);
+            await _auditLogService.LogAsync(
+                EntityType, id, "Converted",
+                reusedExisting
+                    ? $"Converted — linked to existing customer {customer.CustomerNumber}."
+                    : $"Converted to customer {customer.CustomerNumber}.",
+                currentUserId);
 
             return ApiResponse<ConvertLeadResultDto>.SuccessResponse(
                 new ConvertLeadResultDto { CustomerId = customer.Id, CustomerNumber = customer.CustomerNumber },
@@ -605,7 +658,12 @@ namespace ZentavioCRM.Services
             }
             else
             {
-                customer = await CreateCustomerFromLeadAsync(lead, request.CustomerDisplayName, request.AssignToUserId);
+                // Same reuse-if-linked logic as the plain Convert action — avoids creating a
+                // duplicate customer when this lead was already pointed at an existing one.
+                var linkedCustomer = lead.LinkedCustomerId is not null
+                    ? await _customerRepository.GetByIdAsync(lead.LinkedCustomerId.Value)
+                    : null;
+                customer = linkedCustomer ?? await CreateCustomerFromLeadAsync(lead, request.CustomerDisplayName, request.AssignToUserId);
 
                 lead.Status = LeadStatus.Converted;
                 lead.ConvertedCustomerId = customer.Id;
@@ -642,6 +700,69 @@ namespace ZentavioCRM.Services
                     OpportunityNumber = opportunity.OpportunityNumber,
                 },
                 "Lead converted to opportunity.");
+        }
+
+        /// <summary>
+        /// Keeps the linked customer's contact list in sync with this lead's own ContactName/Email/Mobile
+        /// fields — called after every Create/Update of a lead that has a LinkedCustomerId. The first time
+        /// this runs for a given lead, it either reuses the contact the user explicitly picked (LinkedContactId
+        /// already set by the "existing customer" picker) or creates a brand-new ContactPerson on that customer;
+        /// either way it persists LinkedContactId back onto the lead so every later save updates that same
+        /// contact instead of creating duplicates. No-op when the lead isn't linked to a customer.
+        /// </summary>
+        private async Task SyncLinkedContactAsync(Lead lead)
+        {
+            if (lead.LinkedCustomerId is null || string.IsNullOrWhiteSpace(lead.ContactName))
+            {
+                return;
+            }
+
+            if (lead.LinkedContactId is not null)
+            {
+                var existingContact = await _customerRepository.GetContactByIdAsync(lead.LinkedContactId.Value);
+                if (existingContact is not null && existingContact.CustomerId == lead.LinkedCustomerId)
+                {
+                    var (firstName, lastName) = SplitContactName(lead.ContactName);
+                    existingContact.FirstName = firstName;
+                    existingContact.LastName = lastName;
+                    existingContact.Email = lead.Email;
+                    existingContact.Mobile = lead.Mobile;
+                    await _customerRepository.UpdateContactAsync(existingContact);
+                    return;
+                }
+                // The previously-linked contact is gone (or now belongs to a different customer) —
+                // fall through and create a fresh one below, re-linking the lead to it.
+            }
+
+            var customer = await _customerRepository.GetByIdAsync(lead.LinkedCustomerId.Value);
+            if (customer is null)
+            {
+                return;
+            }
+
+            var newContact = new ContactPerson
+            {
+                CustomerId = customer.Id,
+                FirstName = lead.ContactName.Trim(),
+                LastName = string.Empty,
+                Email = lead.Email,
+                Mobile = lead.Mobile,
+                IsPrimary = customer.Contacts.Count == 0,
+            };
+            await _customerRepository.AddContactAsync(newContact);
+
+            lead.LinkedContactId = newContact.Id;
+            await _leadRepository.UpdateAsync(lead);
+        }
+
+        /// <summary>Splits a single free-text full name into FirstName/LastName on the first space, so updating an existing ContactPerson (which stores the two separately) doesn't collapse or leave a stale LastName dangling (e.g. "Jane Doe" -> "Jane"/"Doe", not FirstName="Jane Doe" with the old LastName untouched).</summary>
+        private static (string FirstName, string LastName) SplitContactName(string fullName)
+        {
+            var trimmed = fullName.Trim();
+            var spaceIndex = trimmed.IndexOf(' ');
+            return spaceIndex < 0
+                ? (trimmed, string.Empty)
+                : (trimmed[..spaceIndex], trimmed[(spaceIndex + 1)..].Trim());
         }
 
         /// <summary>Builds and persists a Customer from a Lead's own fields — shared by both the plain "convert to customer" and "convert to opportunity" flows.</summary>
@@ -725,6 +846,9 @@ namespace ZentavioCRM.Services
             Notes = lead.Notes,
             NextFollowUpDate = lead.NextFollowUpDate,
             LostReason = lead.LostReason,
+            LinkedCustomerId = lead.LinkedCustomerId,
+            LinkedCustomerName = lead.LinkedCustomer?.DisplayName,
+            LinkedContactId = lead.LinkedContactId,
             ConvertedCustomerId = lead.ConvertedCustomerId,
             ConvertedAtUtc = lead.ConvertedAtUtc,
             CreatedAtUtc = lead.CreatedAtUtc,

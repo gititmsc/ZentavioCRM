@@ -15,12 +15,27 @@ namespace ZentavioCRM.Services
         private const string EntityType = "Customer";
 
         private readonly ICustomerRepository _customerRepository;
+        private readonly ILeadRepository _leadRepository;
+        private readonly IOpportunityRepository _opportunityRepository;
+        private readonly IQuotationRepository _quotationRepository;
+        private readonly ISalesOrderRepository _salesOrderRepository;
         private readonly IAuditLogService _auditLogService;
         private readonly IAccessScopeService _accessScopeService;
 
-        public CustomerService(ICustomerRepository customerRepository, IAuditLogService auditLogService, IAccessScopeService accessScopeService)
+        public CustomerService(
+            ICustomerRepository customerRepository,
+            ILeadRepository leadRepository,
+            IOpportunityRepository opportunityRepository,
+            IQuotationRepository quotationRepository,
+            ISalesOrderRepository salesOrderRepository,
+            IAuditLogService auditLogService,
+            IAccessScopeService accessScopeService)
         {
             _customerRepository = customerRepository;
+            _leadRepository = leadRepository;
+            _opportunityRepository = opportunityRepository;
+            _quotationRepository = quotationRepository;
+            _salesOrderRepository = salesOrderRepository;
             _auditLogService = auditLogService;
             _accessScopeService = accessScopeService;
         }
@@ -163,10 +178,43 @@ namespace ZentavioCRM.Services
                 return ApiResponse<bool>.FailureResponse("Customer not found.");
             }
 
+            // Block the delete (with a plain-English reason) rather than letting it fail as a raw
+            // DB foreign-key error — Opportunity/Quotation/SalesOrder.CustomerId are Restrict FKs,
+            // and even though Lead's two customer FKs are SetNull (so a delete would silently
+            // succeed there), orphaning a lead's link to a customer that no longer exists isn't
+            // what "this customer is still linked to something" should mean, so it's checked too.
+            var leadCount = await _leadRepository.CountForCustomerAsync(id);
+            var opportunityCount = await _opportunityRepository.CountForCustomerAsync(id);
+            var quotationCount = await _quotationRepository.CountForCustomerAsync(id);
+            var salesOrderCount = await _salesOrderRepository.CountForCustomerAsync(id);
+
+            if (leadCount > 0 || opportunityCount > 0 || quotationCount > 0 || salesOrderCount > 0)
+            {
+                var parts = new List<string>();
+                if (leadCount > 0) parts.Add(Pluralize(leadCount, "lead", "leads"));
+                if (opportunityCount > 0) parts.Add(Pluralize(opportunityCount, "opportunity", "opportunities"));
+                if (quotationCount > 0) parts.Add(Pluralize(quotationCount, "quotation", "quotations"));
+                if (salesOrderCount > 0) parts.Add(Pluralize(salesOrderCount, "sales order", "sales orders"));
+
+                return ApiResponse<bool>.FailureResponse(
+                    $"Cannot delete — this customer is still linked to {JoinWithAnd(parts)}. Remove or reassign those first.");
+            }
+
             await _customerRepository.DeleteAsync(customer);
             await _auditLogService.LogAsync(EntityType, id, "Deleted", $"Customer {customer.CustomerNumber} deleted.", currentUserId);
             return ApiResponse<bool>.SuccessResponse(true, "Customer deleted.");
         }
+
+        private static string Pluralize(int count, string singular, string plural) => $"{count} {(count == 1 ? singular : plural)}";
+
+        /// <summary>"a" / "a and b" / "a, b, and c" — natural-language listing for the delete-blocked message.</summary>
+        private static string JoinWithAnd(IReadOnlyList<string> parts) => parts.Count switch
+        {
+            0 => string.Empty,
+            1 => parts[0],
+            2 => $"{parts[0]} and {parts[1]}",
+            _ => $"{string.Join(", ", parts.Take(parts.Count - 1))}, and {parts[^1]}",
+        };
 
         private static readonly string[] ExportHeaders =
         [

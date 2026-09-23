@@ -80,6 +80,9 @@ export interface Lead {
   notes: string | null;
   nextFollowUpDate: string | null;
   lostReason: string | null;
+  linkedCustomerId: string | null;
+  linkedCustomerName: string | null;
+  linkedContactId: string | null;
   convertedCustomerId: string | null;
   convertedAtUtc: string | null;
   createdAtUtc: string;
@@ -107,6 +110,8 @@ export interface SaveLeadRequest {
   territoryId: string | null;
   notes: string | null;
   nextFollowUpDate: string | null;
+  linkedCustomerId: string | null;
+  linkedContactId: string | null;
 }
 
 export interface LeadSearchParams {
@@ -151,6 +156,25 @@ export interface DuplicateCheckResult {
   matches: DuplicateMatch[];
 }
 
+export interface CustomerLookupContact {
+  id: string;
+  fullName: string;
+  email: string | null;
+  mobile: string | null;
+  isPrimary: boolean;
+}
+
+export interface CustomerLookupMatch {
+  id: string;
+  customerNumber: string;
+  displayName: string;
+  legalName: string;
+  industry: string | null;
+  email: string | null;
+  phone: string | null;
+  contacts: CustomerLookupContact[];
+}
+
 const search = (params: LeadSearchParams) =>
   callApi<PagedResult<LeadListItem>>(apiClient.get("/api/leads", { params }));
 
@@ -176,6 +200,9 @@ const remove = (id: string) => callApi<boolean>(apiClient.delete(`/api/leads/${i
 const checkDuplicates = (email?: string | null, mobile?: string | null, excludeLeadId?: string) =>
   callApi<DuplicateCheckResult>(apiClient.get("/api/leads/check-duplicates", { params: { email, mobile, excludeLeadId } }));
 
+const lookupCustomers = (search: string) =>
+  callApi<CustomerLookupMatch[]>(apiClient.get("/api/leads/customer-lookup", { params: { search } }));
+
 const exportCsv = async (): Promise<Blob> => {
   const response = await apiClient.get("/api/leads/export", { responseType: "blob" });
   return response.data;
@@ -200,6 +227,7 @@ export const leadService = {
   convertToOpportunity,
   remove,
   checkDuplicates,
+  lookupCustomers,
   exportCsv,
   importCsv,
 };

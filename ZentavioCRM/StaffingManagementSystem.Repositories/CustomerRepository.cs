@@ -51,25 +51,7 @@ namespace ZentavioCRM.Repositories
                 query = query.Where(c => c.IsActive == isActive);
             }
 
-            if (accessScope is not null && accessScope.Scope != VisibilityScope.All)
-            {
-                var currentUserId = accessScope.UserId;
-                // .ToHashSet() materializes to a concrete HashSet<Guid> (ICollection<Guid>) — EF Core's
-                // Contains -> SQL IN translation is resolved from the compile-time type, and the source
-                // properties are declared as IReadOnlySet<Guid>, which isn't covered by that translation.
-                var teamIds = accessScope.TeamUserIds.ToHashSet();
-                var delegatedIds = accessScope.DelegatedFromUserIds.ToHashSet();
-
-                query = accessScope.Scope == VisibilityScope.Team
-                    ? query.Where(c =>
-                        (c.AssignedToUserId != null && teamIds.Contains(c.AssignedToUserId.Value)) ||
-                        (c.AssignedToUserId == null && c.CreatedByUserId != null && teamIds.Contains(c.CreatedByUserId.Value)) ||
-                        (c.AssignedToUserId != null && delegatedIds.Contains(c.AssignedToUserId.Value)))
-                    : query.Where(c =>
-                        c.AssignedToUserId == currentUserId ||
-                        (c.AssignedToUserId == null && c.CreatedByUserId == currentUserId) ||
-                        (c.AssignedToUserId != null && delegatedIds.Contains(c.AssignedToUserId.Value)));
-            }
+            query = ApplyAccessScope(query, accessScope);
 
             var totalCount = await query.CountAsync();
 
@@ -100,6 +82,32 @@ namespace ZentavioCRM.Repositories
                 "isactive" => sortDescending ? query.OrderByDescending(c => c.IsActive) : query.OrderBy(c => c.IsActive),
                 _ => sortDescending ? query.OrderByDescending(c => c.CreatedAtUtc) : query.OrderBy(c => c.CreatedAtUtc),
             };
+        }
+
+        /// <summary>Shared Own/Team/All + delegation filter, reused by SearchAsync and SearchByNameAsync.</summary>
+        private static IQueryable<Customer> ApplyAccessScope(IQueryable<Customer> query, AccessScope? accessScope)
+        {
+            if (accessScope is null || accessScope.Scope == VisibilityScope.All)
+            {
+                return query;
+            }
+
+            var currentUserId = accessScope.UserId;
+            // .ToHashSet() materializes to a concrete HashSet<Guid> (ICollection<Guid>) — EF Core's
+            // Contains -> SQL IN translation is resolved from the compile-time type, and the source
+            // properties are declared as IReadOnlySet<Guid>, which isn't covered by that translation.
+            var teamIds = accessScope.TeamUserIds.ToHashSet();
+            var delegatedIds = accessScope.DelegatedFromUserIds.ToHashSet();
+
+            return accessScope.Scope == VisibilityScope.Team
+                ? query.Where(c =>
+                    (c.AssignedToUserId != null && teamIds.Contains(c.AssignedToUserId.Value)) ||
+                    (c.AssignedToUserId == null && c.CreatedByUserId != null && teamIds.Contains(c.CreatedByUserId.Value)) ||
+                    (c.AssignedToUserId != null && delegatedIds.Contains(c.AssignedToUserId.Value)))
+                : query.Where(c =>
+                    c.AssignedToUserId == currentUserId ||
+                    (c.AssignedToUserId == null && c.CreatedByUserId == currentUserId) ||
+                    (c.AssignedToUserId != null && delegatedIds.Contains(c.AssignedToUserId.Value)));
         }
 
         public async Task<string> GetNextCustomerNumberAsync()
@@ -192,6 +200,27 @@ namespace ZentavioCRM.Repositories
             return customers;
         }
 
+        public async Task<IReadOnlyList<Customer>> SearchByNameAsync(string term, int limit, AccessScope? accessScope = null)
+        {
+            if (string.IsNullOrWhiteSpace(term))
+            {
+                return [];
+            }
+
+            var normalized = term.Trim().ToLower();
+
+            var query = _dbContext.Customers
+                .Include(c => c.Contacts)
+                .Where(c => c.DisplayName.ToLower().Contains(normalized) || c.LegalName.ToLower().Contains(normalized));
+
+            query = ApplyAccessScope(query, accessScope);
+
+            return await query
+                .OrderBy(c => c.DisplayName)
+                .Take(limit)
+                .ToListAsync();
+        }
+
         public async Task<IReadOnlyList<ContactPerson>> GetDueForBirthdayReminderAsync(Guid userId, DateTime nowUtc)
             => await _dbContext.ContactPersons
                 .Include(cp => cp.Customer)
@@ -217,6 +246,16 @@ namespace ZentavioCRM.Repositories
         public async Task UpdateContactAsync(ContactPerson contact)
         {
             _dbContext.ContactPersons.Update(contact);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public Task<ContactPerson?> GetContactByIdAsync(Guid contactId)
+            => _dbContext.ContactPersons.FirstOrDefaultAsync(cp => cp.Id == contactId);
+
+        public async Task AddContactAsync(ContactPerson contact)
+        {
+            contact.CreatedAtUtc = DateTime.UtcNow;
+            _dbContext.ContactPersons.Add(contact);
             await _dbContext.SaveChangesAsync();
         }
     }

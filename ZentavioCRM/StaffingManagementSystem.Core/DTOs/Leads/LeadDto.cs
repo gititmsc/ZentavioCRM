@@ -85,6 +85,12 @@ namespace ZentavioCRM.Core.DTOs.Leads
 
         public string? LostReason { get; set; }
 
+        public Guid? LinkedCustomerId { get; set; }
+
+        public string? LinkedCustomerName { get; set; }
+
+        public Guid? LinkedContactId { get; set; }
+
         public Guid? ConvertedCustomerId { get; set; }
 
         public DateTime? ConvertedAtUtc { get; set; }

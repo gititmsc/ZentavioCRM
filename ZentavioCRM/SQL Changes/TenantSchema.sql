@@ -286,6 +286,8 @@ CREATE TABLE dbo.Leads
     NextFollowUpDate    DATETIME2        NULL,
     FollowUpReminderSentAtUtc DATETIME2  NULL,
     LostReason          NVARCHAR(300)    NULL,
+    LinkedCustomerId    UNIQUEIDENTIFIER NULL,
+    LinkedContactId     UNIQUEIDENTIFIER NULL,
     ConvertedCustomerId UNIQUEIDENTIFIER NULL,
     ConvertedAtUtc      DATETIME2        NULL,
     CreatedByUserId     UNIQUEIDENTIFIER NULL,
@@ -293,6 +295,8 @@ CREATE TABLE dbo.Leads
     UpdatedAtUtc        DATETIME2        NULL,
     CONSTRAINT PK_Leads PRIMARY KEY CLUSTERED (Id),
     CONSTRAINT FK_Leads_AssignedToUser FOREIGN KEY (AssignedToUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL,
+    CONSTRAINT FK_Leads_LinkedCustomer FOREIGN KEY (LinkedCustomerId) REFERENCES dbo.Customers (Id) ON DELETE SET NULL,
+    -- LinkedContactId has no FK constraint (deliberately) — see the note above IX_Leads_LinkedContactId below.
     CONSTRAINT FK_Leads_ConvertedCustomer FOREIGN KEY (ConvertedCustomerId) REFERENCES dbo.Customers (Id) ON DELETE SET NULL,
     CONSTRAINT FK_Leads_Territories FOREIGN KEY (TerritoryId) REFERENCES dbo.Territories (Id) ON DELETE SET NULL
 );
@@ -300,6 +304,13 @@ CREATE TABLE dbo.Leads
 CREATE UNIQUE INDEX IX_Leads_LeadNumber ON dbo.Leads (LeadNumber);
 CREATE INDEX IX_Leads_Status ON dbo.Leads (Status);
 CREATE INDEX IX_Leads_AssignedToUserId ON dbo.Leads (AssignedToUserId);
+CREATE INDEX IX_Leads_LinkedCustomerId ON dbo.Leads (LinkedCustomerId);
+-- LinkedContactId is deliberately not a foreign key: dbo.ContactPersons already cascade-deletes from
+-- dbo.Customers, and LinkedCustomerId above already SET NULLs from dbo.Customers directly, so an FK
+-- here (a second, longer SET NULL path into Leads via ContactPersons) hits SQL Server's "multiple
+-- cascade paths" restriction (Msg 1785). LeadService.SyncLinkedContactAsync tolerates a missing/stale
+-- LinkedContactId gracefully, so this is an application-enforced reference only.
+CREATE INDEX IX_Leads_LinkedContactId ON dbo.Leads (LinkedContactId);
 CREATE INDEX IX_Leads_ConvertedCustomerId ON dbo.Leads (ConvertedCustomerId);
 CREATE INDEX IX_Leads_TerritoryId ON dbo.Leads (TerritoryId);
 GO

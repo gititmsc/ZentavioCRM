@@ -24,6 +24,9 @@ namespace ZentavioCRM.Repositories.Interfaces
         /// <summary>Whether any quotation (any version) exists against this opportunity — used to block deleting an Opportunity that already has quotations, since Quotation.OpportunityId is a Restrict FK.</summary>
         Task<bool> HasAnyForOpportunityAsync(Guid opportunityId);
 
+        /// <summary>Count of quotations (any version) against this customer — used to block deleting a Customer that still has quotations on it (Quotation.CustomerId is a Restrict FK).</summary>
+        Task<int> CountForCustomerAsync(Guid customerId);
+
         Task AddAsync(Quotation quotation);
 
         Task UpdateAsync(Quotation quotation);

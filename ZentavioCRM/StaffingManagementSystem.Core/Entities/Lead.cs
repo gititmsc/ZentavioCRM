@@ -77,6 +77,28 @@ namespace ZentavioCRM.Core.Entities
 
         public string? LostReason { get; set; }
 
+        /// <summary>
+        /// Optional link to a pre-existing Customer, set when the lead was created (or edited) by
+        /// picking a company-name match instead of typing a brand-new one — see the "existing
+        /// customer" picker on the Lead form. Distinct from <see cref="ConvertedCustomerId"/>, which
+        /// is only ever set by the Convert action and means "this lead became this customer": this
+        /// field just means "this lead points at a customer that already existed." When the lead is
+        /// later converted, the Convert action reuses this customer instead of creating a duplicate.
+        /// </summary>
+        public Guid? LinkedCustomerId { get; set; }
+
+        public Customer? LinkedCustomer { get; set; }
+
+        /// <summary>
+        /// Optional link to the specific <see cref="ContactPerson"/> (on <see cref="LinkedCustomer"/>) that
+        /// this lead's ContactName/Email/Mobile fields are kept in sync with. Set automatically the first
+        /// time a contact is created or matched for the linked customer, so later edits update that same
+        /// contact instead of creating duplicates. Always null when <see cref="LinkedCustomerId"/> is null.
+        /// </summary>
+        public Guid? LinkedContactId { get; set; }
+
+        public ContactPerson? LinkedContact { get; set; }
+
         public Guid? ConvertedCustomerId { get; set; }
 
         public Customer? ConvertedCustomer { get; set; }

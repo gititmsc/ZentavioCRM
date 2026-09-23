@@ -22,5 +22,8 @@ namespace ZentavioCRM.Repositories.Interfaces
 
         /// <summary>Persists updated DeliveredQuantity values on the order's existing line items (no full replace — quantities/pricing are locked once ordered).</summary>
         Task SaveLineItemsAsync(IEnumerable<SalesOrderLineItem> lineItems);
+
+        /// <summary>Count of sales orders against this customer — used to block deleting a Customer that still has orders on it (SalesOrder.CustomerId is a Restrict FK).</summary>
+        Task<int> CountForCustomerAsync(Guid customerId);
     }
 }

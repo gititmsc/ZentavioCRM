@@ -136,6 +136,9 @@ namespace ZentavioCRM.Repositories
         public Task<bool> HasAnyForOpportunityAsync(Guid opportunityId)
             => _dbContext.Quotations.AnyAsync(q => q.OpportunityId == opportunityId);
 
+        public Task<int> CountForCustomerAsync(Guid customerId)
+            => _dbContext.Quotations.CountAsync(q => q.CustomerId == customerId);
+
         public async Task AddAsync(Quotation quotation)
         {
             _dbContext.Quotations.Add(quotation);

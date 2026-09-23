@@ -174,10 +174,12 @@ export default function LeadDetail() {
             )}
             {canConvert && lead.status !== "Converted" && lead.status !== "Lost" && lead.status !== "Junk" && (
               <>
-                <button type="button" className="btn btn-outline-success" onClick={handleConvert}>
-                  <i className="bi bi-arrow-right-circle me-1" aria-hidden="true" />
-                  Convert to Customer
-                </button>
+                {!lead.linkedCustomerId && (
+                  <button type="button" className="btn btn-outline-success" onClick={handleConvert}>
+                    <i className="bi bi-arrow-right-circle me-1" aria-hidden="true" />
+                    Convert to Customer
+                  </button>
+                )}
                 <button type="button" className="btn btn-success" onClick={handleConvertToOpportunity}>
                   <i className="bi bi-graph-up-arrow me-1" aria-hidden="true" />
                   Convert to Opportunity
@@ -202,6 +204,20 @@ export default function LeadDetail() {
           {lead.convertedCustomerId && (
             <Link to={`/customers/${lead.convertedCustomerId}/edit`}>View customer</Link>
           )}
+        </div>
+      )}
+
+      {lead.status !== "Converted" && lead.linkedCustomerId && (
+        <div className="alert alert-success d-flex align-items-center gap-2">
+          <i className="bi bi-link-45deg" aria-hidden="true" />
+          <div>
+            Linked to existing customer{" "}
+            <Link to={`/customers/${lead.linkedCustomerId}/edit`}>
+              <strong>{lead.linkedCustomerName ?? "View customer"}</strong>
+            </Link>
+            . Converting to a customer is hidden since this lead already points at one — use{" "}
+            <strong>Convert to Opportunity</strong> to create a new deal for it instead.
+          </div>
         </div>
       )}
 

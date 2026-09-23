@@ -1,8 +1,11 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using ZentavioCRM.Api.Json;
 using ZentavioCRM.Api.Middleware;
 using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.Configuration;
@@ -34,7 +37,57 @@ builder.Services.AddControllers()
         // default. Allowing string-to-number coercion here fixes every current and future form
         // at once instead of chasing down each input individually.
         options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowReadingFromString;
+
+        // Same story as above, but for Guid?/DateTime? — AllowReadingFromString's "" -> null
+        // leniency only covers the built-in *numeric* converters, not Guid or DateTime. A
+        // left-at-"Unassigned"/"None" <select> (AssignedToUserId, TerritoryId, LinkedCustomerId)
+        // or an empty <input type="date"> (NextFollowUpDate, ExpectedCloseDate, ...) submits ""
+        // for those too, which the stock converters reject — surfacing as a generic, no-field-
+        // highlighted "One or more validation errors occurred" with no indication of which field.
+        // See Json/EmptyStringAsNullConverters.cs for the full explanation.
+        options.JsonSerializerOptions.Converters.Add(new EmptyStringAsNullGuidConverter());
+        options.JsonSerializerOptions.Converters.Add(new EmptyStringAsNullDateTimeConverter());
     });
+
+// [ApiController]'s automatic 400 response normally echoes ModelState error messages verbatim —
+// fine for our own DataAnnotations messages (e.g. "Company name is required."), but System.Text.
+// Json's own deserialization-failure messages are raw exception text meant for a developer (e.g.
+// "The JSON value could not be converted to System.Nullable`1[System.Guid]. Path: $.territoryId |
+// LineNumber: 0 | BytePositionInLine: 414."). Swap those specific technical messages for a plain
+// one instead — the frontend already highlights the exact offending field red (see LeadForm.tsx's
+// applyServerFieldErrors), so the message itself doesn't need to spell out which field or why.
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var friendlyState = new ModelStateDictionary();
+        foreach (var (key, entry) in context.ModelState)
+        {
+            foreach (var error in entry.Errors)
+            {
+                var message = LooksLikeRawJsonExceptionMessage(error.ErrorMessage)
+                    ? "This value isn't valid — please check this field and try again."
+                    : error.ErrorMessage;
+                friendlyState.AddModelError(key, message);
+            }
+        }
+
+        var problemDetails = new ValidationProblemDetails(friendlyState)
+        {
+            Title = "Please correct the highlighted field(s) and try again.",
+            Status = StatusCodes.Status400BadRequest,
+        };
+
+        return new BadRequestObjectResult(problemDetails);
+    };
+});
+
+static bool LooksLikeRawJsonExceptionMessage(string message) =>
+    message.Contains("JSON value could not be converted", StringComparison.OrdinalIgnoreCase) ||
+    message.Contains("System.Text.Json", StringComparison.OrdinalIgnoreCase) ||
+    message.Contains("BytePositionInLine", StringComparison.OrdinalIgnoreCase) ||
+    message.Contains("could not be converted to System.", StringComparison.OrdinalIgnoreCase);
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
