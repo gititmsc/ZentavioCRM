@@ -1,5 +1,5 @@
 /*
-    Apply-LeadCustomerLink-DB-Fix.sql
+    004_Fix_LeadCustomerLink.sql
 
     IMPORTANT — run this BEFORE using the app again after this update, not just before
     trying the new feature. The Lead entity now always includes a LinkedCustomerId column
@@ -13,7 +13,7 @@
 
     This script is safe to run — every statement is guarded (IF ... IS NULL / WHERE NOT EXISTS),
     so it only adds what's missing and won't touch or duplicate anything that already exists.
-    It's also already folded into SQL Changes/001_CreateSchema.sql for future reference — this
+    It's also already folded into 001_CreateSchema.sql (this same folder) for future reference — this
     file is just a fast, standalone way to apply that one change right now.
 
     How to run:

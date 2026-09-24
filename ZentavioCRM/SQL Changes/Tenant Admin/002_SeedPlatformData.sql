@@ -1,5 +1,5 @@
 /*
-    004_SeedPlatformData.sql
+    002_SeedPlatformData.sql
     ZentavioCRM — Platform (master) database seed.
 
     Not required for the app to run: the Platform database starts empty, and every tenant
@@ -8,8 +8,9 @@
     Platform database yet (no plans/billing — that's a later phase).
 
     What this script DOES do: registers your existing hand-built tenant database
-    ("StaffingManagementSystemDb", created by 001_CreateSchema.sql + 002_SeedData.sql) as a real
-    tenant, subdomain "default". Without this row, that database only keeps working through the
+    ("StaffingManagementSystemDb", created by SQL Changes/Tenant/001_CreateSchema.sql +
+    Tenant/002_SeedData.sql) as a real tenant, subdomain "default". Without this row, that
+    database only keeps working through the
     Tenancy:DefaultTenantConnectionStringName fallback (bare http://localhost with no tenant
     header resolves straight to it, bypassing the Platform database lookup entirely). Run this if
     you want to actually exercise tenant resolution end-to-end instead of relying on that fallback —
@@ -21,7 +22,7 @@
       - Direct API call: send header "X-Tenant: default".
     Either way the request should resolve to this row and connect to StaffingManagementSystemDb.
 
-    Run 003_CreatePlatformDatabase.sql first. Safe to re-run — insert is guarded.
+    Run 001_CreatePlatformDatabase.sql first. Safe to re-run — insert is guarded.
 */
 
 USE [ZentavioCRM_Platform];

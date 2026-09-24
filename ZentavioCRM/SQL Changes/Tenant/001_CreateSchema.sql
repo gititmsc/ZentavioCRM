@@ -1,8 +1,8 @@
 /*
     001_CreateSchema.sql
     ZentavioCRM — Foundation + Leads milestone. This is a TENANT database schema (one per
-    customer company) — see 003_CreatePlatformDatabase.sql for the separate shared Platform
-    (master) database that just tracks which tenant databases exist.
+    customer company) — see SQL Changes/Tenant Admin/001_CreatePlatformDatabase.sql for the
+    separate shared Platform (master) database that just tracks which tenant databases exist.
 
     Creates every table added for the Company/Department/Role/Permission/User foundation,
     the Customer master (with Contacts and Addresses), the Lead pipeline, the Opportunity
@@ -19,7 +19,7 @@
 
     New tenants no longer need this run by hand: POST /api/platform/tenants
     (TenantProvisioningService) creates a fresh tenant database and applies this same schema
-    automatically, from an embedded copy at "SQL Changes/TenantSchema.sql" (embedded into
+    automatically, from an embedded copy at "TenantSchema.sql" (this same folder — embedded into
     StaffingManagementSystem.Infrastructure via a Link in its .csproj — see
     ZentavioCRM.Infrastructure.csproj).
     Keep this file and that embedded copy in sync when the schema changes — this file is the

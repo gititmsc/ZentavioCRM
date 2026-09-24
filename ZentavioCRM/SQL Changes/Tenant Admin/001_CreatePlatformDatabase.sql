@@ -1,5 +1,5 @@
 /*
-    003_CreatePlatformDatabase.sql
+    001_CreatePlatformDatabase.sql
     ZentavioCRM — Platform (master) database.
 
     This is the ONE shared database for the whole SaaS deployment — the tenant registry.
@@ -10,16 +10,23 @@
     unlike the tenant databases (which the app creates for you via the provisioning API),
     the Platform database itself is a one-time manual setup step.
 
-    Relationship to 001/002:
-      - 001_CreateSchema.sql / 002_SeedData.sql describe a TENANT database (one per customer
-        company) — Companies, Users, Leads, Customers, etc.
+    Relationship to the "Tenant" folder scripts (SQL Changes/Tenant/):
+      - Tenant/001_CreateSchema.sql / Tenant/002_SeedData.sql describe a TENANT database (one per
+        customer company) — Companies, Users, Leads, Customers, etc.
       - This script describes the PLATFORM database — just the Tenants table below, which
         records which tenant databases exist and how to reach them.
-      - New tenants are no longer expected to be created by manually re-running 001/002 by hand;
-        POST /api/platform/tenants (TenantProvisioningService) does that automatically: it creates
-        a new tenant database, applies the same schema + RBAC seed, creates the tenant's Company
-        and first Admin user, and inserts the corresponding row here. 001/002 remain useful as a
-        human-readable reference and for manually building a one-off local dev tenant database.
+      - New tenants are no longer expected to be created by manually re-running the Tenant/
+        scripts by hand; POST /api/platform/tenants (TenantProvisioningService) does that
+        automatically: it creates a new tenant database, applies the same schema + RBAC seed,
+        creates the tenant's Company and first Admin user, and inserts the corresponding row
+        here. The Tenant/ scripts remain useful as a human-readable reference and for manually
+        building a one-off local dev tenant database.
+
+    Folder layout: this "Tenant Admin" folder holds scripts that target the single shared
+    Platform database. "Tenant" (sibling folder) holds scripts that target an individual
+    tenant's own database. Each folder is numbered independently in safe, guarded run order —
+    running every numbered script in a folder in order, on any database in any state that
+    folder's scripts apply to, should never error.
 */
 
 -- Run these two lines against the actual SQL Server "master" system database if the Platform

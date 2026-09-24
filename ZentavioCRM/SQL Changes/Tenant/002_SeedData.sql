@@ -21,7 +21,7 @@
     dev). Real tenants created via POST /api/platform/tenants get their Company/Department/Admin
     values from the request instead (real company name, real admin email/password) — see
     TenantProvisioningService — while the Permissions/Roles/RolePermissions portion below is
-    identical to the embedded "SQL Changes/TenantRbacSeed.sql" (embedded into
+    identical to the embedded "TenantRbacSeed.sql" (this same folder — embedded into
     StaffingManagementSystem.Infrastructure via a Link in its .csproj) every
     automatically-provisioned tenant gets. Keep those two in sync when roles/permissions change.
 */

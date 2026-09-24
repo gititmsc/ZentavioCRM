@@ -1,5 +1,5 @@
 /*
-    005_SampleData.sql
+    006_SampleData.sql
     ZentavioCRM — OPTIONAL sample/demo data for local development and testing.
 
     001_CreateSchema.sql / 002_SeedData.sql intentionally seed only reference/config data

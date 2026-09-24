@@ -1,5 +1,5 @@
 /*
-    Apply-LeadContactLink-DB-Fix.sql
+    005_Fix_LeadContactLink.sql
 
     IMPORTANT — run this BEFORE using the app again after this update, not just before
     trying the new feature. The Lead entity now always includes a LinkedContactId column
@@ -34,7 +34,7 @@
     so it only adds what's missing and won't touch or duplicate anything that already exists.
     Safe to re-run even after the earlier "multiple cascade paths" error — that failed statement
     never created anything, and the column/index from before are picked up as already-done.
-    It's also already folded into SQL Changes/001_CreateSchema.sql for future reference — this
+    It's also already folded into 001_CreateSchema.sql (this same folder) for future reference — this
     file is just a fast, standalone way to apply that one change right now.
 
     How to run:

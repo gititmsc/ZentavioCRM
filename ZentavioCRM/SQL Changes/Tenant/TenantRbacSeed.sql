@@ -9,7 +9,10 @@
     TenantProvisioningService itself via EF Core, using the real values from ProvisionTenantRequest
     and IPasswordHasher for the admin's actual password.
 
-    >>> If you change roles/permissions, update BOTH this file and SQL Changes/002_SeedData.sql. <<<
+    Deliberately NOT part of the numbered manual sequence in this folder — same reasoning as
+    TenantSchema.sql above (not idempotent, required embedded build input).
+
+    >>> If you change roles/permissions, update BOTH this file and 002_SeedData.sql. <<<
 */
 
 -- ============================================================================

@@ -1,11 +1,11 @@
 /*
-    Apply-ProductCatalog-DB-Fix.sql
+    003_Fix_ProductCatalog.sql
 
     Fixes: "Product Catalog" nav item missing, and no products showing in the
     Quotation/Opportunity line-item picker.
 
     Root cause: the Products table and Products permissions were added to
-    SQL Changes/001_CreateSchema.sql and SQL Changes/002_SeedData.sql during
+    001_CreateSchema.sql and 002_SeedData.sql (this same folder) during
     development, but those scripts were never re-run against the live database
     (Server=80.65.208.158, Database=itmuske1_ZentavioCRM). So the Products
     table doesn't exist yet, and no role — including Administrator — has been

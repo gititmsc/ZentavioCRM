@@ -2,12 +2,18 @@
     TenantSchema.sql — embedded resource, executed by TenantProvisioningService against a
     freshly created tenant database via raw ADO.NET (split on "GO" batch separators).
 
-    This is the SAME schema as "SQL Changes/001_CreateSchema.sql" at the repo root, with the
+    This is the SAME schema as "001_CreateSchema.sql" (this same folder), with the
     "USE [StaffingManagementSystemDb];" header removed (the ADO.NET connection string already
     targets the newly created tenant database, so a USE statement here would be wrong — and
     dangerous, since it would silently redirect DDL to whatever database name happened to match).
 
-    >>> If you change the schema, update BOTH this file and SQL Changes/001_CreateSchema.sql. <<<
+    Deliberately NOT part of the numbered manual sequence in this folder — unlike 001-006, this
+    file is not guarded/idempotent (it's a one-shot script meant to run once against a brand-new,
+    guaranteed-empty database, which is exactly what TenantProvisioningService gives it) and it's
+    a required embedded build input (see ZentavioCRM.Infrastructure.csproj), not a script you'd
+    normally run by hand.
+
+    >>> If you change the schema, update BOTH this file and 001_CreateSchema.sql. <<<
 */
 
 -- ============================================================================

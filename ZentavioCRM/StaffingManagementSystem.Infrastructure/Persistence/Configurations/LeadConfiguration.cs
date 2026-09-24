@@ -56,7 +56,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
                 .OnDelete(DeleteBehavior.SetNull);
 
             // NOTE: this configures EF's model/graph shape only — there is deliberately NO matching
-            // database-level FOREIGN KEY constraint for LinkedContactId (see SQL Changes/TenantSchema.sql).
+            // database-level FOREIGN KEY constraint for LinkedContactId (see SQL Changes/Tenant/TenantSchema.sql).
             // dbo.ContactPersons already cascade-deletes from dbo.Customers, and LinkedCustomerId above
             // already SET NULLs from dbo.Customers directly, so a real FK here would be a second,
             // longer SET NULL path into Leads that SQL Server refuses to create ("multiple cascade

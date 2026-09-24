@@ -29,13 +29,17 @@
 
   <ItemGroup>
     <!-- Read at runtime by TenantProvisioningService to build each new tenant's database.
-         Physically these files live in the solution-level "SQL Changes" folder alongside every
-         other SQL script (see SQL Changes/001_CreateSchema.sql's header comment) — only these
-         two specific files are embedded into this assembly; the Link keeps them showing under
-         Persistence/Scripts in Solution Explorer and preserves the embedded resource name that
-         TenantProvisioningService.ReadEmbeddedSql looks up by filename suffix. -->
-    <EmbeddedResource Include="..\SQL Changes\TenantSchema.sql" Link="Persistence\Scripts\TenantSchema.sql" />
-    <EmbeddedResource Include="..\SQL Changes\TenantRbacSeed.sql" Link="Persistence\Scripts\TenantRbacSeed.sql" />
+         Physically these files live in the solution-level "SQL Changes/Tenant" folder alongside
+         every other per-tenant-database script (see SQL Changes/Tenant/001_CreateSchema.sql's
+         header comment) — only these two specific files are embedded into this assembly; the
+         Link keeps them showing under Persistence/Scripts in Solution Explorer and preserves the
+         embedded resource name that TenantProvisioningService.ReadEmbeddedSql looks up by
+         filename suffix. They're deliberately left unnumbered in that folder — unlike the other
+         scripts there, they're not guarded/idempotent (built to run once against a brand-new,
+         guaranteed-empty database) and aren't meant to be run manually as part of that numbered
+         sequence. -->
+    <EmbeddedResource Include="..\SQL Changes\Tenant\TenantSchema.sql" Link="Persistence\Scripts\TenantSchema.sql" />
+    <EmbeddedResource Include="..\SQL Changes\Tenant\TenantRbacSeed.sql" Link="Persistence\Scripts\TenantRbacSeed.sql" />
   </ItemGroup>
 
 </Project>
