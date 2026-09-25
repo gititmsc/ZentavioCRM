@@ -65,3 +65,28 @@ BEGIN
     CREATE UNIQUE INDEX IX_Tenants_DatabaseName ON dbo.Tenants (DatabaseName);
 END
 GO
+
+-- ============================================================================
+-- PlatformAdmins — who can log into the Super Admin panel (provision/suspend/reactivate
+-- tenants, manage other platform admins). Entirely separate from any tenant's own Users table:
+-- a platform admin has no tenant, and a tenant's Admin role has no platform access.
+-- See ZentavioCRM.Core.Entities.Platform.PlatformAdmin / PlatformAdminConfiguration.
+-- ============================================================================
+IF OBJECT_ID(N'dbo.PlatformAdmins', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.PlatformAdmins
+    (
+        Id             UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_PlatformAdmins_Id DEFAULT NEWID(),
+        Email          NVARCHAR(256)    NOT NULL,
+        PasswordHash   NVARCHAR(512)    NOT NULL,
+        FirstName      NVARCHAR(100)    NOT NULL,
+        LastName       NVARCHAR(100)    NOT NULL,
+        IsActive       BIT              NOT NULL CONSTRAINT DF_PlatformAdmins_IsActive DEFAULT 1,
+        CreatedAtUtc   DATETIME2        NOT NULL,
+        LastLoginAtUtc DATETIME2        NULL,
+        CONSTRAINT PK_PlatformAdmins PRIMARY KEY CLUSTERED (Id)
+    );
+
+    CREATE UNIQUE INDEX IX_PlatformAdmins_Email ON dbo.PlatformAdmins (Email);
+END
+GO

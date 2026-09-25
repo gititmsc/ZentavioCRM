@@ -22,9 +22,12 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<Tenant> Tenants => Set<Tenant>();
 
+        public DbSet<PlatformAdmin> PlatformAdmins => Set<PlatformAdmin>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new TenantConfiguration());
+            modelBuilder.ApplyConfiguration(new PlatformAdminConfiguration());
             base.OnModelCreating(modelBuilder);
         }
     }

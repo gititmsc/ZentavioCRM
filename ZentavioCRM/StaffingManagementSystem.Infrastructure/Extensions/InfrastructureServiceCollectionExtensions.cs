@@ -19,6 +19,7 @@ namespace ZentavioCRM.Infrastructure.Extensions
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+            services.Configure<PlatformJwtSettings>(configuration.GetSection(PlatformJwtSettings.SectionName));
             services.Configure<TenancySettings>(configuration.GetSection(TenancySettings.SectionName));
             services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
             services.Configure<FrontendSettings>(configuration);
@@ -59,9 +60,11 @@ namespace ZentavioCRM.Infrastructure.Extensions
 
             services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+            services.AddScoped<IPlatformJwtTokenGenerator, PlatformJwtTokenGenerator>();
             services.AddScoped<ISecureTokenGenerator, SecureTokenGenerator>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
+            services.AddScoped<IPlatformAdminService, PlatformAdminService>();
 
             return services;
         }

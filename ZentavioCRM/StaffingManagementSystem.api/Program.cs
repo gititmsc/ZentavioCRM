@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using ZentavioCRM.Api.Authorization;
 using ZentavioCRM.Api.Json;
 using ZentavioCRM.Api.Middleware;
 using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.Configuration;
+using ZentavioCRM.Core.Interfaces;
 using ZentavioCRM.Infrastructure.Extensions;
 using ZentavioCRM.Repositories.Extensions;
 using ZentavioCRM.Services.Extensions;
@@ -115,6 +117,7 @@ builder.Services.AddRepositories();
 builder.Services.AddBusinessServices();
 
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() ?? new JwtSettings();
+var platformJwtSettings = builder.Configuration.GetSection(PlatformJwtSettings.SectionName).Get<PlatformJwtSettings>() ?? new PlatformJwtSettings();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -131,6 +134,24 @@ builder.Services
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero,
         };
+    })
+    // Second, independently-signed scheme for Platform Admin sessions (Super Admin panel) — a
+    // distinct secret/issuer/audience from the tenant-user scheme above means a token minted for
+    // one can never validate against the other, regardless of policy configuration. Only
+    // Controllers/Platform/* opt into this scheme via [Authorize(Policy = PlatformAuthorizationPolicies.PlatformAdmin)].
+    .AddJwtBearer(PlatformAuthorizationPolicies.PlatformAdmin, options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = platformJwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = platformJwtSettings.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(platformJwtSettings.SecretKey)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
+        };
     });
 
 // One policy per permission code — e.g. [Authorize(Policy = PermissionCodes.LeadsCreate)] maps
@@ -141,6 +162,13 @@ builder.Services.AddAuthorization(options =>
     {
         options.AddPolicy(code, policy => policy.RequireClaim(PermissionCodes.ClaimType, code));
     }
+
+    // Scoped to the "PlatformAdmin" scheme only — a request bearing a normal tenant-user JWT
+    // (even one with every permission claim) is authenticated under the default scheme, not this
+    // one, so it's rejected before the claim check even runs.
+    options.AddPolicy(PlatformAuthorizationPolicies.PlatformAdmin, policy => policy
+        .AddAuthenticationSchemes(PlatformAuthorizationPolicies.PlatformAdmin)
+        .RequireClaim(IPlatformJwtTokenGenerator.PlatformAdminClaimType, "true"));
 });
 
 // CORS — allow the Vite dev server
