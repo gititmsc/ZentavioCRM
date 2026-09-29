@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { tenantService, type Tenant } from "@/services/tenantService";
-import { usePlatformAuth } from "@/context/PlatformAuthContext";
 
 const STATUS_BADGE: Record<Tenant["status"], string> = {
   PendingActivation: "text-bg-secondary",
@@ -10,7 +9,6 @@ const STATUS_BADGE: Record<Tenant["status"], string> = {
 };
 
 export default function TenantsList() {
-  const { admin, logout } = usePlatformAuth();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,16 +27,8 @@ export default function TenantsList() {
   }, []);
 
   return (
-    <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h1 className="h4 mb-0">Tenants</h1>
-          <span className="text-muted small">Signed in as {admin?.fullName}</span>
-        </div>
-        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={logout}>
-          Sign Out
-        </button>
-      </div>
+    <div>
+      <h1 className="h4 mb-4">Tenants</h1>
 
       {error && <div className="alert alert-danger">{error}</div>}
 

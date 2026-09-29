@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ZentavioLogo } from "@/components/brand/ZentavioLogo";
 import { platformAuthService } from "@/services/platformAuthService";
 import { usePlatformAuth } from "@/context/PlatformAuthContext";
+import "./Login.css";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -30,41 +32,49 @@ export default function Login() {
   };
 
   return (
-    <div className="d-flex align-items-center justify-content-center min-vh-100 bg-light">
-      <div className="card shadow-sm border-0" style={{ width: 380 }}>
-        <div className="card-body p-4">
-          <h1 className="h4 mb-1">ZentavioCRM</h1>
-          <p className="text-muted mb-4">Platform Admin</p>
+    <div className="login-page">
+      <div className="login-card">
+        <ZentavioLogo height={32} />
+        <h1 className="login-card__heading">Platform Admin</h1>
+        <p className="login-card__subtitle">Sign in to manage ZentavioCRM tenants</p>
 
-          {error && <div className="alert alert-danger py-2">{error}</div>}
+        {error && (
+          <div className="login-alert" role="alert">
+            <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" />
+            <span>{error}</span>
+          </div>
+        )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-3">
-              <label className="form-label">Email</label>
-              <input
-                type="email"
-                className="form-control"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoFocus
-              />
-            </div>
-            <div className="mb-3">
-              <label className="form-label">Password</label>
-              <input
-                type="password"
-                className="form-control"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <button type="submit" className="btn btn-primary w-100" disabled={isSubmitting}>
-              {isSubmitting ? "Signing in..." : "Sign In"}
-            </button>
-          </form>
-        </div>
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="login-field">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              autoFocus
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="login-field">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="login-submit" disabled={isSubmitting}>
+            {isSubmitting ? "Signing in..." : "Sign In"}
+          </button>
+        </form>
+
+        <div className="login-footer">&copy; 2026 ITMusketeers Consultancy Services</div>
       </div>
     </div>
   );
