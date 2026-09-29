@@ -16,5 +16,9 @@ namespace ZentavioCRM.Core.Interfaces
 
         /// <summary>Creates a new platform admin account. Only callable by an already-authenticated platform admin (enforced at the controller).</summary>
         Task<ApiResponse<PlatformAdminDto>> CreateAsync(CreatePlatformAdminRequest request);
+
+        /// <summary>Changes the CALLING admin's own password — verifies CurrentPassword first.
+        /// The only way to rotate a platform admin's password (see ChangePlatformAdminPasswordRequest).</summary>
+        Task<ApiResponse<bool>> ChangePasswordAsync(Guid adminId, ChangePlatformAdminPasswordRequest request);
     }
 }

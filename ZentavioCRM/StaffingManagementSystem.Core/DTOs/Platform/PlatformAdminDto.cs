@@ -53,4 +53,18 @@ namespace ZentavioCRM.Core.DTOs.Platform
 
         public PlatformAdminDto Admin { get; set; } = new();
     }
+
+    /// <summary>Self-service password change for the currently-authenticated platform admin —
+    /// the only way to rotate a platform admin's password, since there's deliberately no admin-
+    /// resets-another-admin's-password flow (mirroring how tenant Users work is out of scope;
+    /// platform admins are few and trusted, so "reset your own" is enough).</summary>
+    public class ChangePlatformAdminPasswordRequest
+    {
+        [Required(ErrorMessage = "Current password is required.")]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "New password is required.")]
+        [MinLength(8, ErrorMessage = "Password must be at least 8 characters.")]
+        public string NewPassword { get; set; } = string.Empty;
+    }
 }

@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { ZentavioLogo } from "@/components/brand/ZentavioLogo";
 import { Avatar } from "@/components/Avatar";
+import { ChangePasswordModal } from "@/components/ChangePasswordModal";
 import { useAuth } from "@/context/AuthContext";
 import "./MainLayout.css";
 
@@ -13,6 +15,7 @@ const NAV_ITEMS = [
 
 export function MainLayout() {
   const { admin, logout } = useAuth();
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   return (
     <div className="app-shell">
@@ -44,7 +47,12 @@ export function MainLayout() {
 
       <div className="app-main">
         <header className="app-topbar">
-          <div className="app-topbar__admin-menu">
+          <button
+            type="button"
+            className="app-topbar__admin-menu"
+            onClick={() => setShowChangePassword(true)}
+            title="Change password"
+          >
             {admin && <Avatar name={admin.fullName} size={32} />}
             <div className="text-start" style={{ lineHeight: 1.2 }}>
               <div className="fw-semibold" style={{ fontSize: "0.86rem" }}>
@@ -54,7 +62,7 @@ export function MainLayout() {
                 {admin?.email}
               </div>
             </div>
-          </div>
+          </button>
           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={logout}>
             <i className="bi bi-box-arrow-right me-1" aria-hidden="true" />
             Sign Out
@@ -65,6 +73,8 @@ export function MainLayout() {
           <Outlet />
         </main>
       </div>
+
+      {showChangePassword && <ChangePasswordModal onClose={() => setShowChangePassword(false)} />}
     </div>
   );
 }

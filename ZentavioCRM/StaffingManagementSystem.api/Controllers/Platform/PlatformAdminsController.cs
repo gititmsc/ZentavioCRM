@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ZentavioCRM.Api.Authorization;
+using ZentavioCRM.Api.Extensions;
 using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.DTOs.Platform;
 using ZentavioCRM.Core.Interfaces;
@@ -43,6 +44,27 @@ namespace ZentavioCRM.Api.Controllers.Platform
             }
 
             var result = await _platformAdminService.CreateAsync(request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        /// <summary>Self-service only — changes the CALLING admin's own password. There is
+        /// deliberately no endpoint for one admin to reset another's password.</summary>
+        [HttpPatch("me/password")]
+        public async Task<IActionResult> ChangeMyPassword([FromBody] ChangePlatformAdminPasswordRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(ApiResponse<bool>.FailureResponse("Validation failed.", errors));
+            }
+
+            var adminId = User.GetUserId();
+            if (adminId is null)
+            {
+                return BadRequest(ApiResponse<bool>.FailureResponse("Could not identify the requesting admin.", ["Could not identify the requesting admin."]));
+            }
+
+            var result = await _platformAdminService.ChangePasswordAsync(adminId.Value, request);
             return result.Success ? Ok(result) : BadRequest(result);
         }
     }

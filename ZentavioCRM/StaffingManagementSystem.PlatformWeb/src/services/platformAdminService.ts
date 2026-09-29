@@ -11,6 +11,11 @@ export interface CreatePlatformAdminRequest {
   password: string;
 }
 
+export interface ChangePlatformAdminPasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 async function getAll(): Promise<ApiResponse<PlatformAdmin[]>> {
   return callApi(() => apiClient.get<ApiResponse<PlatformAdmin[]>>("/api/platform/admins"));
 }
@@ -19,4 +24,9 @@ async function create(request: CreatePlatformAdminRequest): Promise<ApiResponse<
   return callApi(() => apiClient.post<ApiResponse<PlatformAdmin>>("/api/platform/admins", request));
 }
 
-export const platformAdminService = { getAll, create };
+/** Self-service only — changes the calling admin's own password. */
+async function changeMyPassword(request: ChangePlatformAdminPasswordRequest): Promise<ApiResponse<boolean>> {
+  return callApi(() => apiClient.patch<ApiResponse<boolean>>("/api/platform/admins/me/password", request));
+}
+
+export const platformAdminService = { getAll, create, changeMyPassword };

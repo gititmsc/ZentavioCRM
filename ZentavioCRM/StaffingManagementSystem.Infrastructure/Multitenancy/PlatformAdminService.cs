@@ -97,6 +97,29 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
             return ApiResponse<PlatformAdminDto>.SuccessResponse(Map(admin), "Platform admin created.");
         }
 
+        public async Task<ApiResponse<bool>> ChangePasswordAsync(Guid adminId, ChangePlatformAdminPasswordRequest request)
+        {
+            var admin = await _platformDb.PlatformAdmins.FirstOrDefaultAsync(a => a.Id == adminId);
+            if (admin is null)
+            {
+                return ApiResponse<bool>.FailureResponse("Admin not found.", ["Admin not found."]);
+            }
+
+            if (!_passwordHasher.Verify(request.CurrentPassword, admin.PasswordHash))
+            {
+                return ApiResponse<bool>.FailureResponse(
+                    "Current password is incorrect.",
+                    ["Current password is incorrect."]);
+            }
+
+            admin.PasswordHash = _passwordHasher.Hash(request.NewPassword);
+            await _platformDb.SaveChangesAsync();
+
+            await _auditLog.LogAsync(admin.Id, "PasswordChanged", $"{admin.Email} changed their password.");
+
+            return ApiResponse<bool>.SuccessResponse(true, "Password changed.");
+        }
+
         private static PlatformAdminDto Map(PlatformAdmin admin) => new()
         {
             Id = admin.Id,
