@@ -52,7 +52,9 @@ BEGIN
         -- Tenancy:SqlServerHostConnectionString — the full connection string is never persisted,
         -- so rotating SQL Server credentials doesn't require touching this table.
         DatabaseName   NVARCHAR(128)    NOT NULL,
-        -- Provisioning | Active | Suspended | Failed — see ZentavioCRM.Core.Enums.TenantStatus.
+        -- Provisioning | Active | Suspended | Failed | Terminated — see ZentavioCRM.Core.Enums.TenantStatus.
+        -- Suspended and Terminated are both reversible lock-outs (see PATCH .../reactivate);
+        -- neither one touches or drops the tenant's own database.
         Status         NVARCHAR(30)     NOT NULL,
         -- Denormalized for the platform admin list; the tenant's own Users table is the source of truth.
         AdminEmail     NVARCHAR(256)    NOT NULL,
@@ -63,6 +65,34 @@ BEGIN
 
     CREATE UNIQUE INDEX IX_Tenants_Subdomain ON dbo.Tenants (Subdomain);
     CREATE UNIQUE INDEX IX_Tenants_DatabaseName ON dbo.Tenants (DatabaseName);
+END
+GO
+
+-- Plan tier + usage limits — added after Tenants already existed in some deployments, so these
+-- are guarded per-column rather than assumed to come in with the CREATE TABLE above. Defaults
+-- match ZentavioCRM.Core.Configuration.PlanTierDefaults.For(PlanTier.Trial) so existing tenants
+-- land on sensible values instead of zero limits.
+IF COL_LENGTH(N'dbo.Tenants', N'PlanTier') IS NULL
+BEGIN
+    ALTER TABLE dbo.Tenants ADD PlanTier NVARCHAR(30) NOT NULL CONSTRAINT DF_Tenants_PlanTier DEFAULT (N'Trial');
+END
+GO
+
+IF COL_LENGTH(N'dbo.Tenants', N'MaxUsers') IS NULL
+BEGIN
+    ALTER TABLE dbo.Tenants ADD MaxUsers INT NOT NULL CONSTRAINT DF_Tenants_MaxUsers DEFAULT (3);
+END
+GO
+
+IF COL_LENGTH(N'dbo.Tenants', N'MaxStorageMB') IS NULL
+BEGIN
+    ALTER TABLE dbo.Tenants ADD MaxStorageMB INT NOT NULL CONSTRAINT DF_Tenants_MaxStorageMB DEFAULT (500);
+END
+GO
+
+IF COL_LENGTH(N'dbo.Tenants', N'MaxRecords') IS NULL
+BEGIN
+    ALTER TABLE dbo.Tenants ADD MaxRecords INT NOT NULL CONSTRAINT DF_Tenants_MaxRecords DEFAULT (250);
 END
 GO
 
@@ -88,5 +118,36 @@ BEGIN
     );
 
     CREATE UNIQUE INDEX IX_PlatformAdmins_Email ON dbo.PlatformAdmins (Email);
+END
+GO
+
+-- ============================================================================
+-- PlatformAuditLogs — history of platform-level actions (admin logins, tenant provisioned/
+-- suspended/reactivated/stopped, and future actions like impersonation). Separate from a
+-- tenant's own AuditLogs table (which lives in each tenant database, not here).
+-- See ZentavioCRM.Core.Entities.Platform.PlatformAuditLog / PlatformAuditLogConfiguration.
+-- ============================================================================
+IF OBJECT_ID(N'dbo.PlatformAuditLogs', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.PlatformAuditLogs
+    (
+        Id               UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_PlatformAuditLogs_Id DEFAULT NEWID(),
+        -- Null if the admin account was later deleted, or for system-initiated entries.
+        PlatformAdminId  UNIQUEIDENTIFIER NULL,
+        -- "Login", "TenantProvisioned", "TenantSuspended", "TenantReactivated", "TenantStopped".
+        Action           NVARCHAR(30)     NOT NULL,
+        -- Set for tenant-scoped actions; null for account-level actions like Login.
+        TenantId         UNIQUEIDENTIFIER NULL,
+        Summary          NVARCHAR(1000)   NOT NULL,
+        CreatedAtUtc     DATETIME2        NOT NULL,
+        CONSTRAINT PK_PlatformAuditLogs PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT FK_PlatformAuditLogs_PlatformAdmin FOREIGN KEY (PlatformAdminId)
+            REFERENCES dbo.PlatformAdmins (Id) ON DELETE SET NULL,
+        CONSTRAINT FK_PlatformAuditLogs_Tenant FOREIGN KEY (TenantId)
+            REFERENCES dbo.Tenants (Id) ON DELETE SET NULL
+    );
+
+    CREATE INDEX IX_PlatformAuditLogs_TenantId ON dbo.PlatformAuditLogs (TenantId);
+    CREATE INDEX IX_PlatformAuditLogs_CreatedAtUtc ON dbo.PlatformAuditLogs (CreatedAtUtc);
 END
 GO

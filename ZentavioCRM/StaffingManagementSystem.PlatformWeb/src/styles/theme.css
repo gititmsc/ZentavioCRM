@@ -1,0 +1,426 @@
+/*
+  Zentavio design tokens — same palette as the tenant-facing app (StaffingManagementSystem.Web)
+  for visual consistency, since both are part of the same product. Kept as a separate copy rather
+  than a shared package: this app is deliberately a small, independent codebase (see the platform
+  admin plan) and isn't meant to pull in build tooling shared with the tenant app.
+*/
+:root {
+  --itm-primary: #0f2345;
+  --itm-primary-rgb: 15, 35, 69;
+  --itm-accent: #2563eb;
+  --itm-accent-rgb: 37, 99, 235;
+  --itm-teal: #22d3ee;
+  --itm-teal-rgb: 34, 211, 238;
+  --itm-success: #16a34a;
+  --itm-warning: #d97706;
+  --itm-warning-rgb: 217, 119, 6;
+
+  --itm-danger: #dc3545;
+  --itm-danger-rgb: 220, 53, 69;
+
+  --itm-bg: #f3f6fa;
+  --itm-card-bg: #ffffff;
+  --itm-border: #e2e8f0;
+  --itm-text: #334155;
+  --itm-muted: #64748b;
+
+  --itm-gradient-primary: linear-gradient(135deg, var(--itm-primary) 0%, var(--itm-accent) 100%);
+  --itm-gradient-panel: linear-gradient(160deg, #0f2345 0%, #14335f 45%, #0e7490 100%);
+
+  --itm-radius-control: 12px;
+  --itm-radius-card: 16px;
+
+  --itm-shadow-soft: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+  --itm-shadow-raised: 0 4px 8px rgba(16, 24, 40, 0.06), 0 16px 40px rgba(16, 24, 40, 0.1);
+
+  --itm-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --itm-sidebar-width: 252px;
+}
+
+/* =============================================================================
+   Shared "admin panel" building blocks — page headers, cards, tables, avatars,
+   empty states, stat tiles. Used across every PlatformWeb page so the app reads
+   as one coherent product instead of a pile of ad hoc Bootstrap defaults.
+   ============================================================================= */
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.page-header__eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--itm-accent);
+  margin-bottom: 4px;
+}
+
+.page-header__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--itm-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-header__subtitle {
+  color: var(--itm-muted);
+  font-size: 0.92rem;
+  margin-top: 4px;
+}
+
+.page-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.app-card {
+  background: var(--itm-card-bg);
+  border: 1px solid var(--itm-border);
+  border-radius: var(--itm-radius-card);
+  box-shadow: var(--itm-shadow-soft);
+  transition: box-shadow var(--itm-transition);
+}
+
+.app-card--interactive:hover {
+  box-shadow: var(--itm-shadow-raised);
+}
+
+.app-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--itm-border);
+}
+
+.app-card__title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--itm-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-card__body {
+  padding: 22px;
+}
+
+/* ---------- Data table ---------- */
+
+.table-modern {
+  margin: 0;
+}
+
+.table-modern thead th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--itm-muted);
+  border-bottom: 1px solid var(--itm-border);
+  padding: 14px 22px;
+  background: color-mix(in srgb, var(--itm-bg) 55%, white);
+}
+
+.table-modern thead th:first-child {
+  border-top-left-radius: var(--itm-radius-card);
+}
+
+.table-modern thead th:last-child {
+  border-top-right-radius: var(--itm-radius-card);
+}
+
+.table-modern tbody td {
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--itm-border);
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.table-modern tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-modern tbody tr.is-clickable {
+  cursor: pointer;
+  transition: background-color var(--itm-transition);
+}
+
+.table-modern tbody tr.is-clickable:hover {
+  background: color-mix(in srgb, var(--itm-accent) 5%, white);
+}
+
+/* ---------- Avatar chip ---------- */
+
+.avatar-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Search input with icon ---------- */
+
+.search-input {
+  position: relative;
+}
+
+.search-input i {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: var(--itm-muted);
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+.search-input input {
+  padding-left: 2.5rem;
+  border-radius: var(--itm-radius-control);
+}
+
+/* ---------- Empty state ---------- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 56px 24px;
+  color: var(--itm-muted);
+}
+
+.empty-state__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--itm-accent) 10%, white);
+  color: var(--itm-accent);
+  font-size: 1.5rem;
+  margin-bottom: 14px;
+}
+
+.empty-state__title {
+  font-weight: 600;
+  color: var(--itm-text);
+  margin-bottom: 4px;
+}
+
+/* ---------- Stat tiles (dashboard) ---------- */
+
+.stat-card {
+  background: var(--itm-card-bg);
+  border: 1px solid var(--itm-border);
+  border-radius: var(--itm-radius-card);
+  box-shadow: var(--itm-shadow-soft);
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: transform var(--itm-transition), box-shadow var(--itm-transition);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--itm-shadow-raised);
+}
+
+.stat-card__icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+
+.stat-card__value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--itm-primary);
+  line-height: 1.15;
+}
+
+.stat-card__label {
+  font-size: 0.82rem;
+  color: var(--itm-muted);
+  font-weight: 500;
+}
+
+/* ---------- Badges (status pills, plan pills) ---------- */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.status-badge--active {
+  background: color-mix(in srgb, var(--itm-success) 14%, white);
+  color: var(--itm-success);
+}
+
+.status-badge--suspended,
+.status-badge--terminated {
+  background: color-mix(in srgb, var(--itm-warning) 14%, white);
+  color: var(--itm-warning);
+}
+
+.status-badge--failed {
+  background: color-mix(in srgb, var(--itm-danger) 14%, white);
+  color: var(--itm-danger);
+}
+
+.status-badge--provisioning {
+  background: color-mix(in srgb, var(--itm-muted) 14%, white);
+  color: var(--itm-muted);
+}
+
+.plan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--itm-teal) 16%, white);
+  color: #0e7490;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--itm-bg);
+  color: var(--itm-text);
+  font-family: "Poppins", "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--itm-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+::selection {
+  background: rgba(var(--itm-accent-rgb), 0.25);
+}
+
+:root {
+  --bs-primary: var(--itm-accent);
+  --bs-primary-rgb: var(--itm-accent-rgb);
+  --bs-primary-text-emphasis: #1e3a8a;
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--itm-accent) 15%, white);
+  --bs-primary-border-subtle: color-mix(in srgb, var(--itm-accent) 35%, white);
+
+  --bs-danger: var(--itm-danger);
+  --bs-danger-rgb: var(--itm-danger-rgb);
+
+  --bs-link-color: var(--itm-accent);
+  --bs-link-color-rgb: var(--itm-accent-rgb);
+  --bs-link-hover-color: #1d4ed8;
+  --bs-link-hover-color-rgb: 29, 78, 216;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--itm-accent);
+  --bs-btn-border-color: var(--itm-accent);
+  --bs-btn-hover-bg: #1d4ed8;
+  --bs-btn-hover-border-color: #1d4ed8;
+  --bs-btn-active-bg: #1d4ed8;
+  --bs-btn-active-border-color: #1d4ed8;
+  --bs-btn-disabled-bg: var(--itm-accent);
+  --bs-btn-disabled-border-color: var(--itm-accent);
+  --bs-btn-focus-shadow-rgb: var(--itm-accent-rgb);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--itm-accent);
+  --bs-btn-border-color: var(--itm-accent);
+  --bs-btn-hover-bg: var(--itm-accent);
+  --bs-btn-hover-border-color: var(--itm-accent);
+  --bs-btn-active-bg: var(--itm-accent);
+  --bs-btn-active-border-color: var(--itm-accent);
+  --bs-btn-focus-shadow-rgb: var(--itm-accent-rgb);
+}
+
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+  border-color: color-mix(in srgb, var(--itm-accent) 55%, white);
+  box-shadow: 0 0 0 0.25rem rgba(var(--itm-accent-rgb), 0.25);
+}
+
+.form-check-input:checked {
+  background-color: var(--itm-accent);
+  border-color: var(--itm-accent);
+}
+
+@keyframes itm-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes itm-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

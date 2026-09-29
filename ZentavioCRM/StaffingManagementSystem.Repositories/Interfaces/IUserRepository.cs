@@ -20,6 +20,9 @@ namespace ZentavioCRM.Repositories.Interfaces
             string? search, Guid? roleId, Guid? departmentId, bool? isActive, int page, int pageSize,
             string? sortBy = null, bool sortDescending = true);
 
+        /// <summary>Count of active users — the number a plan's MaxUsers seat limit is checked against.</summary>
+        Task<int> CountActiveAsync();
+
         Task<bool> EmailExistsAsync(string email, Guid? excludeUserId = null);
 
         Task<bool> EmployeeCodeExistsAsync(string employeeCode, Guid? excludeUserId = null);

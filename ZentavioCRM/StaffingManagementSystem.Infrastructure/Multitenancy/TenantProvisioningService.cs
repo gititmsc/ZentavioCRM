@@ -20,33 +20,157 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
         private readonly PlatformDbContext _platformDb;
         private readonly TenancySettings _settings;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IPlatformAuditLogService _auditLog;
 
         public TenantProvisioningService(
             PlatformDbContext platformDb,
             IOptions<TenancySettings> tenancyOptions,
-            IPasswordHasher passwordHasher)
+            IPasswordHasher passwordHasher,
+            IPlatformAuditLogService auditLog)
         {
             _platformDb = platformDb;
             _settings = tenancyOptions.Value;
             _passwordHasher = passwordHasher;
+            _auditLog = auditLog;
         }
 
         public async Task<IReadOnlyList<TenantDto>> GetAllAsync()
             => await _platformDb.Tenants
                 .OrderByDescending(t => t.CreatedAtUtc)
-                .Select(t => new TenantDto
-                {
-                    Id = t.Id,
-                    Name = t.Name,
-                    Subdomain = t.Subdomain,
-                    DatabaseName = t.DatabaseName,
-                    Status = t.Status,
-                    AdminEmail = t.AdminEmail,
-                    CreatedAtUtc = t.CreatedAtUtc,
-                })
+                .Select(t => Map(t))
                 .ToListAsync();
 
-        public async Task<ApiResponse<TenantDto>> ProvisionAsync(ProvisionTenantRequest request)
+        public async Task<ApiResponse<TenantDto>> GetByIdAsync(Guid id)
+        {
+            var tenant = await _platformDb.Tenants.FirstOrDefaultAsync(t => t.Id == id);
+            return tenant is null
+                ? ApiResponse<TenantDto>.FailureResponse("Tenant not found.", ["Tenant not found."])
+                : ApiResponse<TenantDto>.SuccessResponse(Map(tenant));
+        }
+
+        public async Task<ApiResponse<TenantDto>> SuspendAsync(Guid id, string? reason, Guid? performedByAdminId)
+        {
+            var tenant = await _platformDb.Tenants.FirstOrDefaultAsync(t => t.Id == id);
+            if (tenant is null)
+            {
+                return ApiResponse<TenantDto>.FailureResponse("Tenant not found.", ["Tenant not found."]);
+            }
+
+            if (tenant.Status != TenantStatus.Active)
+            {
+                return ApiResponse<TenantDto>.FailureResponse(
+                    $"This tenant is {tenant.Status} and cannot be suspended from here.",
+                    [$"Only an Active tenant can be suspended."]);
+            }
+
+            tenant.Status = TenantStatus.Suspended;
+            await _platformDb.SaveChangesAsync();
+
+            var summary = string.IsNullOrWhiteSpace(reason)
+                ? $"Suspended tenant \"{tenant.Name}\"."
+                : $"Suspended tenant \"{tenant.Name}\". Reason: {reason.Trim()}";
+            await _auditLog.LogAsync(performedByAdminId, "TenantSuspended", summary, tenant.Id);
+
+            return ApiResponse<TenantDto>.SuccessResponse(Map(tenant), "Tenant suspended.");
+        }
+
+        public async Task<ApiResponse<TenantDto>> ReactivateAsync(Guid id, Guid? performedByAdminId)
+        {
+            var tenant = await _platformDb.Tenants.FirstOrDefaultAsync(t => t.Id == id);
+            if (tenant is null)
+            {
+                return ApiResponse<TenantDto>.FailureResponse("Tenant not found.", ["Tenant not found."]);
+            }
+
+            if (tenant.Status is not (TenantStatus.Suspended or TenantStatus.Terminated))
+            {
+                return ApiResponse<TenantDto>.FailureResponse(
+                    $"This tenant is {tenant.Status} and cannot be reactivated from here.",
+                    ["Only a Suspended or Terminated tenant can be reactivated."]);
+            }
+
+            var previousStatus = tenant.Status;
+            tenant.Status = TenantStatus.Active;
+            await _platformDb.SaveChangesAsync();
+
+            await _auditLog.LogAsync(
+                performedByAdminId,
+                "TenantReactivated",
+                $"Reactivated tenant \"{tenant.Name}\" (was {previousStatus}).",
+                tenant.Id);
+
+            return ApiResponse<TenantDto>.SuccessResponse(Map(tenant), "Tenant reactivated.");
+        }
+
+        public async Task<ApiResponse<TenantDto>> StopAsync(Guid id, string? reason, Guid? performedByAdminId)
+        {
+            var tenant = await _platformDb.Tenants.FirstOrDefaultAsync(t => t.Id == id);
+            if (tenant is null)
+            {
+                return ApiResponse<TenantDto>.FailureResponse("Tenant not found.", ["Tenant not found."]);
+            }
+
+            if (tenant.Status is not (TenantStatus.Active or TenantStatus.Suspended))
+            {
+                return ApiResponse<TenantDto>.FailureResponse(
+                    $"This tenant is {tenant.Status} and cannot be stopped from here.",
+                    ["Only an Active or Suspended tenant can be stopped."]);
+            }
+
+            tenant.Status = TenantStatus.Terminated;
+            await _platformDb.SaveChangesAsync();
+
+            var summary = string.IsNullOrWhiteSpace(reason)
+                ? $"Stopped tenant \"{tenant.Name}\"."
+                : $"Stopped tenant \"{tenant.Name}\". Reason: {reason.Trim()}";
+            await _auditLog.LogAsync(performedByAdminId, "TenantStopped", summary, tenant.Id);
+
+            return ApiResponse<TenantDto>.SuccessResponse(Map(tenant), "Tenant stopped. This is reversible — reactivate it to restore access.");
+        }
+
+        private static TenantDto Map(Tenant t) => new()
+        {
+            Id = t.Id,
+            Name = t.Name,
+            Subdomain = t.Subdomain,
+            DatabaseName = t.DatabaseName,
+            Status = t.Status,
+            AdminEmail = t.AdminEmail,
+            CreatedAtUtc = t.CreatedAtUtc,
+            ActivatedAtUtc = t.ActivatedAtUtc,
+            PlanTier = t.PlanTier,
+            MaxUsers = t.MaxUsers,
+            MaxStorageMB = t.MaxStorageMB,
+            MaxRecords = t.MaxRecords,
+        };
+
+        public async Task<ApiResponse<TenantDto>> UpdatePlanAsync(Guid id, UpdateTenantPlanRequest request, Guid? performedByAdminId)
+        {
+            var tenant = await _platformDb.Tenants.FirstOrDefaultAsync(t => t.Id == id);
+            if (tenant is null)
+            {
+                return ApiResponse<TenantDto>.FailureResponse("Tenant not found.", ["Tenant not found."]);
+            }
+
+            var defaults = PlanTierDefaults.For(request.PlanTier);
+            var previousTier = tenant.PlanTier;
+
+            tenant.PlanTier = request.PlanTier;
+            tenant.MaxUsers = request.MaxUsers ?? defaults.MaxUsers;
+            tenant.MaxStorageMB = request.MaxStorageMB ?? defaults.MaxStorageMB;
+            tenant.MaxRecords = request.MaxRecords ?? defaults.MaxRecords;
+
+            await _platformDb.SaveChangesAsync();
+
+            var summary = previousTier == tenant.PlanTier
+                ? $"Updated \"{tenant.Name}\"'s plan limits (still {tenant.PlanTier})."
+                : $"Changed \"{tenant.Name}\"'s plan from {previousTier} to {tenant.PlanTier}.";
+            await _auditLog.LogAsync(performedByAdminId, "TenantPlanChanged", summary, tenant.Id);
+
+            return ApiResponse<TenantDto>.SuccessResponse(Map(tenant), "Plan updated.");
+        }
+
+        public async Task<ApiResponse<TenantDto>> ProvisionAsync(ProvisionTenantRequest request, Guid? performedByAdminId)
         {
             var subdomain = request.Subdomain.Trim().ToLowerInvariant();
 
@@ -58,6 +182,8 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
             }
 
             var databaseName = await BuildUniqueDatabaseNameAsync(subdomain);
+            var planTier = request.PlanTier ?? PlanTier.Trial;
+            var limits = PlanTierDefaults.For(planTier);
 
             // Reserve the subdomain + database name immediately (Status = Provisioning) so a
             // concurrent request can't grab the same one while we're still creating the database.
@@ -69,6 +195,10 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
                 Status = TenantStatus.Provisioning,
                 AdminEmail = request.AdminEmail.Trim().ToLowerInvariant(),
                 CreatedAtUtc = DateTime.UtcNow,
+                PlanTier = planTier,
+                MaxUsers = limits.MaxUsers,
+                MaxStorageMB = limits.MaxStorageMB,
+                MaxRecords = limits.MaxRecords,
             };
             _platformDb.Tenants.Add(tenant);
             await _platformDb.SaveChangesAsync();
@@ -85,18 +215,13 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
                 tenant.ActivatedAtUtc = DateTime.UtcNow;
                 await _platformDb.SaveChangesAsync();
 
-                return ApiResponse<TenantDto>.SuccessResponse(
-                    new TenantDto
-                    {
-                        Id = tenant.Id,
-                        Name = tenant.Name,
-                        Subdomain = tenant.Subdomain,
-                        DatabaseName = tenant.DatabaseName,
-                        Status = tenant.Status,
-                        AdminEmail = tenant.AdminEmail,
-                        CreatedAtUtc = tenant.CreatedAtUtc,
-                    },
-                    "Tenant provisioned.");
+                await _auditLog.LogAsync(
+                    performedByAdminId,
+                    "TenantProvisioned",
+                    $"Provisioned tenant \"{tenant.Name}\" ({tenant.Subdomain}).",
+                    tenant.Id);
+
+                return ApiResponse<TenantDto>.SuccessResponse(Map(tenant), "Tenant provisioned.");
             }
             catch (Exception ex)
             {

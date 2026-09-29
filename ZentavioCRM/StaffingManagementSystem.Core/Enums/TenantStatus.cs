@@ -10,5 +10,10 @@ namespace ZentavioCRM.Core.Enums
         Active = 2,
         Suspended = 3,
         Failed = 4,
+        /// <summary>Reversible lock-out: a platform admin stopped this tenant. No data is touched —
+        /// the tenant's database still exists untouched, exactly like <see cref="Suspended"/>, just
+        /// reached via a different admin action. Can be moved back to <see cref="Active"/> the same
+        /// way a Suspended tenant can.</summary>
+        Terminated = 5,
     }
 }

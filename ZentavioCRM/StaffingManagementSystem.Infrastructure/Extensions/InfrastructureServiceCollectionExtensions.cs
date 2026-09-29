@@ -65,6 +65,10 @@ namespace ZentavioCRM.Infrastructure.Extensions
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
             services.AddScoped<IPlatformAdminService, PlatformAdminService>();
+            services.AddScoped<IPlatformAuditLogService, PlatformAuditLogService>();
+            services.AddScoped<ITenantUsageService, TenantUsageService>();
+            services.AddScoped<IPlanLimitService, PlanLimitService>();
+            services.AddScoped<IImpersonationService, ImpersonationService>();
 
             return services;
         }

@@ -15,19 +15,25 @@ namespace ZentavioCRM.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly IAuthService _authService;
+        private readonly ITenantContext _tenantContext;
+        private readonly IPlanLimitService _planLimitService;
 
         public UserService(
             IUserRepository userRepository,
             IRoleRepository roleRepository,
             IPasswordHasher passwordHasher,
             IRefreshTokenRepository refreshTokenRepository,
-            IAuthService authService)
+            IAuthService authService,
+            ITenantContext tenantContext,
+            IPlanLimitService planLimitService)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _passwordHasher = passwordHasher;
             _refreshTokenRepository = refreshTokenRepository;
             _authService = authService;
+            _tenantContext = tenantContext;
+            _planLimitService = planLimitService;
         }
 
         public async Task<IReadOnlyList<UserDto>> GetAllAsync()
@@ -80,6 +86,24 @@ namespace ZentavioCRM.Services
             if (role is null)
             {
                 return ApiResponse<UserDto>.FailureResponse("Selected role does not exist.");
+            }
+
+            // Seat-limit check. TenantId is only null in the unresolved-tenant local-dev fallback
+            // (no X-Tenant header, no subdomain — see TenancySettings.DefaultTenantConnectionStringName),
+            // where there's no Platform-database Tenant row to check a limit against at all.
+            if (_tenantContext.TenantId is { } tenantId)
+            {
+                var limits = await _planLimitService.GetLimitsAsync(tenantId);
+                if (limits is not null)
+                {
+                    var activeUserCount = await _userRepository.CountActiveAsync();
+                    if (activeUserCount >= limits.MaxUsers)
+                    {
+                        return ApiResponse<UserDto>.FailureResponse(
+                            $"You've reached your plan's user limit ({limits.MaxUsers}).",
+                            ["Contact your account administrator to upgrade your plan before adding more users."]);
+                    }
+                }
             }
 
             var user = new User

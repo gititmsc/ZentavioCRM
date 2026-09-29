@@ -24,10 +24,13 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<PlatformAdmin> PlatformAdmins => Set<PlatformAdmin>();
 
+        public DbSet<PlatformAuditLog> PlatformAuditLogs => Set<PlatformAuditLog>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new TenantConfiguration());
             modelBuilder.ApplyConfiguration(new PlatformAdminConfiguration());
+            modelBuilder.ApplyConfiguration(new PlatformAuditLogConfiguration());
             base.OnModelCreating(modelBuilder);
         }
     }

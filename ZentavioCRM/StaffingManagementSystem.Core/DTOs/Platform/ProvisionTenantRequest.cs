@@ -1,9 +1,13 @@
 using System.ComponentModel.DataAnnotations;
+using ZentavioCRM.Core.Enums;
 
 namespace ZentavioCRM.Core.DTOs.Platform
 {
     public class ProvisionTenantRequest
     {
+        /// <summary>Defaults to <see cref="PlanTier.Trial"/> if not supplied.</summary>
+        public PlanTier? PlanTier { get; set; }
+
         [Required(ErrorMessage = "Company name is required.")]
         [MaxLength(200)]
         public string CompanyName { get; set; } = string.Empty;

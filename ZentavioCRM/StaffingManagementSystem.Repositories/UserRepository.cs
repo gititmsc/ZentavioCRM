@@ -93,6 +93,9 @@ namespace ZentavioCRM.Repositories
             };
         }
 
+        public Task<int> CountActiveAsync()
+            => _dbContext.Users.CountAsync(u => u.IsActive);
+
         public Task<bool> EmailExistsAsync(string email, Guid? excludeUserId = null)
             => _dbContext.Users.AnyAsync(u => u.Email == email && (excludeUserId == null || u.Id != excludeUserId));
 

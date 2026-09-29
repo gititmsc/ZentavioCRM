@@ -13,15 +13,18 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
         private readonly PlatformDbContext _platformDb;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IPlatformJwtTokenGenerator _jwtTokenGenerator;
+        private readonly IPlatformAuditLogService _auditLog;
 
         public PlatformAdminService(
             PlatformDbContext platformDb,
             IPasswordHasher passwordHasher,
-            IPlatformJwtTokenGenerator jwtTokenGenerator)
+            IPlatformJwtTokenGenerator jwtTokenGenerator,
+            IPlatformAuditLogService auditLog)
         {
             _platformDb = platformDb;
             _passwordHasher = passwordHasher;
             _jwtTokenGenerator = jwtTokenGenerator;
+            _auditLog = auditLog;
         }
 
         public async Task<ApiResponse<PlatformLoginResponseDto>> LoginAsync(PlatformLoginRequestDto request)
@@ -38,6 +41,8 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
 
             admin.LastLoginAtUtc = DateTime.UtcNow;
             await _platformDb.SaveChangesAsync();
+
+            await _auditLog.LogAsync(admin.Id, "Login", $"{admin.Email} logged in.");
 
             var (token, expiresAtUtc) = _jwtTokenGenerator.GenerateToken(admin);
 

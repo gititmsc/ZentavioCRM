@@ -1,0 +1,170 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-sidebar {
+  width: var(--itm-sidebar-width);
+  flex-shrink: 0;
+  background: var(--itm-gradient-panel);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 0;
+  position: relative;
+}
+
+.app-sidebar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.08) 0, transparent 45%),
+    radial-gradient(circle at 0% 100%, rgba(34, 211, 238, 0.16) 0, transparent 50%);
+}
+
+.app-sidebar__brand {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 22px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 18px;
+}
+
+.app-sidebar__brand-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0f2345;
+  background: var(--itm-teal);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.app-sidebar__section-label {
+  position: relative;
+  z-index: 1;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 0 22px;
+  margin-bottom: 8px;
+}
+
+.app-sidebar__nav {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 14px;
+}
+
+.app-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: var(--itm-radius-control);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color var(--itm-transition), color var(--itm-transition);
+  position: relative;
+}
+
+.app-sidebar__link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  text-decoration: none;
+}
+
+.app-sidebar__link.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-weight: 600;
+}
+
+.app-sidebar__link.active::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 3px 3px 0;
+  background: var(--itm-teal);
+}
+
+.app-sidebar__link i {
+  font-size: 1.05rem;
+  width: 20px;
+  text-align: center;
+}
+
+.app-sidebar__footer {
+  position: relative;
+  z-index: 1;
+  padding: 14px 22px 0;
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-topbar {
+  height: 68px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 0 28px;
+  background: var(--itm-card-bg);
+  border-bottom: 1px solid var(--itm-border);
+}
+
+.app-topbar__admin-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--itm-border);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color var(--itm-transition), border-color var(--itm-transition);
+}
+
+.app-topbar__admin-menu:hover {
+  background: var(--itm-bg);
+  border-color: color-mix(in srgb, var(--itm-accent) 30%, var(--itm-border));
+}
+
+.app-content {
+  flex: 1;
+  padding: 28px 32px 40px;
+  overflow-y: auto;
+  animation: itm-fade-in 250ms ease both;
+}

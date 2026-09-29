@@ -22,7 +22,7 @@ namespace ZentavioCRM.Infrastructure.Security
             _settings = options.Value;
         }
 
-        public (string Token, DateTime ExpiresAtUtc) GenerateToken(User user)
+        public (string Token, DateTime ExpiresAtUtc) GenerateToken(User user, IReadOnlyDictionary<string, string>? extraClaims = null)
         {
             var expiresAtUtc = DateTime.UtcNow.AddMinutes(_settings.AccessTokenExpiryMinutes);
 
@@ -42,6 +42,11 @@ namespace ZentavioCRM.Infrastructure.Security
                 ?? [];
 
             claims.AddRange(permissionCodes.Select(code => new Claim(PermissionCodes.ClaimType, code)));
+
+            if (extraClaims is not null)
+            {
+                claims.AddRange(extraClaims.Select(kv => new Claim(kv.Key, kv.Value)));
+            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SecretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

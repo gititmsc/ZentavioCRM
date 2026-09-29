@@ -32,6 +32,11 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
             builder.Property(t => t.AdminEmail).IsRequired().HasMaxLength(256);
 
             builder.Property(t => t.CreatedAtUtc).IsRequired();
+
+            builder.Property(t => t.PlanTier).IsRequired().HasConversion<string>().HasMaxLength(30);
+            builder.Property(t => t.MaxUsers).IsRequired();
+            builder.Property(t => t.MaxStorageMB).IsRequired();
+            builder.Property(t => t.MaxRecords).IsRequired();
         }
     }
 }

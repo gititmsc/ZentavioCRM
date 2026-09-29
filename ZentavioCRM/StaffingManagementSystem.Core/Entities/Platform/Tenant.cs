@@ -29,5 +29,16 @@ namespace ZentavioCRM.Core.Entities.Platform
         public DateTime CreatedAtUtc { get; set; }
 
         public DateTime? ActivatedAtUtc { get; set; }
+
+        public PlanTier PlanTier { get; set; } = PlanTier.Trial;
+
+        /// <summary>Usage limits, seeded from <see cref="Configuration.PlanTierDefaults"/> for
+        /// <see cref="PlanTier"/> at provision/tier-change time but independently editable per
+        /// tenant afterward (see PATCH /api/platform/tenants/{id}/plan).</summary>
+        public int MaxUsers { get; set; }
+
+        public int MaxStorageMB { get; set; }
+
+        public int MaxRecords { get; set; }
     }
 }
