@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { tenantService, type Tenant } from "@/services/tenantService";
 
 const STATUS_BADGE: Record<Tenant["status"], string> = {
-  PendingActivation: "text-bg-secondary",
+  Provisioning: "text-bg-secondary",
   Active: "text-bg-success",
   Suspended: "text-bg-warning",
-  Stopped: "text-bg-danger",
+  Failed: "text-bg-danger",
+  Terminated: "text-bg-danger",
 };
 
 export default function TenantsList() {
+  const navigate = useNavigate();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +31,13 @@ export default function TenantsList() {
 
   return (
     <div>
-      <h1 className="h4 mb-4">Tenants</h1>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className="h4 mb-0">Tenants</h1>
+        <button type="button" className="btn btn-primary" onClick={() => navigate("/tenants/new")}>
+          <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+          New Tenant
+        </button>
+      </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
 
@@ -61,7 +70,7 @@ export default function TenantsList() {
                 </tr>
               )}
               {tenants.map((t) => (
-                <tr key={t.id}>
+                <tr key={t.id} role="button" onClick={() => navigate(`/tenants/${t.id}`)}>
                   <td>{t.name}</td>
                   <td>{t.subdomain}</td>
                   <td>{t.planTier}</td>

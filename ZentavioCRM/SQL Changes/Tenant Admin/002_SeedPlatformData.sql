@@ -23,6 +23,17 @@
     Either way the request should resolve to this row and connect to StaffingManagementSystemDb.
 
     Run 001_CreatePlatformDatabase.sql first. Safe to re-run — insert is guarded.
+
+    IMPORTANT — DatabaseName below is a placeholder, not a literal value to copy as-is:
+    TenantUsageService and TenantResolutionMiddleware both build a live connection string as
+    "Database={tenant.DatabaseName}", so this column must hold the ACTUAL SQL Server database name
+    (e.g. "ZentavioCRM" locally, "itmuske1_ZentavioCRM" on the itmusketeers host) — never the
+    ConnectionStrings:* config KEY. Seeding the literal string "StaffingManagementSystemDb" here
+    broke GetUsageAsync in production (tried to connect to a database that doesn't exist) and had
+    to be corrected/removed. Edit the VALUES below to your own environment's real database name
+    before running this script, and don't run it at all against an environment where a tenant
+    already covers that same database (DatabaseName has a unique index — a duplicate will fail,
+    or worse, silently shadow the real tenant if the insert is ever changed to an upsert).
 */
 
 USE [ZentavioCRM_Platform];
@@ -34,7 +45,7 @@ BEGIN
     VALUES (
         N'My Company',
         N'default',
-        N'StaffingManagementSystemDb',
+        N'ZentavioCRM', -- Replace with YOUR SQL Server's actual database name for StaffingManagementSystemDb.
         N'Active',
         N'admin@zentaviocrm.com',
         '2026-01-01T00:00:00',
