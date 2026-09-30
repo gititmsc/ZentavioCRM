@@ -244,3 +244,40 @@ BEGIN
     CREATE INDEX IX_TenantNotes_CreatedAtUtc ON dbo.TenantNotes (CreatedAtUtc);
 END
 GO
+
+-- ============================================================================
+-- Platform admin roles + login lockout — SuperAdmin (full access) vs Support (read-only); every
+-- admin created before this existed defaults to SuperAdmin so nobody is silently locked out.
+-- FailedLoginAttempts/LockedUntilUtc back a simple lockout after repeated bad passwords.
+-- See ZentavioCRM.Core.Entities.Platform.PlatformAdmin / PlatformAdminRole.
+-- ============================================================================
+IF COL_LENGTH(N'dbo.PlatformAdmins', N'Role') IS NULL
+BEGIN
+    ALTER TABLE dbo.PlatformAdmins ADD Role NVARCHAR(20) NOT NULL CONSTRAINT DF_PlatformAdmins_Role DEFAULT (N'SuperAdmin');
+END
+GO
+
+IF COL_LENGTH(N'dbo.PlatformAdmins', N'FailedLoginAttempts') IS NULL
+BEGIN
+    ALTER TABLE dbo.PlatformAdmins ADD FailedLoginAttempts INT NOT NULL CONSTRAINT DF_PlatformAdmins_FailedLoginAttempts DEFAULT (0);
+END
+GO
+
+IF COL_LENGTH(N'dbo.PlatformAdmins', N'LockedUntilUtc') IS NULL
+BEGIN
+    ALTER TABLE dbo.PlatformAdmins ADD LockedUntilUtc DATETIME2 NULL;
+END
+GO
+
+-- ============================================================================
+-- Trial expiration — set at provision time for Trial-tier tenants; TenantResolutionMiddleware
+-- reactively suspends an Active Trial tenant once this passes (no background job infrastructure
+-- exists in this app, so this mirrors the existing Overdue auto-suspend pattern instead of a
+-- scheduled sweep). Null for non-Trial tenants and for Trial tenants provisioned before this
+-- existed, both of which are treated as "never expires".
+-- ============================================================================
+IF COL_LENGTH(N'dbo.Tenants', N'TrialEndsAtUtc') IS NULL
+BEGIN
+    ALTER TABLE dbo.Tenants ADD TrialEndsAtUtc DATETIME2 NULL;
+END
+GO

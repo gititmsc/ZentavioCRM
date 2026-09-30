@@ -27,6 +27,11 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
             builder.Property(a => a.LastName).HasMaxLength(100);
 
             builder.Property(a => a.IsActive).IsRequired();
+
+            builder.Property(a => a.Role).IsRequired().HasConversion<string>().HasMaxLength(20);
+            builder.Property(a => a.FailedLoginAttempts).IsRequired();
+            builder.Property(a => a.LockedUntilUtc);
+
             builder.Property(a => a.CreatedAtUtc).IsRequired();
 
             builder.Ignore(a => a.FullName);

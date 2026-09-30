@@ -3,16 +3,19 @@ import { useForm } from "react-hook-form";
 import { PageHeader } from "@/components/PageHeader";
 import { Avatar } from "@/components/Avatar";
 import { platformAdminService, type CreatePlatformAdminRequest } from "@/services/platformAdminService";
-import type { PlatformAdmin } from "@/services/authService";
+import type { PlatformAdmin, PlatformAdminRole } from "@/services/authService";
+import { useAuth } from "@/context/AuthContext";
 
 interface FormValues {
   email: string;
   firstName: string;
   lastName: string;
   password: string;
+  role: PlatformAdminRole;
 }
 
 export function PlatformAdminsPage() {
+  const { isSuperAdmin } = useAuth();
   const [admins, setAdmins] = useState<PlatformAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +27,7 @@ export function PlatformAdminsPage() {
     reset,
     setError: setFormError,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ defaultValues: { email: "", firstName: "", lastName: "", password: "" } });
+  } = useForm<FormValues>({ defaultValues: { email: "", firstName: "", lastName: "", password: "", role: "SuperAdmin" } });
 
   const load = async () => {
     setLoading(true);
@@ -48,6 +51,7 @@ export function PlatformAdminsPage() {
       firstName: values.firstName.trim(),
       lastName: values.lastName.trim() || undefined,
       password: values.password,
+      role: values.role,
     };
 
     const response = await platformAdminService.create(request);
@@ -69,16 +73,18 @@ export function PlatformAdminsPage() {
         title="Platform Admins"
         subtitle="Who can sign in to this console and act on tenants."
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
-            <i className="bi bi-plus-lg me-1" />
-            New Admin
-          </button>
+          isSuperAdmin ? (
+            <button type="button" className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
+              <i className="bi bi-plus-lg me-1" />
+              New Admin
+            </button>
+          ) : undefined
         }
       />
 
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {showForm && (
+      {showForm && isSuperAdmin && (
         <div className="app-card mb-4">
           <div className="app-card__header">
             <h3 className="app-card__title">
@@ -111,6 +117,13 @@ export function PlatformAdminsPage() {
                   />
                   {errors.password && <div className="invalid-feedback">{errors.password.message}</div>}
                 </div>
+                <div className="col-md-6">
+                  <label className="form-label">Role</label>
+                  <select className="form-select" {...register("role", { required: true })}>
+                    <option value="SuperAdmin">Super Admin — full access</option>
+                    <option value="Support">Support — read-only</option>
+                  </select>
+                </div>
               </div>
               <div className="d-flex justify-content-end gap-2 mt-3">
                 <button type="button" className="btn btn-outline-secondary" onClick={() => setShowForm(false)}>
@@ -131,6 +144,7 @@ export function PlatformAdminsPage() {
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Role</th>
                 <th>Status</th>
                 <th>Last Login</th>
                 <th>Created</th>
@@ -139,13 +153,13 @@ export function PlatformAdminsPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="text-center text-muted py-5">
+                  <td colSpan={5} className="text-center text-muted py-5">
                     Loading...
                   </td>
                 </tr>
               ) : admins.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="p-0">
+                  <td colSpan={5} className="p-0">
                     <div className="empty-state">
                       <div className="empty-state__icon">
                         <i className="bi bi-shield-lock" aria-hidden="true" />
@@ -169,9 +183,20 @@ export function PlatformAdminsPage() {
                       </div>
                     </td>
                     <td>
+                      <span className={`badge ${a.role === "SuperAdmin" ? "text-bg-primary" : "text-bg-light text-dark border"}`}>
+                        {a.role === "SuperAdmin" ? "Super Admin" : "Support"}
+                      </span>
+                    </td>
+                    <td>
                       <span className={`badge ${a.isActive ? "text-bg-success" : "text-bg-secondary"}`}>
                         {a.isActive ? "Active" : "Inactive"}
                       </span>
+                      {a.isLockedOut && (
+                        <span className="badge text-bg-danger ms-1">
+                          <i className="bi bi-lock-fill me-1" />
+                          Locked
+                        </span>
+                      )}
                     </td>
                     <td className="text-muted small">{a.lastLoginAtUtc ? new Date(a.lastLoginAtUtc).toLocaleString() : "Never"}</td>
                     <td className="text-muted small">{new Date(a.createdAtUtc).toLocaleDateString()}</td>

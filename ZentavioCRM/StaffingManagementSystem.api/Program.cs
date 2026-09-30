@@ -1,8 +1,10 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ZentavioCRM.Api.Authorization;
@@ -10,6 +12,7 @@ using ZentavioCRM.Api.Json;
 using ZentavioCRM.Api.Middleware;
 using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.Configuration;
+using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Interfaces;
 using ZentavioCRM.Infrastructure.Extensions;
 using ZentavioCRM.Repositories.Extensions;
@@ -169,6 +172,40 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(PlatformAuthorizationPolicies.PlatformAdmin, policy => policy
         .AddAuthenticationSchemes(PlatformAuthorizationPolicies.PlatformAdmin)
         .RequireClaim(IPlatformJwtTokenGenerator.PlatformAdminClaimType, "true"));
+
+    // Same scheme, additionally requires the SuperAdmin role claim — a Support-role admin's token
+    // passes the PlatformAdmin policy above (so read endpoints work) but fails this one.
+    options.AddPolicy(PlatformAuthorizationPolicies.PlatformSuperAdmin, policy => policy
+        .AddAuthenticationSchemes(PlatformAuthorizationPolicies.PlatformAdmin)
+        .RequireClaim(IPlatformJwtTokenGenerator.PlatformAdminClaimType, "true")
+        .RequireClaim(IPlatformJwtTokenGenerator.RoleClaimType, nameof(PlatformAdminRole.SuperAdmin)));
+});
+
+// Rate limiting — currently just the public, unauthenticated tenant self-service signup endpoint
+// (SignupController), the only endpoint in the app that lets an anonymous caller provision a real
+// database. Fixed window per client IP: generous enough for a genuine new customer retrying a
+// validation error, tight enough that scripting it into a resource-exhaustion vector isn't free.
+// Partitioned on HttpContext.Connection.RemoteIpAddress — this is the true client IP when Kestrel
+// faces the internet directly, or when hosted in-process behind IIS (IIS's ASP.NET Core Module
+// already translates this correctly). If this API is ever placed behind a separate reverse proxy/
+// load balancer that terminates TLS itself (not IIS in-process), add ForwardedHeadersMiddleware
+// with an explicit, locked-down KnownProxies/KnownNetworks list before this point — without it,
+// every request would appear to come from the proxy's single IP, collapsing this rate limit to one
+// shared bucket for everyone (or, if the proxy blindly forwards X-Forwarded-For, becoming trivially
+// spoofable) rather than actually limiting per real caller.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("signup", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromHours(1),
+                QueueLimit = 0,
+            }));
 });
 
 // CORS — allow the Vite dev server
@@ -206,6 +243,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();  // keeps CORS headers on erro
 app.UseMiddleware<TenantResolutionMiddleware>();   // resolves which tenant DB this request targets
 app.UseAuthentication();   // must run before UseAuthorization so HttpContext.User is populated
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 
 app.Run();

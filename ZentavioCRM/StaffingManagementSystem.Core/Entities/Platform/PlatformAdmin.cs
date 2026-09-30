@@ -1,3 +1,5 @@
+using ZentavioCRM.Core.Enums;
+
 namespace ZentavioCRM.Core.Entities.Platform
 {
     /// <summary>
@@ -20,6 +22,19 @@ namespace ZentavioCRM.Core.Entities.Platform
         public string LastName { get; set; } = string.Empty;
 
         public bool IsActive { get; set; } = true;
+
+        /// <summary>SuperAdmin (full access) or Support (read-only) — see <see cref="PlatformAdminRole"/>.
+        /// Defaults to SuperAdmin so every admin created before roles existed keeps full access.</summary>
+        public PlatformAdminRole Role { get; set; } = PlatformAdminRole.SuperAdmin;
+
+        /// <summary>Consecutive failed login attempts since the last successful login or the last
+        /// time a lockout expired. Reset to 0 on a successful login. See <see cref="LockedUntilUtc"/>.</summary>
+        public int FailedLoginAttempts { get; set; }
+
+        /// <summary>Set once <see cref="FailedLoginAttempts"/> crosses the lockout threshold; login
+        /// is rejected until this passes, then the counter resets on the next attempt. Null when
+        /// not currently locked out.</summary>
+        public DateTime? LockedUntilUtc { get; set; }
 
         public DateTime CreatedAtUtc { get; set; }
 

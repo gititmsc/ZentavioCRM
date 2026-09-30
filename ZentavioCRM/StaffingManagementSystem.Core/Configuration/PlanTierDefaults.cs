@@ -12,6 +12,11 @@ namespace ZentavioCRM.Core.Configuration
     {
         public readonly record struct Limits(int MaxUsers, int MaxStorageMB, int MaxRecords);
 
+        /// <summary>How long a newly-provisioned Trial-tier tenant gets before
+        /// TenantResolutionMiddleware auto-suspends it (see <see cref="Entities.Platform.Tenant.TrialEndsAtUtc"/>).
+        /// Not applied retroactively to Trial tenants provisioned before this existed.</summary>
+        public const int TrialLengthDays = 14;
+
         public static Limits For(PlanTier tier) => tier switch
         {
             PlanTier.Trial => new Limits(MaxUsers: 3, MaxStorageMB: 500, MaxRecords: 250),

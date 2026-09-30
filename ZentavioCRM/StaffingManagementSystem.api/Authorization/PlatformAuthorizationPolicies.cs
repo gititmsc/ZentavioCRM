@@ -9,5 +9,11 @@ namespace ZentavioCRM.Api.Authorization
     {
         /// <summary>Name of both the JWT bearer authentication scheme and the authorization policy for Platform Admin sessions — distinct from the default (tenant user) scheme.</summary>
         public const string PlatformAdmin = "PlatformAdmin";
+
+        /// <summary>Authorization policy for mutating platform actions (provision/suspend/reactivate/stop
+        /// a tenant, billing, quick admin actions, managing other platform admins) — requires the
+        /// "PlatformAdmin" scheme AND a role claim of SuperAdmin. A Support-role admin authenticates
+        /// fine under the PlatformAdmin policy (so read endpoints work) but is rejected here.</summary>
+        public const string PlatformSuperAdmin = "PlatformSuperAdmin";
     }
 }

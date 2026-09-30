@@ -43,6 +43,8 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
             builder.Property(t => t.BillingCurrency).HasMaxLength(3);
             builder.Property(t => t.BillingCycle).HasConversion<string>().HasMaxLength(20);
             builder.Property(t => t.NextDueDateUtc);
+
+            builder.Property(t => t.TrialEndsAtUtc);
         }
     }
 }

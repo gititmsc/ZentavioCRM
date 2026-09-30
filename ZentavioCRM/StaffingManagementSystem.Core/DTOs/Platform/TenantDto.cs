@@ -38,6 +38,8 @@ namespace ZentavioCRM.Core.DTOs.Platform
         public BillingCycle? BillingCycle { get; set; }
 
         public DateTime? NextDueDateUtc { get; set; }
+
+        public DateTime? TrialEndsAtUtc { get; set; }
     }
 
     /// <summary>Change a tenant's plan tier. Omitted limit fields fall back to

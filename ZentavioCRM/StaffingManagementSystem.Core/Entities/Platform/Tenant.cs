@@ -61,5 +61,15 @@ namespace ZentavioCRM.Core.Entities.Platform
         /// cycle each time a payment is recorded (see ITenantBillingService.RecordPaymentAsync);
         /// otherwise editable directly.</summary>
         public DateTime? NextDueDateUtc { get; set; }
+
+        /// <summary>Set at provision time for a Trial-tier tenant (see <see cref="Configuration.PlanTierDefaults"/>
+        /// for the trial length); null for every other plan tier and for Trial tenants provisioned
+        /// before this existed, both of which are treated as "never expires". TenantResolutionMiddleware
+        /// reactively suspends an Active Trial tenant once this passes — there is no background job
+        /// infrastructure in this app, so this mirrors the existing Overdue auto-suspend pattern
+        /// (a reactive check on the next request) rather than a scheduled sweep. Changing PlanTier
+        /// away from Trial does not clear this automatically; the middleware only acts on it while
+        /// PlanTier is still Trial.</summary>
+        public DateTime? TrialEndsAtUtc { get; set; }
     }
 }

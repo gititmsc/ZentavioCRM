@@ -34,6 +34,7 @@ namespace ZentavioCRM.Infrastructure.Security
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new(ClaimTypes.Name, admin.FullName),
                 new(IPlatformJwtTokenGenerator.PlatformAdminClaimType, "true"),
+                new(IPlatformJwtTokenGenerator.RoleClaimType, admin.Role.ToString()),
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SecretKey));

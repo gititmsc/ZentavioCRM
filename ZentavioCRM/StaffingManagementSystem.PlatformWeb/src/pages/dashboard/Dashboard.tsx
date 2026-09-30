@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { tenantService, type Tenant, type TenantUsageAlert, PLAN_TIERS } from "@/services/tenantService";
 import { auditLogService, type PlatformAuditLogEntry } from "@/services/auditLogService";
 import { platformAdminService } from "@/services/platformAdminService";
+import { useAuth } from "@/context/AuthContext";
 
 const ACTION_ICONS: Record<string, string> = {
   Login: "bi-box-arrow-in-right",
@@ -18,6 +19,7 @@ const ACTION_ICONS: Record<string, string> = {
 };
 
 export function Dashboard() {
+  const { isSuperAdmin } = useAuth();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [recentActivity, setRecentActivity] = useState<PlatformAuditLogEntry[]>([]);
   const [adminCount, setAdminCount] = useState<number | null>(null);
@@ -197,10 +199,12 @@ export function Dashboard() {
                 </div>
               ))}
 
-              <Link to="/tenants" className="btn btn-outline-primary btn-sm w-100 mt-2">
-                <i className="bi bi-plus-lg me-1" />
-                Provision New Tenant
-              </Link>
+              {isSuperAdmin && (
+                <Link to="/tenants" className="btn btn-outline-primary btn-sm w-100 mt-2">
+                  <i className="bi bi-plus-lg me-1" />
+                  Provision New Tenant
+                </Link>
+              )}
             </div>
           </div>
         </div>

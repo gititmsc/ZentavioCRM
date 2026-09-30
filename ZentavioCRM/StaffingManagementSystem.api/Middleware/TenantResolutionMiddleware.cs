@@ -34,7 +34,8 @@ namespace ZentavioCRM.Api.Middleware
             HttpContext context,
             ITenantContext tenantContext,
             PlatformDbContext platformDbContext,
-            IOptions<TenancySettings> tenancyOptions)
+            IOptions<TenancySettings> tenancyOptions,
+            IPlatformAuditLogService auditLog)
         {
             if (BypassPrefixes.Any(prefix => context.Request.Path.StartsWithSegments(prefix)))
             {
@@ -54,6 +55,31 @@ namespace ZentavioCRM.Api.Middleware
                 if (tenant is null)
                 {
                     await WriteErrorAsync(context, StatusCodes.Status404NotFound, $"No tenant found for \"{subdomain}\".");
+                    return;
+                }
+
+                // Reactive trial expiration — mirrors the existing Overdue-auto-suspend pattern
+                // (TenantBillingService.UpdateBillingAsync): there's no background job
+                // infrastructure anywhere in this app, so an expired-but-still-Active Trial tenant
+                // is only caught the next time one of its own requests passes through here, not on
+                // a schedule. tenant.PlanTier still being Trial guards against acting on a tenant
+                // that was upgraded to a paid tier without ever clearing its old TrialEndsAtUtc.
+                if (tenant.Status == TenantStatus.Active
+                    && tenant.PlanTier == PlanTier.Trial
+                    && tenant.TrialEndsAtUtc is { } trialEndsAtUtc
+                    && trialEndsAtUtc <= DateTime.UtcNow)
+                {
+                    await platformDbContext.Tenants
+                        .Where(t => t.Id == tenant.Id)
+                        .ExecuteUpdateAsync(setters => setters.SetProperty(t => t.Status, TenantStatus.Suspended));
+
+                    await auditLog.LogAsync(
+                        null,
+                        "TenantTrialExpired",
+                        $"Tenant \"{tenant.Name}\" was automatically suspended — its {PlanTierDefaults.TrialLengthDays}-day trial expired.",
+                        tenant.Id);
+
+                    await WriteErrorAsync(context, StatusCodes.Status403Forbidden, $"Tenant \"{subdomain}\" is Suspended and cannot be accessed.");
                     return;
                 }
 

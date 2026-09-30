@@ -3,6 +3,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { ZentavioLogo } from "@/components/brand/ZentavioLogo";
 import { Avatar } from "@/components/Avatar";
 import { ChangePasswordModal } from "@/components/ChangePasswordModal";
+import { GlobalSearch } from "@/components/GlobalSearch";
 import { useAuth } from "@/context/AuthContext";
 import "./MainLayout.css";
 
@@ -47,6 +48,8 @@ export function MainLayout() {
 
       <div className="app-main">
         <header className="app-topbar">
+          <GlobalSearch />
+          <div className="ms-auto d-flex align-items-center gap-3">
           <button
             type="button"
             className="app-topbar__admin-menu"
@@ -67,6 +70,7 @@ export function MainLayout() {
             <i className="bi bi-box-arrow-right me-1" aria-hidden="true" />
             Sign Out
           </button>
+          </div>
         </header>
 
         <main className="app-content">

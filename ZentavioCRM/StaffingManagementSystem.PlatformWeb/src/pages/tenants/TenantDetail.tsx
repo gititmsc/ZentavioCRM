@@ -10,6 +10,7 @@ import { MetadataEditor } from "@/pages/tenants/MetadataEditor";
 import { BillingPanel } from "@/pages/tenants/BillingPanel";
 import { NotesPanel } from "@/pages/tenants/NotesPanel";
 import { ActivityTab } from "@/pages/tenants/ActivityTab";
+import { useAuth } from "@/context/AuthContext";
 
 type ActiveDialog = "suspend" | "stop" | "impersonate" | null;
 type ActiveTab = "overview" | "billing" | "notes" | "activity";
@@ -35,6 +36,7 @@ function UsageBar({ label, value, max, format }: { label: string; value: number;
 }
 
 export function TenantDetail() {
+  const { isSuperAdmin } = useAuth();
   const { id } = useParams<{ id: string }>();
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [usage, setUsage] = useState<TenantUsage | null>(null);
@@ -129,6 +131,32 @@ export function TenantDetail() {
     }
   };
 
+  const [sendingAdminAction, setSendingAdminAction] = useState<"welcome" | "reset" | null>(null);
+
+  const handleResendWelcomeEmail = async () => {
+    if (!id) return;
+    setSendingAdminAction("welcome");
+    const response = await tenantService.resendWelcomeEmail(id);
+    setSendingAdminAction(null);
+    if (response.success) {
+      setBanner("Welcome email sent.");
+    } else {
+      setError(response.message || "Could not send the welcome email.");
+    }
+  };
+
+  const handleForcePasswordReset = async () => {
+    if (!id) return;
+    setSendingAdminAction("reset");
+    const response = await tenantService.forcePasswordReset(id);
+    setSendingAdminAction(null);
+    if (response.success) {
+      setBanner("Password reset email sent.");
+    } else {
+      setError(response.message || "Could not send the password reset email.");
+    }
+  };
+
   const handleImpersonate = async (reason: string) => {
     if (!id) return;
     const response = await tenantService.impersonate(id, reason);
@@ -192,14 +220,16 @@ export function TenantDetail() {
               <h4 className="fw-bold mb-0">{tenant.name}</h4>
               <StatusBadge status={tenant.status} />
               <PaymentStatusBadge status={tenant.paymentStatus} />
-              <button
-                type="button"
-                className="btn btn-sm btn-link text-muted p-0 ms-1"
-                onClick={() => setEditingMetadata(true)}
-                title="Edit company name / directory email"
-              >
-                <i className="bi bi-pencil-fill" />
-              </button>
+              {isSuperAdmin && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-link text-muted p-0 ms-1"
+                  onClick={() => setEditingMetadata(true)}
+                  title="Edit company name / directory email"
+                >
+                  <i className="bi bi-pencil-fill" />
+                </button>
+              )}
             </div>
             <div className="text-muted small mt-1">
               <i className="bi bi-globe2 me-1" />
@@ -209,8 +239,34 @@ export function TenantDetail() {
         </div>
 
         <div className="d-flex gap-2">
-          {tenant.status === "Active" && (
+          {!isSuperAdmin && (tenant.status === "Active" || tenant.status === "Suspended" || tenant.status === "Terminated") && (
+            <span className="text-muted small fst-italic align-self-center">
+              <i className="bi bi-eye me-1" />
+              Read-only (Support role)
+            </span>
+          )}
+          {isSuperAdmin && tenant.status === "Active" && (
             <>
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => void handleResendWelcomeEmail()}
+                disabled={sendingAdminAction !== null}
+                title="Email this tenant's admin a fresh welcome / set-password link"
+              >
+                <i className="bi bi-envelope-fill me-1" />
+                {sendingAdminAction === "welcome" ? "Sending..." : "Resend Welcome Email"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => void handleForcePasswordReset()}
+                disabled={sendingAdminAction !== null}
+                title="Email this tenant's admin a password-reset link"
+              >
+                <i className="bi bi-key-fill me-1" />
+                {sendingAdminAction === "reset" ? "Sending..." : "Force Password Reset"}
+              </button>
               <button type="button" className="btn btn-outline-warning btn-sm" onClick={() => setActiveDialog("suspend")}>
                 <i className="bi bi-pause-fill me-1" />
                 Suspend
@@ -224,7 +280,7 @@ export function TenantDetail() {
               </button>
             </>
           )}
-          {tenant.status === "Suspended" && (
+          {isSuperAdmin && tenant.status === "Suspended" && (
             <>
               <button type="button" className="btn btn-success btn-sm" onClick={() => void handleReactivate()}>
                 <i className="bi bi-play-fill me-1" />
@@ -236,7 +292,7 @@ export function TenantDetail() {
               </button>
             </>
           )}
-          {tenant.status === "Terminated" && (
+          {isSuperAdmin && tenant.status === "Terminated" && (
             <button type="button" className="btn btn-success btn-sm" onClick={() => void handleReactivate()}>
               <i className="bi bi-play-fill me-1" />
               Reactivate
@@ -272,7 +328,7 @@ export function TenantDetail() {
                 <i className="bi bi-credit-card-2-front-fill" aria-hidden="true" />
                 Plan
               </h3>
-              {!editingPlan && (
+              {!editingPlan && isSuperAdmin && (
                 <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setEditingPlan(true)}>
                   <i className="bi bi-pencil-fill me-1" />
                   Edit
@@ -287,6 +343,14 @@ export function TenantDetail() {
                   <span className="plan-badge mb-3 d-inline-flex" style={{ fontSize: "0.85rem", padding: "5px 14px" }}>
                     {tenant.planTier}
                   </span>
+                  {tenant.planTier === "Trial" && tenant.trialEndsAtUtc && (
+                    <div className={`small mt-2 mb-1 ${new Date(tenant.trialEndsAtUtc) <= new Date() ? "text-danger" : "text-warning"}`}>
+                      <i className="bi bi-hourglass-split me-1" />
+                      {new Date(tenant.trialEndsAtUtc) <= new Date()
+                        ? "Trial expired — will be suspended on next access."
+                        : `Trial ends ${new Date(tenant.trialEndsAtUtc).toLocaleDateString()}`}
+                    </div>
+                  )}
                   <div className="d-flex flex-column gap-2 mt-2">
                     <div className="d-flex justify-content-between text-muted small">
                       <span>Max Users</span>

@@ -12,13 +12,17 @@ export interface LoginRequest {
   rememberMe: boolean;
 }
 
+export type PlatformAdminRole = "SuperAdmin" | "Support";
+
 export interface PlatformAdmin {
   id: string;
   email: string;
   fullName: string;
   isActive: boolean;
+  role: PlatformAdminRole;
   createdAtUtc: string;
   lastLoginAtUtc: string | null;
+  isLockedOut: boolean;
 }
 
 export interface AuthResult {

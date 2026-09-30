@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { MainLayout } from "@/layouts/MainLayout";
 import Login from "@/pages/login/Login";
+import Signup from "@/pages/signup/Signup";
 import { Dashboard } from "@/pages/dashboard/Dashboard";
 import { TenantsList } from "@/pages/tenants/TenantsList";
 import { TenantDetail } from "@/pages/tenants/TenantDetail";
@@ -12,6 +13,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
 
       <Route
         element={

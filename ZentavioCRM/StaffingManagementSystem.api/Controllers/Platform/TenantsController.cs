@@ -27,19 +27,22 @@ namespace ZentavioCRM.Api.Controllers.Platform
         private readonly IImpersonationService _impersonationService;
         private readonly ITenantBillingService _billingService;
         private readonly ITenantNoteService _noteService;
+        private readonly ITenantAdminActionsService _adminActionsService;
 
         public TenantsController(
             ITenantProvisioningService provisioningService,
             ITenantUsageService usageService,
             IImpersonationService impersonationService,
             ITenantBillingService billingService,
-            ITenantNoteService noteService)
+            ITenantNoteService noteService,
+            ITenantAdminActionsService adminActionsService)
         {
             _provisioningService = provisioningService;
             _usageService = usageService;
             _impersonationService = impersonationService;
             _billingService = billingService;
             _noteService = noteService;
+            _adminActionsService = adminActionsService;
         }
 
         [HttpGet]
@@ -57,6 +60,7 @@ namespace ZentavioCRM.Api.Controllers.Platform
         }
 
         [HttpPost]
+        [Authorize(Policy = PlatformAuthorizationPolicies.PlatformSuperAdmin)]
         public async Task<IActionResult> Provision([FromBody] ProvisionTenantRequest request)
         {
             if (!ModelState.IsValid)
@@ -70,6 +74,7 @@ namespace ZentavioCRM.Api.Controllers.Platform
         }
 
         [HttpPatch("{id:guid}/suspend")]
+        [Authorize(Policy = PlatformAuthorizationPolicies.PlatformSuperAdmin)]
         public async Task<IActionResult> Suspend(Guid id, [FromBody] SuspendTenantRequest? request)
         {
             var result = await _provisioningService.SuspendAsync(id, request?.Reason, User.GetUserId());
@@ -77,6 +82,7 @@ namespace ZentavioCRM.Api.Controllers.Platform
         }
 
         [HttpPatch("{id:guid}/reactivate")]
+        [Authorize(Policy = PlatformAuthorizationPolicies.PlatformSuperAdmin)]
         public async Task<IActionResult> Reactivate(Guid id)
         {
             var result = await _provisioningService.ReactivateAsync(id, User.GetUserId());
@@ -84,6 +90,7 @@ namespace ZentavioCRM.Api.Controllers.Platform
         }
 
         [HttpPatch("{id:guid}/stop")]
+        [Authorize(Policy = PlatformAuthorizationPolicies.PlatformSuperAdmin)]
         public async Task<IActionResult> Stop(Guid id, [FromBody] StopTenantRequest? request)
         {
             var result = await _provisioningService.StopAsync(id, request?.Reason, User.GetUserId());
@@ -91,6 +98,7 @@ namespace ZentavioCRM.Api.Controllers.Platform
         }
 
         [HttpPatch("{id:guid}/plan")]
+        [Authorize(Policy = PlatformAuthorizationPolicies.PlatformSuperAdmin)]
         public async Task<IActionResult> UpdatePlan(Guid id, [FromBody] UpdateTenantPlanRequest request)
         {
             if (!ModelState.IsValid)
@@ -123,6 +131,7 @@ namespace ZentavioCRM.Api.Controllers.Platform
         /// <see cref="IImpersonationService"/> for the safeguards — this is the single most
         /// security-sensitive action in the whole Platform Admin surface.</summary>
         [HttpPost("{id:guid}/impersonate")]
+        [Authorize(Policy = PlatformAuthorizationPolicies.PlatformSuperAdmin)]
         public async Task<IActionResult> Impersonate(Guid id, [FromBody] ImpersonateTenantRequest request)
         {
             if (!ModelState.IsValid)
@@ -150,6 +159,7 @@ namespace ZentavioCRM.Api.Controllers.Platform
         /// <summary>Edits company name + the denormalized directory admin-email field. Does not
         /// touch the tenant's own database or its real admin user's sign-in email.</summary>
         [HttpPatch("{id:guid}/metadata")]
+        [Authorize(Policy = PlatformAuthorizationPolicies.PlatformSuperAdmin)]
         public async Task<IActionResult> UpdateMetadata(Guid id, [FromBody] UpdateTenantMetadataRequest request)
         {
             if (!ModelState.IsValid)
@@ -165,6 +175,7 @@ namespace ZentavioCRM.Api.Controllers.Platform
         /// <summary>Manual billing fields only — no payment gateway involved. Setting
         /// PaymentStatus to Overdue on an Active tenant auto-suspends it.</summary>
         [HttpPatch("{id:guid}/billing")]
+        [Authorize(Policy = PlatformAuthorizationPolicies.PlatformSuperAdmin)]
         public async Task<IActionResult> UpdateBilling(Guid id, [FromBody] UpdateTenantBillingRequest request)
         {
             if (!ModelState.IsValid)
@@ -187,6 +198,7 @@ namespace ZentavioCRM.Api.Controllers.Platform
         /// <summary>Records a manual payment-history entry — never a real charge. Sets
         /// PaymentStatus to Paid and advances NextDueDateUtc by one BillingCycle when set.</summary>
         [HttpPost("{id:guid}/payments")]
+        [Authorize(Policy = PlatformAuthorizationPolicies.PlatformSuperAdmin)]
         public async Task<IActionResult> RecordPayment(Guid id, [FromBody] RecordTenantPaymentRequest request)
         {
             if (!ModelState.IsValid)
@@ -216,6 +228,28 @@ namespace ZentavioCRM.Api.Controllers.Platform
             }
 
             var result = await _noteService.AddNoteAsync(id, request, User.GetUserId());
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        /// <summary>Emails this tenant's admin user a fresh "Welcome to ZentavioCRM" link containing
+        /// a password-reset token, so they can set their password and sign in — for when the
+        /// original welcome email never arrived. Does not touch or impersonate the account.</summary>
+        [HttpPost("{id:guid}/admin-actions/resend-welcome-email")]
+        [Authorize(Policy = PlatformAuthorizationPolicies.PlatformSuperAdmin)]
+        public async Task<IActionResult> ResendWelcomeEmail(Guid id)
+        {
+            var result = await _adminActionsService.ResendWelcomeEmailAsync(id, User.GetUserId());
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        /// <summary>Emails this tenant's admin user a password-reset link, the same as their own
+        /// "Forgot Password?" flow — for when they're locked out and can't request one themselves.
+        /// Does not change their password directly.</summary>
+        [HttpPost("{id:guid}/admin-actions/force-password-reset")]
+        [Authorize(Policy = PlatformAuthorizationPolicies.PlatformSuperAdmin)]
+        public async Task<IActionResult> ForcePasswordReset(Guid id)
+        {
+            var result = await _adminActionsService.ForcePasswordResetAsync(id, User.GetUserId());
             return result.Success ? Ok(result) : BadRequest(result);
         }
     }

@@ -6,6 +6,9 @@ import { AUTH_STATE_STORAGE_KEY, TOKEN_STORAGE_KEY } from "@/services/authStorag
 interface AuthContextValue {
   admin: PlatformAdmin | null;
   isAuthenticated: boolean;
+  /** True only for a SuperAdmin session — use to hide/disable mutating actions for Support-role admins.
+   * The backend enforces this too (PlatformSuperAdmin policy); this is purely a UI convenience. */
+  isSuperAdmin: boolean;
   setSession: (admin: PlatformAdmin) => void;
   logout: () => void;
 }
@@ -58,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       admin,
       isAuthenticated: admin !== null,
+      isSuperAdmin: admin?.role === "SuperAdmin",
       setSession: (nextAdmin: PlatformAdmin) => setAdmin(nextAdmin),
       logout: () => {
         setAdmin(null);

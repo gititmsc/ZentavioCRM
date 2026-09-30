@@ -2,13 +2,14 @@
 import { apiClient } from "@/services/apiClient";
 import { callApi } from "@/services/apiHelpers";
 import type { ApiResponse } from "@/services/authService";
-import type { PlatformAdmin } from "@/services/authService";
+import type { PlatformAdmin, PlatformAdminRole } from "@/services/authService";
 
 export interface CreatePlatformAdminRequest {
   email: string;
   firstName: string;
   lastName?: string;
   password: string;
+  role: PlatformAdminRole;
 }
 
 export interface ChangePlatformAdminPasswordRequest {

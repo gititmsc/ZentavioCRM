@@ -9,6 +9,7 @@ import {
   type TenantPayment,
 } from "@/services/tenantService";
 import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
+import { useAuth } from "@/context/AuthContext";
 
 interface BillingPanelProps {
   tenant: Tenant;
@@ -21,6 +22,7 @@ interface BillingPanelProps {
  * history ledger. Nothing here talks to a real payment processor — every action is a platform
  * admin recording what they know happened. */
 export function BillingPanel({ tenant, onTenantChange, onError, onBanner }: BillingPanelProps) {
+  const { isSuperAdmin } = useAuth();
   const [payments, setPayments] = useState<TenantPayment[]>([]);
   const [loadingPayments, setLoadingPayments] = useState(true);
   const [editingBilling, setEditingBilling] = useState(false);
@@ -119,7 +121,7 @@ export function BillingPanel({ tenant, onTenantChange, onError, onBanner }: Bill
               <i className="bi bi-receipt" aria-hidden="true" />
               Billing
             </h3>
-            {!editingBilling && (
+            {!editingBilling && isSuperAdmin && (
               <button
                 type="button"
                 className="btn btn-sm btn-outline-secondary"
@@ -256,7 +258,7 @@ export function BillingPanel({ tenant, onTenantChange, onError, onBanner }: Bill
               <i className="bi bi-cash-coin" aria-hidden="true" />
               Payment History
             </h3>
-            {!recordingPayment && (
+            {!recordingPayment && isSuperAdmin && (
               <button type="button" className="btn btn-sm btn-primary" onClick={() => setRecordingPayment(true)}>
                 <i className="bi bi-plus-lg me-1" />
                 Record Payment

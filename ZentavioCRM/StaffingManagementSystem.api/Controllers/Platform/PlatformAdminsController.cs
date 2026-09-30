@@ -35,6 +35,7 @@ namespace ZentavioCRM.Api.Controllers.Platform
         }
 
         [HttpPost]
+        [Authorize(Policy = PlatformAuthorizationPolicies.PlatformSuperAdmin)]
         public async Task<IActionResult> Create([FromBody] CreatePlatformAdminRequest request)
         {
             if (!ModelState.IsValid)

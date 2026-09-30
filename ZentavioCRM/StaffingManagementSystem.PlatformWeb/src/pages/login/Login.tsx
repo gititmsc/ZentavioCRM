@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ZentavioLogo } from "@/components/brand/ZentavioLogo";
 import { useAuth } from "@/context/AuthContext";
 import { authService } from "@/services/authService";
@@ -177,6 +177,10 @@ export default function Login() {
               {isSubmitting ? "Signing In..." : "Sign In"}
             </button>
           </form>
+
+          <div className="text-center text-muted small mt-3">
+            New to ZentavioCRM? <Link to="/signup">Start a free trial</Link>
+          </div>
         </div>
       </main>
     </div>

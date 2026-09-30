@@ -147,6 +147,7 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
             BillingCurrency = t.BillingCurrency,
             BillingCycle = t.BillingCycle,
             NextDueDateUtc = t.NextDueDateUtc,
+            TrialEndsAtUtc = t.TrialEndsAtUtc,
         };
 
         public async Task<ApiResponse<TenantDto>> UpdateMetadataAsync(Guid id, UpdateTenantMetadataRequest request, Guid? performedByAdminId)
@@ -238,6 +239,9 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
                 MaxUsers = limits.MaxUsers,
                 MaxStorageMB = limits.MaxStorageMB,
                 MaxRecords = limits.MaxRecords,
+                TrialEndsAtUtc = planTier == PlanTier.Trial
+                    ? DateTime.UtcNow.AddDays(PlanTierDefaults.TrialLengthDays)
+                    : null,
             };
             _platformDb.Tenants.Add(tenant);
             await _platformDb.SaveChangesAsync();

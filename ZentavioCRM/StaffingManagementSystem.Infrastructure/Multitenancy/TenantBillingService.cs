@@ -212,6 +212,7 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
             BillingCurrency = t.BillingCurrency,
             BillingCycle = t.BillingCycle,
             NextDueDateUtc = t.NextDueDateUtc,
+            TrialEndsAtUtc = t.TrialEndsAtUtc,
         };
     }
 }

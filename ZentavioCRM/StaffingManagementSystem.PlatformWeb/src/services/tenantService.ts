@@ -34,6 +34,7 @@ export interface Tenant {
   billingCurrency: string | null;
   billingCycle: BillingCycle | null;
   nextDueDateUtc: string | null;
+  trialEndsAtUtc: string | null;
 }
 
 export interface ProvisionTenantRequest {
@@ -197,6 +198,18 @@ async function addNote(id: string, note: string): Promise<ApiResponse<TenantNote
   return callApi(() => apiClient.post<ApiResponse<TenantNote>>(`/api/platform/tenants/${id}/notes`, { note }));
 }
 
+/** Emails the tenant's admin user a fresh welcome/set-password link — for when the original
+ * welcome email never arrived. Does not touch or impersonate the account. */
+async function resendWelcomeEmail(id: string): Promise<ApiResponse<boolean>> {
+  return callApi(() => apiClient.post<ApiResponse<boolean>>(`/api/platform/tenants/${id}/admin-actions/resend-welcome-email`));
+}
+
+/** Emails the tenant's admin user a password-reset link, the same as their own "Forgot Password?"
+ * flow — for when they're locked out and can't request one themselves. */
+async function forcePasswordReset(id: string): Promise<ApiResponse<boolean>> {
+  return callApi(() => apiClient.post<ApiResponse<boolean>>(`/api/platform/tenants/${id}/admin-actions/force-password-reset`));
+}
+
 export const tenantService = {
   getAll,
   getById,
@@ -214,4 +227,6 @@ export const tenantService = {
   getNotes,
   addNote,
   getUsageAlerts,
+  resendWelcomeEmail,
+  forcePasswordReset,
 };

@@ -6,8 +6,10 @@ import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { PageHeader } from "@/components/PageHeader";
 import { ProvisionTenantModal } from "@/pages/tenants/ProvisionTenantModal";
+import { useAuth } from "@/context/AuthContext";
 
 export function TenantsList() {
+  const { isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,10 +47,12 @@ export function TenantsList() {
         title="Tenants"
         subtitle={`${tenants.length} tenant${tenants.length === 1 ? "" : "s"} on the platform`}
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setShowProvisionModal(true)}>
-            <i className="bi bi-plus-lg me-1" aria-hidden="true" />
-            New Tenant
-          </button>
+          isSuperAdmin ? (
+            <button type="button" className="btn btn-primary" onClick={() => setShowProvisionModal(true)}>
+              <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+              New Tenant
+            </button>
+          ) : undefined
         }
       />
 

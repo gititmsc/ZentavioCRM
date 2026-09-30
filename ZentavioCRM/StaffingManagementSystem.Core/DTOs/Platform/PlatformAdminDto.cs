@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ZentavioCRM.Core.Enums;
 
 namespace ZentavioCRM.Core.DTOs.Platform
 {
@@ -12,9 +13,16 @@ namespace ZentavioCRM.Core.DTOs.Platform
 
         public bool IsActive { get; set; }
 
+        public PlatformAdminRole Role { get; set; }
+
         public DateTime CreatedAtUtc { get; set; }
 
         public DateTime? LastLoginAtUtc { get; set; }
+
+        /// <summary>True while a failed-login lockout is currently in effect (PlatformAdmin.LockedUntilUtc
+        /// is in the future). Only this flag is surfaced, not the raw failed-attempt count or the
+        /// exact unlock time.</summary>
+        public bool IsLockedOut { get; set; }
     }
 
     public class CreatePlatformAdminRequest
@@ -33,6 +41,9 @@ namespace ZentavioCRM.Core.DTOs.Platform
         [Required(ErrorMessage = "Password is required.")]
         [MinLength(8, ErrorMessage = "Password must be at least 8 characters.")]
         public string Password { get; set; } = string.Empty;
+
+        /// <summary>Defaults to SuperAdmin when not specified, matching the pre-roles behavior.</summary>
+        public PlatformAdminRole Role { get; set; } = PlatformAdminRole.SuperAdmin;
     }
 
     public class PlatformLoginRequestDto
