@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
 import { StatusBadge } from "@/components/StatusBadge";
-import { tenantService, type Tenant, PLAN_TIERS } from "@/services/tenantService";
+import { tenantService, type Tenant, type TenantUsageAlert, PLAN_TIERS } from "@/services/tenantService";
 import { auditLogService, type PlatformAuditLogEntry } from "@/services/auditLogService";
 import { platformAdminService } from "@/services/platformAdminService";
 
@@ -21,19 +21,22 @@ export function Dashboard() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [recentActivity, setRecentActivity] = useState<PlatformAuditLogEntry[]>([]);
   const [adminCount, setAdminCount] = useState<number | null>(null);
+  const [usageAlerts, setUsageAlerts] = useState<TenantUsageAlert[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void (async () => {
       setLoading(true);
-      const [tenantsResponse, auditResponse, adminsResponse] = await Promise.all([
+      const [tenantsResponse, auditResponse, adminsResponse, usageAlertsResponse] = await Promise.all([
         tenantService.getAll(),
         auditLogService.getAll(),
         platformAdminService.getAll(),
+        tenantService.getUsageAlerts(),
       ]);
       if (tenantsResponse.success && tenantsResponse.data) setTenants(tenantsResponse.data);
       if (auditResponse.success && auditResponse.data) setRecentActivity(auditResponse.data.slice(0, 6));
       if (adminsResponse.success && adminsResponse.data) setAdminCount(adminsResponse.data.length);
+      if (usageAlertsResponse.success && usageAlertsResponse.data) setUsageAlerts(usageAlertsResponse.data);
       setLoading(false);
     })();
   }, []);
@@ -117,7 +120,7 @@ export function Dashboard() {
           </div>
 
           {needsAttention.length > 0 && (
-            <div className="app-card">
+            <div className="app-card mb-4">
               <div className="app-card__header">
                 <h3 className="app-card__title">
                   <i className="bi bi-exclamation-triangle-fill text-warning" aria-hidden="true" />
@@ -133,6 +136,36 @@ export function Dashboard() {
                   >
                     <span className="text-body">{t.name}</span>
                     <StatusBadge status={t.status} />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {usageAlerts.length > 0 && (
+            <div className="app-card">
+              <div className="app-card__header">
+                <h3 className="app-card__title">
+                  <i className="bi bi-speedometer2 text-warning" aria-hidden="true" />
+                  Tenants Nearing Limits
+                </h3>
+              </div>
+              <div className="list-group list-group-flush">
+                {usageAlerts.map((alert) => (
+                  <Link
+                    key={`${alert.tenantId}-${alert.metric}`}
+                    to={`/tenants/${alert.tenantId}`}
+                    className="list-group-item d-flex justify-content-between align-items-center py-3 text-decoration-none"
+                  >
+                    <div>
+                      <span className="text-body">{alert.tenantName}</span>
+                      <div className="text-muted small">
+                        {alert.metric}: {alert.current.toLocaleString()} / {alert.max.toLocaleString()}
+                      </div>
+                    </div>
+                    <span className={`fw-semibold ${alert.atLimit ? "text-danger" : "text-warning"}`}>
+                      {alert.percentUsed}%
+                    </span>
                   </Link>
                 ))}
               </div>

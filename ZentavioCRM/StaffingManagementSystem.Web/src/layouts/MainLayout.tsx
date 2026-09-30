@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { UserAvatar } from "@/components/users/UserAvatar";
+import { UsageBanner } from "@/components/UsageBanner";
 import "./MainLayout.css";
 
 interface NavItem {
@@ -87,6 +88,7 @@ export function MainLayout() {
         </header>
 
         <main className="app-content">
+          <UsageBanner />
           <Outlet />
         </main>
       </div>

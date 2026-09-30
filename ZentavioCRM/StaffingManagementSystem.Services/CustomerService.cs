@@ -3,6 +3,7 @@ using ZentavioCRM.Core.DTOs.Common;
 using ZentavioCRM.Core.DTOs.Customers;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Interfaces;
 using ZentavioCRM.Core.Security;
 using ZentavioCRM.Repositories.Interfaces;
 using ZentavioCRM.Services.Interfaces;
@@ -21,6 +22,7 @@ namespace ZentavioCRM.Services
         private readonly ISalesOrderRepository _salesOrderRepository;
         private readonly IAuditLogService _auditLogService;
         private readonly IAccessScopeService _accessScopeService;
+        private readonly IUsageLimitService _usageLimitService;
 
         public CustomerService(
             ICustomerRepository customerRepository,
@@ -29,7 +31,8 @@ namespace ZentavioCRM.Services
             IQuotationRepository quotationRepository,
             ISalesOrderRepository salesOrderRepository,
             IAuditLogService auditLogService,
-            IAccessScopeService accessScopeService)
+            IAccessScopeService accessScopeService,
+            IUsageLimitService usageLimitService)
         {
             _customerRepository = customerRepository;
             _leadRepository = leadRepository;
@@ -38,6 +41,7 @@ namespace ZentavioCRM.Services
             _salesOrderRepository = salesOrderRepository;
             _auditLogService = auditLogService;
             _accessScopeService = accessScopeService;
+            _usageLimitService = usageLimitService;
         }
 
         /// <summary>In-memory record-visibility check for a single already-fetched Customer. Returns true (no restriction) when currentUserId is null, since that only happens for internal/system callers, never an authenticated HTTP request.</summary>
@@ -89,6 +93,12 @@ namespace ZentavioCRM.Services
 
         public async Task<ApiResponse<CustomerDto>> CreateAsync(SaveCustomerRequest request, Guid? currentUserId)
         {
+            var limitMessage = await _usageLimitService.CheckRecordLimitAsync();
+            if (limitMessage is not null)
+            {
+                return ApiResponse<CustomerDto>.FailureResponse(limitMessage, ["Contact your account administrator to upgrade your plan."]);
+            }
+
             var customer = new Customer
             {
                 CustomerNumber = await _customerRepository.GetNextCustomerNumberAsync(),

@@ -1,8 +1,11 @@
+using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.Configuration;
 using ZentavioCRM.Core.DTOs.Platform;
+using ZentavioCRM.Core.Entities.Platform;
+using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Interfaces;
 using ZentavioCRM.Infrastructure.Persistence;
 
@@ -13,6 +16,10 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
     {
         private readonly PlatformDbContext _platformDb;
         private readonly TenancySettings _settings;
+
+        /// <summary>Any metric at or above this fraction of its plan limit is surfaced on the
+        /// Platform Admin Dashboard's "Tenants nearing limits" widget.</summary>
+        private const decimal NearLimitThreshold = 0.8m;
 
         public TenantUsageService(PlatformDbContext platformDb, IOptions<TenancySettings> tenancyOptions)
         {
@@ -28,19 +35,75 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
                 return ApiResponse<TenantUsageDto>.FailureResponse("Tenant not found.", ["Tenant not found."]);
             }
 
+            var usage = await ComputeUsageAsync(tenant);
+            return ApiResponse<TenantUsageDto>.SuccessResponse(usage);
+        }
+
+        public async Task<ApiResponse<IReadOnlyList<TenantUsageAlertDto>>> GetTenantsNearLimitsAsync()
+        {
+            var activeTenants = await _platformDb.Tenants
+                .Where(t => t.Status == TenantStatus.Active)
+                .ToListAsync();
+
+            var alerts = new ConcurrentBag<TenantUsageAlertDto>();
+
+            // Bounded parallelism — each tenant needs its own live database connection, so
+            // computing these fully sequentially would make the Dashboard widget painfully slow
+            // on a large tenant base, but firing them all off at once risks exhausting the SQL
+            // Server connection pool just as easily. 5 at a time is a reasonable middle ground for
+            // an internal admin tool, not a customer-facing high-traffic page.
+            await Parallel.ForEachAsync(activeTenants, new ParallelOptions { MaxDegreeOfParallelism = 5 }, async (tenant, _) =>
+            {
+                var usage = await ComputeUsageAsync(tenant);
+                AddAlertIfNearLimit(alerts, tenant, "Users", usage.UserCount, usage.MaxUsers);
+                AddAlertIfNearLimit(alerts, tenant, "Records", usage.RecordCount, usage.MaxRecords);
+                AddAlertIfNearLimit(alerts, tenant, "Storage", usage.DatabaseSizeMB, usage.MaxStorageMB);
+            });
+
+            return ApiResponse<IReadOnlyList<TenantUsageAlertDto>>.SuccessResponse(
+                alerts.OrderByDescending(a => a.PercentUsed).ToList());
+        }
+
+        private static void AddAlertIfNearLimit(ConcurrentBag<TenantUsageAlertDto> alerts, Tenant tenant, string metric, decimal current, decimal max)
+        {
+            if (max <= 0)
+            {
+                return;
+            }
+
+            var percentUsed = current / max;
+            if (percentUsed < NearLimitThreshold)
+            {
+                return;
+            }
+
+            alerts.Add(new TenantUsageAlertDto
+            {
+                TenantId = tenant.Id,
+                TenantName = tenant.Name,
+                Metric = metric,
+                Current = current,
+                Max = max,
+                PercentUsed = Math.Round(percentUsed * 100, 1),
+                AtLimit = current >= max,
+            });
+        }
+
+        private async Task<TenantUsageDto> ComputeUsageAsync(Tenant tenant)
+        {
             // A tenant that never finished provisioning (Provisioning/Failed) has no usable
             // database to connect to — everything is zero rather than an error, since "no usage
             // yet" is the accurate answer, not a failure.
             if (tenant.DatabaseName is not { Length: > 0 })
             {
-                return ApiResponse<TenantUsageDto>.SuccessResponse(new TenantUsageDto
+                return new TenantUsageDto
                 {
                     TenantId = tenant.Id,
                     PlanTier = tenant.PlanTier,
                     MaxUsers = tenant.MaxUsers,
                     MaxRecords = tenant.MaxRecords,
                     MaxStorageMB = tenant.MaxStorageMB,
-                });
+                };
             }
 
             var connectionString = $"{_settings.SqlServerHostConnectionString};Database={tenant.DatabaseName};";
@@ -67,7 +130,7 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
                     "SELECT CAST(ISNULL(SUM(size), 0) * 8.0 / 1024 AS DECIMAL(18,2)) AS Value FROM sys.database_files WHERE type = 0")
                 .FirstOrDefaultAsync();
 
-            return ApiResponse<TenantUsageDto>.SuccessResponse(new TenantUsageDto
+            return new TenantUsageDto
             {
                 TenantId = tenant.Id,
                 PlanTier = tenant.PlanTier,
@@ -78,7 +141,7 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
                 DatabaseSizeMB = databaseSizeMB,
                 MaxStorageMB = tenant.MaxStorageMB,
                 LastActivityAtUtc = lastActivityAtUtc,
-            });
+            };
         }
     }
 }

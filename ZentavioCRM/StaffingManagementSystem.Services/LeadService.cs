@@ -3,6 +3,7 @@ using ZentavioCRM.Core.DTOs.Common;
 using ZentavioCRM.Core.DTOs.Leads;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Interfaces;
 using ZentavioCRM.Core.Security;
 using ZentavioCRM.Repositories.Interfaces;
 using ZentavioCRM.Services.Interfaces;
@@ -22,6 +23,7 @@ namespace ZentavioCRM.Services
         private readonly IAuditLogService _auditLogService;
         private readonly INotificationService _notificationService;
         private readonly IAccessScopeService _accessScopeService;
+        private readonly IUsageLimitService _usageLimitService;
 
         public LeadService(
             ILeadRepository leadRepository,
@@ -29,7 +31,8 @@ namespace ZentavioCRM.Services
             IOpportunityRepository opportunityRepository,
             IAuditLogService auditLogService,
             INotificationService notificationService,
-            IAccessScopeService accessScopeService)
+            IAccessScopeService accessScopeService,
+            IUsageLimitService usageLimitService)
         {
             _leadRepository = leadRepository;
             _customerRepository = customerRepository;
@@ -37,6 +40,7 @@ namespace ZentavioCRM.Services
             _auditLogService = auditLogService;
             _notificationService = notificationService;
             _accessScopeService = accessScopeService;
+            _usageLimitService = usageLimitService;
         }
 
         /// <summary>In-memory record-visibility check for a single already-fetched Lead. Returns true (no restriction) when currentUserId is null, since that only happens for internal/system callers, never an authenticated HTTP request.</summary>
@@ -88,6 +92,12 @@ namespace ZentavioCRM.Services
 
         public async Task<ApiResponse<LeadDto>> CreateAsync(SaveLeadRequest request, Guid? currentUserId)
         {
+            var limitMessage = await _usageLimitService.CheckRecordLimitAsync();
+            if (limitMessage is not null)
+            {
+                return ApiResponse<LeadDto>.FailureResponse(limitMessage, ["Contact your account administrator to upgrade your plan."]);
+            }
+
             var lead = new Lead
             {
                 LeadNumber = await _leadRepository.GetNextLeadNumberAsync(),

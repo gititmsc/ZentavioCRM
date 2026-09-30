@@ -14,5 +14,12 @@ namespace ZentavioCRM.Core.Interfaces
     public interface ITenantUsageService
     {
         Task<ApiResponse<TenantUsageDto>> GetUsageAsync(Guid tenantId);
+
+        /// <summary>Every Active tenant/metric pair at or above 80% of its plan limit (Users,
+        /// Records or Storage), ordered by how close to/over the limit it is — feeds the "Tenants
+        /// nearing limits" Dashboard widget. Only Active tenants are checked: a Suspended,
+        /// Terminated, Provisioning or Failed tenant isn't accumulating new usage that a platform
+        /// admin needs to act on right now.</summary>
+        Task<ApiResponse<IReadOnlyList<TenantUsageAlertDto>>> GetTenantsNearLimitsAsync();
     }
 }

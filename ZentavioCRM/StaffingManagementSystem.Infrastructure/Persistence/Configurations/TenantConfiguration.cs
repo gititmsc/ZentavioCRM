@@ -37,6 +37,12 @@ namespace ZentavioCRM.Infrastructure.Persistence.Configurations
             builder.Property(t => t.MaxUsers).IsRequired();
             builder.Property(t => t.MaxStorageMB).IsRequired();
             builder.Property(t => t.MaxRecords).IsRequired();
+
+            builder.Property(t => t.PaymentStatus).IsRequired().HasConversion<string>().HasMaxLength(30);
+            builder.Property(t => t.BillingAmount).HasColumnType("decimal(12,2)");
+            builder.Property(t => t.BillingCurrency).HasMaxLength(3);
+            builder.Property(t => t.BillingCycle).HasConversion<string>().HasMaxLength(20);
+            builder.Property(t => t.NextDueDateUtc);
         }
     }
 }

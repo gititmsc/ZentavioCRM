@@ -35,5 +35,10 @@ namespace ZentavioCRM.Core.Interfaces
         /// <summary>Changes a tenant's plan tier and/or overrides its usage limits. Omitted limit
         /// fields in the request fall back to that tier's <see cref="Configuration.PlanTierDefaults"/>.</summary>
         Task<ApiResponse<TenantDto>> UpdatePlanAsync(Guid id, UpdateTenantPlanRequest request, Guid? performedByAdminId);
+
+        /// <summary>Edits the tenant registry's company name and denormalized admin-email display
+        /// field. Does not touch the tenant's own database or its real admin user's sign-in
+        /// email — see <see cref="DTOs.Platform.UpdateTenantMetadataRequest"/>.</summary>
+        Task<ApiResponse<TenantDto>> UpdateMetadataAsync(Guid id, UpdateTenantMetadataRequest request, Guid? performedByAdminId);
     }
 }

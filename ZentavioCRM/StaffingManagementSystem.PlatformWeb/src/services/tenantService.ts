@@ -9,8 +9,12 @@ import type { ApiResponse } from "@/services/authService";
 
 export type TenantStatus = "Provisioning" | "Active" | "Suspended" | "Failed" | "Terminated";
 export type PlanTier = "Trial" | "Starter" | "Professional" | "Enterprise";
+export type PaymentStatus = "Unpaid" | "Paid" | "Overdue";
+export type BillingCycle = "OneTime" | "Monthly" | "Yearly";
 
 export const PLAN_TIERS: PlanTier[] = ["Trial", "Starter", "Professional", "Enterprise"];
+export const PAYMENT_STATUSES: PaymentStatus[] = ["Unpaid", "Paid", "Overdue"];
+export const BILLING_CYCLES: BillingCycle[] = ["OneTime", "Monthly", "Yearly"];
 
 export interface Tenant {
   id: string;
@@ -25,6 +29,11 @@ export interface Tenant {
   maxUsers: number;
   maxStorageMB: number;
   maxRecords: number;
+  paymentStatus: PaymentStatus;
+  billingAmount: number | null;
+  billingCurrency: string | null;
+  billingCycle: BillingCycle | null;
+  nextDueDateUtc: string | null;
 }
 
 export interface ProvisionTenantRequest {
@@ -65,6 +74,56 @@ export interface ImpersonateResult {
   impersonatedUserFullName: string;
 }
 
+export interface UpdateTenantMetadataRequest {
+  name: string;
+  adminEmail: string;
+}
+
+export interface UpdateTenantBillingRequest {
+  paymentStatus?: PaymentStatus;
+  billingAmount?: number;
+  billingCurrency?: string;
+  billingCycle?: BillingCycle;
+  nextDueDateUtc?: string;
+}
+
+export interface RecordTenantPaymentRequest {
+  amount: number;
+  currency?: string;
+  paidAtUtc?: string;
+  note?: string;
+}
+
+export interface TenantPayment {
+  id: string;
+  tenantId: string;
+  amount: number;
+  currency: string;
+  paidAtUtc: string;
+  note: string | null;
+  recordedByAdminEmail: string;
+  createdAtUtc: string;
+}
+
+export interface TenantNote {
+  id: string;
+  tenantId: string;
+  note: string;
+  createdByAdminEmail: string;
+  createdAtUtc: string;
+}
+
+/** One tenant/metric pair at or above 80% of its plan limit — see GetTenantsNearLimitsAsync. */
+export interface TenantUsageAlert {
+  tenantId: string;
+  tenantName: string;
+  metric: "Users" | "Records" | "Storage";
+  current: number;
+  max: number;
+  percentUsed: number;
+  atLimit: boolean;
+}
+
 async function getAll(): Promise<ApiResponse<Tenant[]>> {
   return callApi(() => apiClient.get<ApiResponse<Tenant[]>>("/api/platform/tenants"));
 }
@@ -97,10 +156,45 @@ async function getUsage(id: string): Promise<ApiResponse<TenantUsage>> {
   return callApi(() => apiClient.get<ApiResponse<TenantUsage>>(`/api/platform/tenants/${id}/usage`));
 }
 
+/** Every Active tenant/metric pair at or above 80% of its plan limit — for the Dashboard's
+ * "Tenants nearing limits" widget. */
+async function getUsageAlerts(): Promise<ApiResponse<TenantUsageAlert[]>> {
+  return callApi(() => apiClient.get<ApiResponse<TenantUsageAlert[]>>("/api/platform/tenants/usage-alerts"));
+}
+
 /** Requires a stated reason — see ImpersonateTenantRequest on the backend. This is the single
  * most security-sensitive action in the app; the UI should always confirm before calling it. */
 async function impersonate(id: string, reason: string): Promise<ApiResponse<ImpersonateResult>> {
   return callApi(() => apiClient.post<ApiResponse<ImpersonateResult>>(`/api/platform/tenants/${id}/impersonate`, { reason }));
+}
+
+/** Company name + the denormalized directory admin-email field only — never the tenant's real
+ * sign-in email, which lives in that tenant's own database. */
+async function updateMetadata(id: string, request: UpdateTenantMetadataRequest): Promise<ApiResponse<Tenant>> {
+  return callApi(() => apiClient.patch<ApiResponse<Tenant>>(`/api/platform/tenants/${id}/metadata`, request));
+}
+
+/** Manual billing fields only — there is no payment gateway anywhere behind this. Setting
+ * paymentStatus to "Overdue" on an Active tenant auto-suspends it. */
+async function updateBilling(id: string, request: UpdateTenantBillingRequest): Promise<ApiResponse<Tenant>> {
+  return callApi(() => apiClient.patch<ApiResponse<Tenant>>(`/api/platform/tenants/${id}/billing`, request));
+}
+
+async function getPayments(id: string): Promise<ApiResponse<TenantPayment[]>> {
+  return callApi(() => apiClient.get<ApiResponse<TenantPayment[]>>(`/api/platform/tenants/${id}/payments`));
+}
+
+/** Records a manual payment-history entry — never a real charge. */
+async function recordPayment(id: string, request: RecordTenantPaymentRequest): Promise<ApiResponse<TenantPayment>> {
+  return callApi(() => apiClient.post<ApiResponse<TenantPayment>>(`/api/platform/tenants/${id}/payments`, request));
+}
+
+async function getNotes(id: string): Promise<ApiResponse<TenantNote[]>> {
+  return callApi(() => apiClient.get<ApiResponse<TenantNote[]>>(`/api/platform/tenants/${id}/notes`));
+}
+
+async function addNote(id: string, note: string): Promise<ApiResponse<TenantNote>> {
+  return callApi(() => apiClient.post<ApiResponse<TenantNote>>(`/api/platform/tenants/${id}/notes`, { note }));
 }
 
 export const tenantService = {
@@ -113,4 +207,11 @@ export const tenantService = {
   updatePlan,
   getUsage,
   impersonate,
+  updateMetadata,
+  updateBilling,
+  getPayments,
+  recordPayment,
+  getNotes,
+  addNote,
+  getUsageAlerts,
 };

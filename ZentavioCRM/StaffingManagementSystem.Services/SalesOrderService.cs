@@ -2,6 +2,7 @@ using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.DTOs.SalesOrders;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Interfaces;
 using ZentavioCRM.Core.Security;
 using ZentavioCRM.Repositories.Interfaces;
 using ZentavioCRM.Services.Interfaces;
@@ -18,19 +19,22 @@ namespace ZentavioCRM.Services
         private readonly IAuditLogService _auditLogService;
         private readonly INotificationService _notificationService;
         private readonly IAccessScopeService _accessScopeService;
+        private readonly IUsageLimitService _usageLimitService;
 
         public SalesOrderService(
             ISalesOrderRepository salesOrderRepository,
             IQuotationRepository quotationRepository,
             IAuditLogService auditLogService,
             INotificationService notificationService,
-            IAccessScopeService accessScopeService)
+            IAccessScopeService accessScopeService,
+            IUsageLimitService usageLimitService)
         {
             _salesOrderRepository = salesOrderRepository;
             _quotationRepository = quotationRepository;
             _auditLogService = auditLogService;
             _notificationService = notificationService;
             _accessScopeService = accessScopeService;
+            _usageLimitService = usageLimitService;
         }
 
         /// <summary>In-memory record-visibility check for a single already-fetched record's assignment/ownership. Returns true (no restriction) when currentUserId is null, since that only happens for internal/system callers, never an authenticated HTTP request.</summary>
@@ -82,6 +86,12 @@ namespace ZentavioCRM.Services
 
         public async Task<ApiResponse<SalesOrderDto>> ConvertFromQuotationAsync(ConvertQuotationToSalesOrderRequest request, Guid? currentUserId)
         {
+            var limitMessage = await _usageLimitService.CheckRecordLimitAsync();
+            if (limitMessage is not null)
+            {
+                return ApiResponse<SalesOrderDto>.FailureResponse(limitMessage, ["Contact your account administrator to upgrade your plan."]);
+            }
+
             var quotation = await _quotationRepository.GetByIdAsync(request.QuotationId);
             if (quotation is null)
             {

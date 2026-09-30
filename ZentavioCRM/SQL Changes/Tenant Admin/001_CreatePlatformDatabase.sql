@@ -151,3 +151,96 @@ BEGIN
     CREATE INDEX IX_PlatformAuditLogs_CreatedAtUtc ON dbo.PlatformAuditLogs (CreatedAtUtc);
 END
 GO
+
+-- ============================================================================
+-- Billing (manual, no payment gateway) — Unpaid/Paid/Overdue status plus optional
+-- amount/currency/cycle/next-due-date, all set directly by a platform admin. Marking a tenant
+-- Overdue automatically suspends it (see ITenantBillingService.UpdateBillingAsync); nothing here
+-- ever talks to a real payment processor.
+-- ============================================================================
+IF COL_LENGTH(N'dbo.Tenants', N'PaymentStatus') IS NULL
+BEGIN
+    ALTER TABLE dbo.Tenants ADD PaymentStatus NVARCHAR(30) NOT NULL CONSTRAINT DF_Tenants_PaymentStatus DEFAULT (N'Unpaid');
+END
+GO
+
+IF COL_LENGTH(N'dbo.Tenants', N'BillingAmount') IS NULL
+BEGIN
+    ALTER TABLE dbo.Tenants ADD BillingAmount DECIMAL(12,2) NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.Tenants', N'BillingCurrency') IS NULL
+BEGIN
+    ALTER TABLE dbo.Tenants ADD BillingCurrency NVARCHAR(3) NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.Tenants', N'BillingCycle') IS NULL
+BEGIN
+    ALTER TABLE dbo.Tenants ADD BillingCycle NVARCHAR(20) NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.Tenants', N'NextDueDateUtc') IS NULL
+BEGIN
+    ALTER TABLE dbo.Tenants ADD NextDueDateUtc DATETIME2 NULL;
+END
+GO
+
+-- ============================================================================
+-- TenantPayments — append-only ledger of individual payment entries recorded by a platform
+-- admin. Recording one of these sets the parent Tenant's PaymentStatus to Paid and advances its
+-- NextDueDateUtc by one BillingCycle. See ZentavioCRM.Core.Entities.Platform.TenantPayment.
+-- ============================================================================
+IF OBJECT_ID(N'dbo.TenantPayments', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.TenantPayments
+    (
+        Id                 UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_TenantPayments_Id DEFAULT NEWID(),
+        TenantId           UNIQUEIDENTIFIER NOT NULL,
+        Amount             DECIMAL(12,2)    NOT NULL,
+        Currency           NVARCHAR(3)      NOT NULL,
+        PaidAtUtc          DATETIME2        NOT NULL,
+        Note               NVARCHAR(1000)   NULL,
+        -- Null if the admin account was later deleted.
+        RecordedByAdminId  UNIQUEIDENTIFIER NULL,
+        CreatedAtUtc       DATETIME2        NOT NULL,
+        CONSTRAINT PK_TenantPayments PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT FK_TenantPayments_Tenant FOREIGN KEY (TenantId)
+            REFERENCES dbo.Tenants (Id) ON DELETE CASCADE,
+        CONSTRAINT FK_TenantPayments_RecordedByAdmin FOREIGN KEY (RecordedByAdminId)
+            REFERENCES dbo.PlatformAdmins (Id) ON DELETE SET NULL
+    );
+
+    CREATE INDEX IX_TenantPayments_TenantId ON dbo.TenantPayments (TenantId);
+    CREATE INDEX IX_TenantPayments_PaidAtUtc ON dbo.TenantPayments (PaidAtUtc);
+END
+GO
+
+-- ============================================================================
+-- TenantNotes — append-only free-text notes platform admins leave for each other on a tenant.
+-- Separate from PlatformAuditLogs (which records actions, not commentary).
+-- See ZentavioCRM.Core.Entities.Platform.TenantNote.
+-- ============================================================================
+IF OBJECT_ID(N'dbo.TenantNotes', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.TenantNotes
+    (
+        Id                UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_TenantNotes_Id DEFAULT NEWID(),
+        TenantId          UNIQUEIDENTIFIER NOT NULL,
+        Note              NVARCHAR(2000)   NOT NULL,
+        -- Null if the admin account was later deleted.
+        CreatedByAdminId  UNIQUEIDENTIFIER NULL,
+        CreatedAtUtc      DATETIME2        NOT NULL,
+        CONSTRAINT PK_TenantNotes PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT FK_TenantNotes_Tenant FOREIGN KEY (TenantId)
+            REFERENCES dbo.Tenants (Id) ON DELETE CASCADE,
+        CONSTRAINT FK_TenantNotes_CreatedByAdmin FOREIGN KEY (CreatedByAdminId)
+            REFERENCES dbo.PlatformAdmins (Id) ON DELETE SET NULL
+    );
+
+    CREATE INDEX IX_TenantNotes_TenantId ON dbo.TenantNotes (TenantId);
+    CREATE INDEX IX_TenantNotes_CreatedAtUtc ON dbo.TenantNotes (CreatedAtUtc);
+END
+GO

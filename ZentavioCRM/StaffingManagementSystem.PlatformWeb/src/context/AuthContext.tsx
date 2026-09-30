@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { authService, type PlatformAdmin } from "@/services/authService";
 import { AUTH_STATE_STORAGE_KEY, TOKEN_STORAGE_KEY } from "@/services/authStorage";
 
@@ -13,6 +14,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<PlatformAdmin | null>(() => authService.getStoredAdmin());
+  const navigate = useNavigate();
 
   useEffect(() => {
     const syncAuthState = () => {
@@ -60,9 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout: () => {
         setAdmin(null);
         authService.logout();
+        // Explicit SPA navigation rather than relying solely on ProtectedRoute's conditional
+        // render — guarantees the admin lands on /login the instant they click Sign Out.
+        navigate("/login", { replace: true });
       },
     }),
-    [admin]
+    [admin, navigate]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

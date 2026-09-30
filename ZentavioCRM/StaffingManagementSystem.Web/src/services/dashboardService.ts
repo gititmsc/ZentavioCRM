@@ -21,6 +21,18 @@ export interface SalesDashboardSummary {
   stageBreakdown: StageBreakdownItem[];
 }
 
+export interface UsageSummary {
+  userCount: number;
+  maxUsers: number;
+  recordCount: number;
+  maxRecords: number;
+  databaseSizeMB: number;
+  maxStorageMB: number;
+}
+
 const getSalesSummary = () => callApi<SalesDashboardSummary>(apiClient.get("/api/dashboard/sales-summary"));
 
-export const dashboardService = { getSalesSummary };
+/** Self-service usage vs. plan limits for the current tenant — powers the in-app usage banner. */
+const getUsage = () => callApi<UsageSummary>(apiClient.get("/api/dashboard/usage"));
+
+export const dashboardService = { getSalesSummary, getUsage };

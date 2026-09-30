@@ -142,7 +142,46 @@ namespace ZentavioCRM.Infrastructure.Multitenancy
             MaxUsers = t.MaxUsers,
             MaxStorageMB = t.MaxStorageMB,
             MaxRecords = t.MaxRecords,
+            PaymentStatus = t.PaymentStatus,
+            BillingAmount = t.BillingAmount,
+            BillingCurrency = t.BillingCurrency,
+            BillingCycle = t.BillingCycle,
+            NextDueDateUtc = t.NextDueDateUtc,
         };
+
+        public async Task<ApiResponse<TenantDto>> UpdateMetadataAsync(Guid id, UpdateTenantMetadataRequest request, Guid? performedByAdminId)
+        {
+            var tenant = await _platformDb.Tenants.FirstOrDefaultAsync(t => t.Id == id);
+            if (tenant is null)
+            {
+                return ApiResponse<TenantDto>.FailureResponse("Tenant not found.", ["Tenant not found."]);
+            }
+
+            var previousName = tenant.Name;
+            var previousAdminEmail = tenant.AdminEmail;
+
+            tenant.Name = request.Name.Trim();
+            tenant.AdminEmail = request.AdminEmail.Trim().ToLowerInvariant();
+
+            await _platformDb.SaveChangesAsync();
+
+            var changes = new List<string>();
+            if (previousName != tenant.Name)
+            {
+                changes.Add($"name \"{previousName}\" -> \"{tenant.Name}\"");
+            }
+            if (previousAdminEmail != tenant.AdminEmail)
+            {
+                changes.Add($"directory admin email \"{previousAdminEmail}\" -> \"{tenant.AdminEmail}\"");
+            }
+
+            var summary = changes.Count == 0
+                ? $"Updated tenant \"{tenant.Name}\"'s metadata (no field changes)."
+                : $"Updated tenant \"{tenant.Name}\"'s metadata: {string.Join(", ", changes)}.";
+            await _auditLog.LogAsync(performedByAdminId, "TenantMetadataUpdated", summary, tenant.Id);
+
+            return ApiResponse<TenantDto>.SuccessResponse(Map(tenant), "Tenant metadata updated.");
+        }
 
         public async Task<ApiResponse<TenantDto>> UpdatePlanAsync(Guid id, UpdateTenantPlanRequest request, Guid? performedByAdminId)
         {

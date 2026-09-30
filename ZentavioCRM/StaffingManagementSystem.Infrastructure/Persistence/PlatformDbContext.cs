@@ -26,11 +26,17 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<PlatformAuditLog> PlatformAuditLogs => Set<PlatformAuditLog>();
 
+        public DbSet<TenantPayment> TenantPayments => Set<TenantPayment>();
+
+        public DbSet<TenantNote> TenantNotes => Set<TenantNote>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new TenantConfiguration());
             modelBuilder.ApplyConfiguration(new PlatformAdminConfiguration());
             modelBuilder.ApplyConfiguration(new PlatformAuditLogConfiguration());
+            modelBuilder.ApplyConfiguration(new TenantPaymentConfiguration());
+            modelBuilder.ApplyConfiguration(new TenantNoteConfiguration());
             base.OnModelCreating(modelBuilder);
         }
     }

@@ -40,5 +40,26 @@ namespace ZentavioCRM.Core.Entities.Platform
         public int MaxStorageMB { get; set; }
 
         public int MaxRecords { get; set; }
+
+        /// <summary>Manually-tracked billing status — no payment gateway is involved anywhere in
+        /// this system. Defaults to Unpaid for a newly-provisioned tenant. Setting this to
+        /// <see cref="PaymentStatus.Overdue"/> automatically suspends the tenant (see
+        /// <see cref="Interfaces.ITenantBillingService"/>); setting it back to Paid does not
+        /// auto-reactivate — that stays a separate, deliberate admin action.</summary>
+        public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Unpaid;
+
+        /// <summary>What this tenant is being charged, in <see cref="BillingCurrency"/>. Purely
+        /// informational — nothing here triggers an actual charge.</summary>
+        public decimal? BillingAmount { get; set; }
+
+        /// <summary>ISO 4217 code, e.g. "USD". Defaults to "USD" when a BillingAmount is first set.</summary>
+        public string? BillingCurrency { get; set; }
+
+        public BillingCycle? BillingCycle { get; set; }
+
+        /// <summary>When the next payment is expected. Advanced automatically by one billing
+        /// cycle each time a payment is recorded (see ITenantBillingService.RecordPaymentAsync);
+        /// otherwise editable directly.</summary>
+        public DateTime? NextDueDateUtc { get; set; }
     }
 }

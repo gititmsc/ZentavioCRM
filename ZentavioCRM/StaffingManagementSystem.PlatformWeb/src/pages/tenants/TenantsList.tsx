@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { tenantService, type Tenant } from "@/services/tenantService";
 import { StatusBadge } from "@/components/StatusBadge";
+import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { PageHeader } from "@/components/PageHeader";
 import { ProvisionTenantModal } from "@/pages/tenants/ProvisionTenantModal";
@@ -72,19 +73,20 @@ export function TenantsList() {
                 <th>Subdomain</th>
                 <th>Plan</th>
                 <th>Status</th>
+                <th>Payment</th>
                 <th>Created</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center text-muted py-5">
+                  <td colSpan={6} className="text-center text-muted py-5">
                     Loading tenants...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-0">
+                  <td colSpan={6} className="p-0">
                     <div className="empty-state">
                       <div className="empty-state__icon">
                         <i className="bi bi-buildings" aria-hidden="true" />
@@ -114,6 +116,9 @@ export function TenantsList() {
                     </td>
                     <td>
                       <StatusBadge status={tenant.status} />
+                    </td>
+                    <td>
+                      <PaymentStatusBadge status={tenant.paymentStatus} />
                     </td>
                     <td className="text-muted small">{new Date(tenant.createdAtUtc).toLocaleDateString()}</td>
                   </tr>

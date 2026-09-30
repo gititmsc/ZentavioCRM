@@ -301,7 +301,10 @@ CREATE TABLE dbo.Leads
     UpdatedAtUtc        DATETIME2        NULL,
     CONSTRAINT PK_Leads PRIMARY KEY CLUSTERED (Id),
     CONSTRAINT FK_Leads_AssignedToUser FOREIGN KEY (AssignedToUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL,
-    CONSTRAINT FK_Leads_LinkedCustomer FOREIGN KEY (LinkedCustomerId) REFERENCES dbo.Customers (Id) ON DELETE SET NULL,
+    -- NO ACTION, not SET NULL: SQL Server rejects a second cascading (SET NULL/CASCADE) path from
+    -- Leads to Customers once FK_Leads_ConvertedCustomer already has one ("may cause cycles or
+    -- multiple cascade paths") — only one FK between the same two tables can cascade.
+    CONSTRAINT FK_Leads_LinkedCustomer FOREIGN KEY (LinkedCustomerId) REFERENCES dbo.Customers (Id) ON DELETE NO ACTION,
     -- LinkedContactId has no FK constraint (deliberately) — see the note above IX_Leads_LinkedContactId below.
     CONSTRAINT FK_Leads_ConvertedCustomer FOREIGN KEY (ConvertedCustomerId) REFERENCES dbo.Customers (Id) ON DELETE SET NULL,
     CONSTRAINT FK_Leads_Territories FOREIGN KEY (TerritoryId) REFERENCES dbo.Territories (Id) ON DELETE SET NULL
@@ -522,11 +525,13 @@ CREATE TABLE dbo.Activities
     RecurrenceRule   NVARCHAR(20)     NULL,
     RecurrenceGroupId UNIQUEIDENTIFIER NULL,
     AssignedToUserId UNIQUEIDENTIFIER NULL,
+    -- No FK: CreatedByUserId is an audit-trail scalar only, same convention as Leads/Opportunities/
+    -- Quotations/SalesOrders.CreatedByUserId. Also avoids the "multiple cascade paths" conflict a
+    -- second cascading FK to Users would create alongside FK_Activities_AssignedToUser.
     CreatedByUserId  UNIQUEIDENTIFIER NULL,
     CreatedAtUtc     DATETIME2        NOT NULL,
     CONSTRAINT PK_Activities PRIMARY KEY CLUSTERED (Id),
-    CONSTRAINT FK_Activities_AssignedToUser FOREIGN KEY (AssignedToUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL,
-    CONSTRAINT FK_Activities_CreatedByUser FOREIGN KEY (CreatedByUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL
+    CONSTRAINT FK_Activities_AssignedToUser FOREIGN KEY (AssignedToUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL
 );
 
 CREATE INDEX IX_Activities_RelatedToType_RelatedToId ON dbo.Activities (RelatedToType, RelatedToId);

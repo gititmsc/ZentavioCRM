@@ -538,11 +538,16 @@ BEGIN
 END
 GO
 
+-- NO ACTION, not SET NULL: SQL Server rejects a second cascading (SET NULL/CASCADE) path from
+-- Leads to Customers once FK_Leads_ConvertedCustomer already has one ("may cause cycles or
+-- multiple cascade paths") — this ADD CONSTRAINT silently never succeeded while it said SET NULL.
+-- Safe as NO ACTION: CustomerService.DeleteAsync already blocks deleting a customer that any lead
+-- still references (LinkedCustomerId or ConvertedCustomerId) before the DB delete is ever issued.
 IF OBJECT_ID(N'dbo.Leads', N'U') IS NOT NULL
    AND COL_LENGTH('dbo.Leads', 'LinkedCustomerId') IS NOT NULL
    AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_Leads_LinkedCustomer')
 BEGIN
-    ALTER TABLE dbo.Leads ADD CONSTRAINT FK_Leads_LinkedCustomer FOREIGN KEY (LinkedCustomerId) REFERENCES dbo.Customers (Id) ON DELETE SET NULL;
+    ALTER TABLE dbo.Leads ADD CONSTRAINT FK_Leads_LinkedCustomer FOREIGN KEY (LinkedCustomerId) REFERENCES dbo.Customers (Id) ON DELETE NO ACTION;
 END
 GO
 
@@ -823,11 +828,13 @@ BEGIN
         RecurrenceRule   NVARCHAR(20)     NULL,
         RecurrenceGroupId UNIQUEIDENTIFIER NULL,
         AssignedToUserId UNIQUEIDENTIFIER NULL,
+        -- No FK: CreatedByUserId is an audit-trail scalar only, same convention as
+        -- Leads/Opportunities.CreatedByUserId above. Also avoids the "multiple cascade paths"
+        -- conflict a second cascading FK to Users would create alongside FK_Activities_AssignedToUser.
         CreatedByUserId  UNIQUEIDENTIFIER NULL,
         CreatedAtUtc     DATETIME2        NOT NULL,
         CONSTRAINT PK_Activities PRIMARY KEY CLUSTERED (Id),
-        CONSTRAINT FK_Activities_AssignedToUser FOREIGN KEY (AssignedToUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL,
-        CONSTRAINT FK_Activities_CreatedByUser FOREIGN KEY (CreatedByUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL
+        CONSTRAINT FK_Activities_AssignedToUser FOREIGN KEY (AssignedToUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL
     );
 
     CREATE INDEX IX_Activities_RelatedToType_RelatedToId ON dbo.Activities (RelatedToType, RelatedToId);

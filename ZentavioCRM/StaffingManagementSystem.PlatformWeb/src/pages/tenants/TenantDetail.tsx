@@ -2,11 +2,17 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { tenantService, type Tenant, type TenantUsage, type PlanTier } from "@/services/tenantService";
 import { StatusBadge } from "@/components/StatusBadge";
+import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
 import { Avatar } from "@/components/Avatar";
 import { ReasonModal } from "@/components/ReasonModal";
 import { PlanEditor } from "@/pages/tenants/PlanEditor";
+import { MetadataEditor } from "@/pages/tenants/MetadataEditor";
+import { BillingPanel } from "@/pages/tenants/BillingPanel";
+import { NotesPanel } from "@/pages/tenants/NotesPanel";
+import { ActivityTab } from "@/pages/tenants/ActivityTab";
 
 type ActiveDialog = "suspend" | "stop" | "impersonate" | null;
+type ActiveTab = "overview" | "billing" | "notes" | "activity";
 
 function UsageBar({ label, value, max, format }: { label: string; value: number; max: number; format?: (n: number) => string }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
@@ -35,6 +41,8 @@ export function TenantDetail() {
   const [error, setError] = useState<string | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
   const [editingPlan, setEditingPlan] = useState(false);
+  const [editingMetadata, setEditingMetadata] = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
   const [impersonateResult, setImpersonateResult] = useState<{
     token: string;
@@ -144,6 +152,18 @@ export function TenantDetail() {
     }
   };
 
+  const handleSaveMetadata = async (name: string, adminEmail: string) => {
+    if (!id) return;
+    const response = await tenantService.updateMetadata(id, { name, adminEmail });
+    if (response.success) {
+      setEditingMetadata(false);
+      setBanner("Tenant metadata updated.");
+      void load();
+    } else {
+      setError(response.message || "Could not update tenant metadata.");
+    }
+  };
+
   return (
     <div>
       {backLink}
@@ -171,6 +191,15 @@ export function TenantDetail() {
             <div className="d-flex align-items-center gap-2">
               <h4 className="fw-bold mb-0">{tenant.name}</h4>
               <StatusBadge status={tenant.status} />
+              <PaymentStatusBadge status={tenant.paymentStatus} />
+              <button
+                type="button"
+                className="btn btn-sm btn-link text-muted p-0 ms-1"
+                onClick={() => setEditingMetadata(true)}
+                title="Edit company name / directory email"
+              >
+                <i className="bi bi-pencil-fill" />
+              </button>
             </div>
             <div className="text-muted small mt-1">
               <i className="bi bi-globe2 me-1" />
@@ -219,6 +248,22 @@ export function TenantDetail() {
         </div>
       </div>
 
+      <div className="itm-tabs">
+        <button type="button" className={`itm-tabs__tab${activeTab === "overview" ? " active" : ""}`} onClick={() => setActiveTab("overview")}>
+          <i className="bi bi-grid-1x2-fill" /> Overview
+        </button>
+        <button type="button" className={`itm-tabs__tab${activeTab === "billing" ? " active" : ""}`} onClick={() => setActiveTab("billing")}>
+          <i className="bi bi-receipt" /> Billing
+        </button>
+        <button type="button" className={`itm-tabs__tab${activeTab === "notes" ? " active" : ""}`} onClick={() => setActiveTab("notes")}>
+          <i className="bi bi-sticky-fill" /> Notes
+        </button>
+        <button type="button" className={`itm-tabs__tab${activeTab === "activity" ? " active" : ""}`} onClick={() => setActiveTab("activity")}>
+          <i className="bi bi-clock-history" /> Activity
+        </button>
+      </div>
+
+      {activeTab === "overview" && (
       <div className="row g-4">
         <div className="col-lg-6">
           <div className="app-card h-100">
@@ -298,6 +343,39 @@ export function TenantDetail() {
           </div>
         </div>
       </div>
+      )}
+
+      {activeTab === "billing" && (
+        <BillingPanel
+          tenant={tenant}
+          onTenantChange={(updated) => setTenant(updated)}
+          onError={(message) => setError(message)}
+          onBanner={(message) => setBanner(message)}
+        />
+      )}
+
+      {activeTab === "notes" && id && <NotesPanel tenantId={id} onError={(message) => setError(message)} />}
+
+      {activeTab === "activity" && id && <ActivityTab tenantId={id} />}
+
+      {editingMetadata && (
+        <div className="modal d-block" tabIndex={-1} style={{ background: "rgba(15, 23, 42, 0.45)" }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content" style={{ borderRadius: "var(--itm-radius-card)" }}>
+              <div className="modal-header">
+                <h5 className="modal-title d-flex align-items-center gap-2">
+                  <i className="bi bi-pencil-fill text-primary" />
+                  Edit Tenant Metadata
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setEditingMetadata(false)} aria-label="Close" />
+              </div>
+              <div className="modal-body">
+                <MetadataEditor tenant={tenant} onCancel={() => setEditingMetadata(false)} onSave={handleSaveMetadata} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeDialog === "suspend" && (
         <ReasonModal

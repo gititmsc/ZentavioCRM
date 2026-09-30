@@ -2,6 +2,7 @@ using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.DTOs.Opportunities;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
+using ZentavioCRM.Core.Interfaces;
 using ZentavioCRM.Core.Security;
 using ZentavioCRM.Repositories.Interfaces;
 using ZentavioCRM.Services.Interfaces;
@@ -33,6 +34,7 @@ namespace ZentavioCRM.Services
         private readonly IAuditLogService _auditLogService;
         private readonly INotificationService _notificationService;
         private readonly IAccessScopeService _accessScopeService;
+        private readonly IUsageLimitService _usageLimitService;
 
         public OpportunityService(
             IOpportunityRepository opportunityRepository,
@@ -40,7 +42,8 @@ namespace ZentavioCRM.Services
             IQuotationRepository quotationRepository,
             IAuditLogService auditLogService,
             INotificationService notificationService,
-            IAccessScopeService accessScopeService)
+            IAccessScopeService accessScopeService,
+            IUsageLimitService usageLimitService)
         {
             _opportunityRepository = opportunityRepository;
             _customerRepository = customerRepository;
@@ -48,6 +51,7 @@ namespace ZentavioCRM.Services
             _auditLogService = auditLogService;
             _notificationService = notificationService;
             _accessScopeService = accessScopeService;
+            _usageLimitService = usageLimitService;
         }
 
         /// <summary>In-memory record-visibility check for a single already-fetched Opportunity. Returns true (no restriction) when currentUserId is null, since that only happens for internal/system callers, never an authenticated HTTP request.</summary>
@@ -99,6 +103,12 @@ namespace ZentavioCRM.Services
 
         public async Task<ApiResponse<OpportunityDto>> CreateAsync(SaveOpportunityRequest request, Guid? currentUserId)
         {
+            var limitMessage = await _usageLimitService.CheckRecordLimitAsync();
+            if (limitMessage is not null)
+            {
+                return ApiResponse<OpportunityDto>.FailureResponse(limitMessage, ["Contact your account administrator to upgrade your plan."]);
+            }
+
             var customer = await _customerRepository.GetByIdAsync(request.CustomerId);
             if (customer is null)
             {

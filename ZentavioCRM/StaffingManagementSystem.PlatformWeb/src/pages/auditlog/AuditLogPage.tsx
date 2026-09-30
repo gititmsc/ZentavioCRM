@@ -10,6 +10,10 @@ const ACTION_META: Record<string, { icon: string; tint: string }> = {
   TenantStopped: { icon: "bi-stop-circle-fill", tint: "var(--itm-danger)" },
   TenantPlanChanged: { icon: "bi-arrow-repeat", tint: "var(--itm-accent)" },
   TenantImpersonated: { icon: "bi-person-badge-fill", tint: "var(--itm-accent)" },
+  TenantMetadataUpdated: { icon: "bi-pencil-fill", tint: "var(--itm-accent)" },
+  TenantBillingUpdated: { icon: "bi-receipt", tint: "var(--itm-teal)" },
+  PaymentRecorded: { icon: "bi-cash-coin", tint: "var(--itm-success)" },
+  TenantNoteAdded: { icon: "bi-sticky-fill", tint: "var(--itm-muted)" },
 };
 
 const DEFAULT_META = { icon: "bi-info-circle-fill", tint: "var(--itm-muted)" };

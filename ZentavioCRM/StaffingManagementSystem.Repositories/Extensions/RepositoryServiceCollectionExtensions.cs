@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using ZentavioCRM.Core.Interfaces;
 using ZentavioCRM.Repositories.Interfaces;
 
 namespace ZentavioCRM.Repositories.Extensions
@@ -11,6 +12,10 @@ namespace ZentavioCRM.Repositories.Extensions
         public static IServiceCollection AddRepositories(this IServiceCollection services)
         {
             services.AddScoped<IUserRepository, UserRepository>();
+            // Not a per-entity repository, but lives here because it needs the same direct
+            // AppDbContext access every repository in this project already has — see
+            // IUsageLimitService's remarks for why it isn't in the Services layer instead.
+            services.AddScoped<IUsageLimitService, UsageLimitService>();
             services.AddScoped<IDepartmentRepository, DepartmentRepository>();
             services.AddScoped<ITerritoryRepository, TerritoryRepository>();
             services.AddScoped<IUserDelegationRepository, UserDelegationRepository>();
