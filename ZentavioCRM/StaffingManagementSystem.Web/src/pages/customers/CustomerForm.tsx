@@ -16,6 +16,7 @@ import { emailPatternRule } from "@/utils/validation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FormSection } from "@/components/form/FormSection";
 import { FormActionBar } from "@/components/form/FormActionBar";
+import { TagPicker } from "@/components/tags/TagPicker";
 
 /** yyyy-MM-dd for a native <input type="date">, or "" if null. */
 function toDateInputValue(value: string | null): string {
@@ -67,6 +68,7 @@ export default function CustomerForm() {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(isEditMode);
+  const [tagIds, setTagIds] = useState<string[]>([]);
 
   const {
     register,
@@ -139,6 +141,7 @@ export default function CustomerForm() {
             })),
             addresses: c.addresses.map(({ id: _aid, ...rest }) => rest),
           });
+          setTagIds(c.tagList.map((t) => t.id));
         }
       }
 
@@ -151,6 +154,7 @@ export default function CustomerForm() {
 
     const request: SaveCustomerRequest = {
       ...values,
+      tagIds,
       assignedToUserId: values.assignedToUserId || null,
       acquisitionSource: values.acquisitionSource || null,
       healthStatus: values.healthStatus || null,
@@ -314,7 +318,7 @@ export default function CustomerForm() {
 
             <div className="col-md-6">
               <label className="form-label">
-                Tags <span className="text-muted small text-lowercase fw-normal">(comma-separated, e.g. VIP, At Risk)</span>
+                Legacy Tags <span className="text-muted small text-lowercase fw-normal">(comma-separated, e.g. VIP, At Risk — kept for CSV import/export)</span>
               </label>
               <input className="form-control" placeholder="VIP, Hot Account, At Risk" {...register("tags")} />
             </div>
@@ -329,6 +333,11 @@ export default function CustomerForm() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="col-12">
+              <label className="form-label">Tags</label>
+              <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
             </div>
           </div>
         </FormSection>

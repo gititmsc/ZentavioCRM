@@ -5,6 +5,7 @@ import { apiClient } from "@/services/apiClient";
 import { callApi } from "@/services/apiHelpers";
 import type { LeadSource, PagedResult } from "@/services/leadService";
 import type { ImportResult } from "@/services/importTypes";
+import type { Tag } from "@/services/tagService";
 
 export type CustomerType =
   | "Prospect"
@@ -34,6 +35,7 @@ export interface CustomerListItem {
   phone: string | null;
   assignedToUserName: string | null;
   tags: string | null;
+  tagList: Tag[];
   healthStatus: CustomerHealthStatus | null;
   isActive: boolean;
   createdAtUtc: string;
@@ -87,6 +89,7 @@ export interface Customer {
   creditLimit: number | null;
   rating: string | null;
   tags: string | null;
+  tagList: Tag[];
   acquisitionSource: LeadSource | null;
   healthStatus: CustomerHealthStatus | null;
   assignedToUserId: string | null;
@@ -113,6 +116,7 @@ export interface SaveCustomerRequest {
   creditLimit: number | null;
   rating: string | null;
   tags: string | null;
+  tagIds: string[];
   acquisitionSource: LeadSource | null;
   healthStatus: CustomerHealthStatus | null;
   assignedToUserId: string | null;
@@ -156,4 +160,7 @@ const importCsv = (file: File) => {
   );
 };
 
-export const customerService = { search, getById, create, update, remove, exportCsv, importCsv };
+const mergeCustomers = (survivingCustomerId: string, losingCustomerId: string) =>
+  callApi<boolean>(apiClient.post("/api/customers/merge", { survivingCustomerId, losingCustomerId }));
+
+export const customerService = { search, getById, create, update, remove, exportCsv, importCsv, mergeCustomers };

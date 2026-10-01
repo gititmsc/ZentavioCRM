@@ -4,6 +4,7 @@
 import { apiClient } from "@/services/apiClient";
 import { callApi } from "@/services/apiHelpers";
 import type { ImportResult } from "@/services/importTypes";
+import type { Tag } from "@/services/tagService";
 
 /** Standard paged list envelope returned by every list endpoint. */
 export interface PagedResult<T> {
@@ -48,6 +49,7 @@ export interface LeadListItem {
   expectedValue: number | null;
   assignedToUserId: string | null;
   assignedToUserName: string | null;
+  tags: Tag[];
   createdAtUtc: string;
 }
 
@@ -77,6 +79,7 @@ export interface Lead {
   status: LeadStatus;
   leadScore: number | null;
   aiScore: number | null;
+  tags: Tag[];
   notes: string | null;
   nextFollowUpDate: string | null;
   lostReason: string | null;
@@ -112,6 +115,7 @@ export interface SaveLeadRequest {
   nextFollowUpDate: string | null;
   linkedCustomerId: string | null;
   linkedContactId: string | null;
+  tagIds: string[];
 }
 
 export interface LeadSearchParams {
@@ -216,6 +220,22 @@ const importCsv = (file: File) => {
   );
 };
 
+const exportXlsx = async (): Promise<Blob> => {
+  const response = await apiClient.get("/api/leads/export-xlsx", { responseType: "blob" });
+  return response.data;
+};
+
+const importXlsx = (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return callApi<ImportResult>(
+    apiClient.post("/api/leads/import-xlsx", formData, { headers: { "Content-Type": "multipart/form-data" } })
+  );
+};
+
+const mergeLeads = (survivingLeadId: string, losingLeadId: string) =>
+  callApi<boolean>(apiClient.post("/api/leads/merge", { survivingLeadId, losingLeadId }));
+
 export const leadService = {
   search,
   getById,
@@ -230,4 +250,7 @@ export const leadService = {
   lookupCustomers,
   exportCsv,
   importCsv,
+  exportXlsx,
+  importXlsx,
+  mergeLeads,
 };

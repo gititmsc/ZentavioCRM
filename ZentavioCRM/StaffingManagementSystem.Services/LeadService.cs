@@ -1,11 +1,13 @@
 using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.DTOs.Common;
 using ZentavioCRM.Core.DTOs.Leads;
+using ZentavioCRM.Core.DTOs.Tags;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Interfaces;
 using ZentavioCRM.Core.Security;
 using ZentavioCRM.Repositories.Interfaces;
+using ZentavioCRM.Services.Common;
 using ZentavioCRM.Services.Interfaces;
 
 namespace ZentavioCRM.Services
@@ -20,6 +22,9 @@ namespace ZentavioCRM.Services
         private readonly ILeadRepository _leadRepository;
         private readonly ICustomerRepository _customerRepository;
         private readonly IOpportunityRepository _opportunityRepository;
+        private readonly IActivityRepository _activityRepository;
+        private readonly ILeadScoringSettingsRepository _leadScoringSettingsRepository;
+        private readonly ITagRepository _tagRepository;
         private readonly IAuditLogService _auditLogService;
         private readonly INotificationService _notificationService;
         private readonly IAccessScopeService _accessScopeService;
@@ -29,6 +34,9 @@ namespace ZentavioCRM.Services
             ILeadRepository leadRepository,
             ICustomerRepository customerRepository,
             IOpportunityRepository opportunityRepository,
+            IActivityRepository activityRepository,
+            ILeadScoringSettingsRepository leadScoringSettingsRepository,
+            ITagRepository tagRepository,
             IAuditLogService auditLogService,
             INotificationService notificationService,
             IAccessScopeService accessScopeService,
@@ -37,6 +45,9 @@ namespace ZentavioCRM.Services
             _leadRepository = leadRepository;
             _customerRepository = customerRepository;
             _opportunityRepository = opportunityRepository;
+            _activityRepository = activityRepository;
+            _leadScoringSettingsRepository = leadScoringSettingsRepository;
+            _tagRepository = tagRepository;
             _auditLogService = auditLogService;
             _notificationService = notificationService;
             _accessScopeService = accessScopeService;
@@ -65,9 +76,11 @@ namespace ZentavioCRM.Services
             AccessScope? accessScope = currentUserId is null ? null : await _accessScopeService.GetForUserAsync(currentUserId.Value);
             var (items, totalCount) = await _leadRepository.SearchAsync(search, status, assignedToUserId, page, pageSize, accessScope, sortBy, sortDescending);
 
+            var tagsByLeadId = await _tagRepository.GetForLeadsAsync(items.Select(l => l.Id).ToList());
+
             return new PagedResult<LeadListItemDto>
             {
-                Items = items.Select(MapListItem).ToList(),
+                Items = items.Select(l => MapListItem(l, tagsByLeadId.GetValueOrDefault(l.Id, []))).ToList(),
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize,
@@ -87,7 +100,8 @@ namespace ZentavioCRM.Services
                 return ApiResponse<LeadDto>.FailureResponse("Lead not found.");
             }
 
-            return ApiResponse<LeadDto>.SuccessResponse(Map(lead));
+            var tags = await _tagRepository.GetForLeadAsync(id);
+            return ApiResponse<LeadDto>.SuccessResponse(Map(lead, tags));
         }
 
         public async Task<ApiResponse<LeadDto>> CreateAsync(SaveLeadRequest request, Guid? currentUserId)
@@ -127,55 +141,78 @@ namespace ZentavioCRM.Services
                 CreatedByUserId = currentUserId,
                 CreatedAtUtc = DateTime.UtcNow,
             };
-            lead.LeadScore = ComputeLeadScore(lead);
+            lead.LeadScore = await ComputeLeadScoreAsync(lead);
 
             await _leadRepository.AddAsync(lead);
             await SyncLinkedContactAsync(lead);
+            await _tagRepository.ReplaceLeadTagsAsync(lead.Id, request.TagIds ?? []);
             await _auditLogService.LogAsync(EntityType, lead.Id, "Created", $"Lead {lead.LeadNumber} created.", currentUserId);
 
             var created = await _leadRepository.GetByIdAsync(lead.Id);
-            return ApiResponse<LeadDto>.SuccessResponse(Map(created!), "Lead created.");
+            var tags = await _tagRepository.GetForLeadAsync(lead.Id);
+            return ApiResponse<LeadDto>.SuccessResponse(Map(created!, tags), "Lead created.");
         }
 
         /// <summary>
-        /// Simple rule-based score (0-100) reflecting how "sales-ready" a lead looks, based only on
-        /// fields already on the record — no external data or AI model. Recomputed on every save.
-        /// A real scoring model (weighted by conversion-rate history, ideally ML-driven per the SRS's
-        /// "AI Lead Intelligence" section) is a natural next iteration once there's enough historical
-        /// conversion data to train against.
+        /// Rule-based score reflecting how "sales-ready" a lead looks, using the tenant's
+        /// configurable <see cref="LeadScoringSettings"/> (see the Lead Scoring Settings screen,
+        /// gated by Leads.ManageScoring) plus a count of completed Activities logged against the
+        /// lead, to give real engagement — calls made, meetings held — a say alongside raw field
+        /// completeness. Recomputed on every save. A real ML-driven model (per the SRS's "AI Lead
+        /// Intelligence" section) is a natural next iteration once there's enough historical
+        /// conversion data to train against — see Lead.AiScore, reserved for that.
         /// </summary>
-        private static int ComputeLeadScore(Lead lead)
+        private async Task<int> ComputeLeadScoreAsync(Lead lead)
+        {
+            var settings = await _leadScoringSettingsRepository.GetOrCreateAsync();
+
+            // A lead not yet persisted (Id still default/empty — true during CreateAsync, which
+            // computes the score before AddAsync) can't have any Activities logged against it yet,
+            // so skip the query rather than asking the repository to match on an empty Guid.
+            var completedActivityCount = 0;
+            if (lead.Id != Guid.Empty)
+            {
+                var timeline = await _activityRepository.GetTimelineAsync(RelatedEntityType.Lead, lead.Id);
+                completedActivityCount = timeline.Count(a => a.CompletedAtUtc is not null);
+            }
+
+            return ComputeLeadScore(lead, settings, completedActivityCount);
+        }
+
+        private static int ComputeLeadScore(Lead lead, LeadScoringSettings settings, int completedActivityCount)
         {
             var score = 0;
 
-            if (!string.IsNullOrWhiteSpace(lead.Email)) score += 15;
-            if (!string.IsNullOrWhiteSpace(lead.Mobile)) score += 15;
-            if (!string.IsNullOrWhiteSpace(lead.Industry)) score += 10;
-            if (lead.AssignedToUserId is not null) score += 10;
+            if (!string.IsNullOrWhiteSpace(lead.Email)) score += settings.EmailPresentPoints;
+            if (!string.IsNullOrWhiteSpace(lead.Mobile)) score += settings.MobilePresentPoints;
+            if (!string.IsNullOrWhiteSpace(lead.Industry)) score += settings.IndustryPresentPoints;
+            if (lead.AssignedToUserId is not null) score += settings.AssignedPoints;
 
-            if (lead.ExpectedValue is >= 50000) score += 25;
-            else if (lead.ExpectedValue is >= 10000) score += 15;
-            else if (lead.ExpectedValue is > 0) score += 5;
+            if (lead.ExpectedValue >= settings.ExpectedValueHighThreshold) score += settings.ExpectedValueHighPoints;
+            else if (lead.ExpectedValue >= settings.ExpectedValueMediumThreshold) score += settings.ExpectedValueMediumPoints;
+            else if (lead.ExpectedValue is > 0) score += settings.ExpectedValueLowPoints;
 
             score += lead.Source switch
             {
-                LeadSource.Referral => 20,
-                LeadSource.LinkedIn => 10,
-                LeadSource.Website or LeadSource.LandingPage => 10,
-                LeadSource.Exhibition => 10,
+                LeadSource.Referral => settings.SourceReferralPoints,
+                LeadSource.LinkedIn => settings.SourceWarmChannelPoints,
+                LeadSource.Website or LeadSource.LandingPage => settings.SourceWarmChannelPoints,
+                LeadSource.Exhibition => settings.SourceWarmChannelPoints,
                 _ => 0,
             };
 
             if (!string.IsNullOrWhiteSpace(lead.Timeline))
             {
-                var timeline = lead.Timeline.ToLowerInvariant();
-                if (timeline.Contains("month") || timeline.Contains("quarter") || timeline.Contains("immediate") || timeline.Contains("asap"))
+                var timelineText = lead.Timeline.ToLowerInvariant();
+                if (timelineText.Contains("month") || timelineText.Contains("quarter") || timelineText.Contains("immediate") || timelineText.Contains("asap"))
                 {
-                    score += 5;
+                    score += settings.UrgentTimelinePoints;
                 }
             }
 
-            return Math.Min(score, 100);
+            score += Math.Min(completedActivityCount * settings.PointsPerCompletedActivity, settings.EngagementMaxPoints);
+
+            return Math.Min(score, settings.MaxScore);
         }
 
         public async Task<ApiResponse<LeadDto>> UpdateAsync(Guid id, SaveLeadRequest request, Guid? currentUserId)
@@ -238,10 +275,11 @@ namespace ZentavioCRM.Services
             }
 
             lead.UpdatedAtUtc = DateTime.UtcNow;
-            lead.LeadScore = ComputeLeadScore(lead);
+            lead.LeadScore = await ComputeLeadScoreAsync(lead);
 
             await _leadRepository.UpdateAsync(lead);
             await SyncLinkedContactAsync(lead);
+            await _tagRepository.ReplaceLeadTagsAsync(id, request.TagIds ?? []);
             await _auditLogService.LogAsync(EntityType, id, "Updated", "Lead details updated.", currentUserId);
             if (reassigned)
             {
@@ -258,7 +296,8 @@ namespace ZentavioCRM.Services
                     updated.Id);
             }
 
-            return ApiResponse<LeadDto>.SuccessResponse(Map(updated!), "Lead updated.");
+            var tags = await _tagRepository.GetForLeadAsync(id);
+            return ApiResponse<LeadDto>.SuccessResponse(Map(updated!, tags), "Lead updated.");
         }
 
         public async Task<ApiResponse<LeadDto>> UpdateStatusAsync(Guid id, UpdateLeadStatusRequest request, Guid? currentUserId)
@@ -304,7 +343,8 @@ namespace ZentavioCRM.Services
             await _auditLogService.LogAsync(EntityType, id, "StatusChanged", $"Status changed from {oldStatus} to {request.Status}.", currentUserId);
 
             var updated = await _leadRepository.GetByIdAsync(id);
-            return ApiResponse<LeadDto>.SuccessResponse(Map(updated!), "Lead status updated.");
+            var tags = await _tagRepository.GetForLeadAsync(id);
+            return ApiResponse<LeadDto>.SuccessResponse(Map(updated!, tags), "Lead status updated.");
         }
 
         public async Task<ApiResponse<LeadDto>> AssignAsync(Guid id, AssignLeadRequest request, Guid? currentUserId)
@@ -342,7 +382,8 @@ namespace ZentavioCRM.Services
                 RelatedEntityType.Lead,
                 updated.Id);
 
-            return ApiResponse<LeadDto>.SuccessResponse(Map(updated), "Lead assigned.");
+            var tags = await _tagRepository.GetForLeadAsync(id);
+            return ApiResponse<LeadDto>.SuccessResponse(Map(updated, tags), "Lead assigned.");
         }
 
         public async Task<ApiResponse<bool>> DeleteAsync(Guid id, Guid? currentUserId)
@@ -440,11 +481,12 @@ namespace ZentavioCRM.Services
             "Budget", "Timeline", "ExpectedValue", "Territory", "Notes",
         ];
 
-        public async Task<string> ExportCsvAsync()
+        /// <summary>Builds the export rows shared by both the CSV and Excel export formats, in <see cref="ExportHeaders"/> column order.</summary>
+        private async Task<List<IReadOnlyList<string?>>> BuildExportRowsAsync()
         {
             var leads = await _leadRepository.GetAllAsync();
 
-            var rows = leads.Select(l => (IReadOnlyList<string?>)new List<string?>
+            return leads.Select(l => (IReadOnlyList<string?>)new List<string?>
             {
                 l.LeadNumber,
                 l.CompanyName,
@@ -468,14 +510,36 @@ namespace ZentavioCRM.Services
                 l.AssignedToUser?.FullName,
                 l.Notes,
                 l.CreatedAtUtc.ToString("O"),
-            });
+            }).ToList();
+        }
 
+        public async Task<string> ExportCsvAsync()
+        {
+            var rows = await BuildExportRowsAsync();
             return CsvUtility.Write(ExportHeaders, rows);
+        }
+
+        public async Task<byte[]> ExportXlsxAsync()
+        {
+            var rows = await BuildExportRowsAsync();
+            return ExcelUtility.Write(ExportHeaders, rows);
         }
 
         public async Task<ImportResultDto> ImportCsvAsync(string csvContent, Guid? currentUserId)
         {
             var (headers, rows) = CsvUtility.Parse(csvContent);
+            return await ImportRowsAsync(headers, rows, currentUserId);
+        }
+
+        public async Task<ImportResultDto> ImportXlsxAsync(Stream xlsxStream, Guid? currentUserId)
+        {
+            var (headers, rows) = ExcelUtility.Parse(xlsxStream);
+            return await ImportRowsAsync(headers, rows, currentUserId);
+        }
+
+        /// <summary>Row-validation/persistence logic shared by both the CSV and Excel import formats — only the parsing step (<see cref="CsvUtility.Parse"/> vs <see cref="ExcelUtility.Parse(Stream)"/>) differs between the two.</summary>
+        private async Task<ImportResultDto> ImportRowsAsync(string[] headers, List<string[]> rows, Guid? currentUserId)
+        {
             var result = new ImportResultDto { TotalRows = rows.Count };
 
             var columnIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -568,7 +632,7 @@ namespace ZentavioCRM.Services
                         CreatedByUserId = currentUserId,
                         CreatedAtUtc = DateTime.UtcNow,
                     };
-                    lead.LeadScore = ComputeLeadScore(lead);
+                    lead.LeadScore = await ComputeLeadScoreAsync(lead);
 
                     await _leadRepository.AddAsync(lead);
                     await _auditLogService.LogAsync(EntityType, lead.Id, "Created", $"Lead {lead.LeadNumber} created via CSV import.", currentUserId);
@@ -812,7 +876,7 @@ namespace ZentavioCRM.Services
             return customer;
         }
 
-        private static LeadListItemDto MapListItem(Lead lead) => new()
+        private static LeadListItemDto MapListItem(Lead lead, IReadOnlyList<Tag> tags) => new()
         {
             Id = lead.Id,
             LeadNumber = lead.LeadNumber,
@@ -823,10 +887,19 @@ namespace ZentavioCRM.Services
             ExpectedValue = lead.ExpectedValue,
             AssignedToUserId = lead.AssignedToUserId,
             AssignedToUserName = lead.AssignedToUser?.FullName,
+            Tags = tags.Select(MapTag).ToList(),
             CreatedAtUtc = lead.CreatedAtUtc,
         };
 
-        private static LeadDto Map(Lead lead) => new()
+        private static TagDto MapTag(Tag tag) => new()
+        {
+            Id = tag.Id,
+            Name = tag.Name,
+            Color = tag.Color,
+            CreatedAtUtc = tag.CreatedAtUtc,
+        };
+
+        private static LeadDto Map(Lead lead, IReadOnlyList<Tag> tags) => new()
         {
             Id = lead.Id,
             LeadNumber = lead.LeadNumber,
@@ -853,6 +926,7 @@ namespace ZentavioCRM.Services
             Status = lead.Status,
             LeadScore = lead.LeadScore,
             AiScore = lead.AiScore,
+            Tags = tags.Select(MapTag).ToList(),
             Notes = lead.Notes,
             NextFollowUpDate = lead.NextFollowUpDate,
             LostReason = lead.LostReason,

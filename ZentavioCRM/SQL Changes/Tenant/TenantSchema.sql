@@ -662,3 +662,81 @@ CREATE TABLE dbo.PasswordResetTokens
 CREATE UNIQUE INDEX IX_PasswordResetTokens_TokenHash ON dbo.PasswordResetTokens (TokenHash);
 CREATE INDEX IX_PasswordResetTokens_UserId ON dbo.PasswordResetTokens (UserId);
 GO
+
+-- ============================================================================
+-- LeadScoringSettings (exactly one row per tenant — tenant-configurable weights for
+-- LeadService.ComputeLeadScore; see LeadScoringSettings.cs for what each column means.
+-- Defaults below reproduce the original hardcoded formula exactly.)
+-- ============================================================================
+CREATE TABLE dbo.LeadScoringSettings
+(
+    Id                          UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_LeadScoringSettings_Id DEFAULT NEWID(),
+    EmailPresentPoints          INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_EmailPresentPoints DEFAULT (15),
+    MobilePresentPoints         INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_MobilePresentPoints DEFAULT (15),
+    IndustryPresentPoints       INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_IndustryPresentPoints DEFAULT (10),
+    AssignedPoints              INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_AssignedPoints DEFAULT (10),
+    ExpectedValueHighThreshold  DECIMAL(18, 2)   NOT NULL CONSTRAINT DF_LeadScoringSettings_ExpectedValueHighThreshold DEFAULT (50000),
+    ExpectedValueHighPoints     INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_ExpectedValueHighPoints DEFAULT (25),
+    ExpectedValueMediumThreshold DECIMAL(18, 2)  NOT NULL CONSTRAINT DF_LeadScoringSettings_ExpectedValueMediumThreshold DEFAULT (10000),
+    ExpectedValueMediumPoints   INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_ExpectedValueMediumPoints DEFAULT (15),
+    ExpectedValueLowPoints      INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_ExpectedValueLowPoints DEFAULT (5),
+    SourceReferralPoints        INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_SourceReferralPoints DEFAULT (20),
+    SourceWarmChannelPoints     INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_SourceWarmChannelPoints DEFAULT (10),
+    UrgentTimelinePoints        INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_UrgentTimelinePoints DEFAULT (5),
+    PointsPerCompletedActivity  INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_PointsPerCompletedActivity DEFAULT (2),
+    EngagementMaxPoints         INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_EngagementMaxPoints DEFAULT (10),
+    MaxScore                    INT              NOT NULL CONSTRAINT DF_LeadScoringSettings_MaxScore DEFAULT (100),
+    UpdatedByUserId              UNIQUEIDENTIFIER NULL,
+    UpdatedAtUtc                 DATETIME2        NULL,
+    CONSTRAINT PK_LeadScoringSettings PRIMARY KEY CLUSTERED (Id)
+);
+GO
+
+-- Exactly one row, fixed Id matching Core.Common.SeedIds.LeadScoringSettingsId, so every
+-- tenant (new or pre-existing) always has defaults to read without a lazy-create race.
+INSERT INTO dbo.LeadScoringSettings (Id)
+VALUES ('60000000-0000-0000-0000-000000000001');
+GO
+
+-- ============================================================================
+-- Tags (reusable, tenant-wide labels — see Tag.cs. Distinct from the original freeform
+-- Customers.Tags text column, which is unchanged and still used by CSV import/export.)
+-- ============================================================================
+CREATE TABLE dbo.Tags
+(
+    Id           UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Tags_Id DEFAULT NEWID(),
+    Name         NVARCHAR(100)    NOT NULL,
+    Color        NVARCHAR(20)     NULL,
+    CreatedAtUtc DATETIME2        NOT NULL,
+    CONSTRAINT PK_Tags PRIMARY KEY CLUSTERED (Id)
+);
+
+CREATE UNIQUE INDEX IX_Tags_Name ON dbo.Tags (Name);
+GO
+
+-- ============================================================================
+-- LeadTags / CustomerTags (join tables — a Tag attached to a Lead and/or a Customer)
+-- ============================================================================
+CREATE TABLE dbo.LeadTags
+(
+    LeadId UNIQUEIDENTIFIER NOT NULL,
+    TagId  UNIQUEIDENTIFIER NOT NULL,
+    CONSTRAINT PK_LeadTags PRIMARY KEY CLUSTERED (LeadId, TagId),
+    CONSTRAINT FK_LeadTags_Lead FOREIGN KEY (LeadId) REFERENCES dbo.Leads (Id) ON DELETE CASCADE,
+    CONSTRAINT FK_LeadTags_Tag FOREIGN KEY (TagId) REFERENCES dbo.Tags (Id) ON DELETE CASCADE
+);
+
+CREATE INDEX IX_LeadTags_TagId ON dbo.LeadTags (TagId);
+GO
+
+CREATE TABLE dbo.CustomerTags
+(
+    CustomerId UNIQUEIDENTIFIER NOT NULL,
+    TagId      UNIQUEIDENTIFIER NOT NULL,
+    CONSTRAINT PK_CustomerTags PRIMARY KEY CLUSTERED (CustomerId, TagId),
+    CONSTRAINT FK_CustomerTags_Customer FOREIGN KEY (CustomerId) REFERENCES dbo.Customers (Id) ON DELETE CASCADE,
+    CONSTRAINT FK_CustomerTags_Tag FOREIGN KEY (TagId) REFERENCES dbo.Tags (Id) ON DELETE CASCADE
+);
+
+CREATE INDEX IX_CustomerTags_TagId ON dbo.CustomerTags (TagId);
+GO

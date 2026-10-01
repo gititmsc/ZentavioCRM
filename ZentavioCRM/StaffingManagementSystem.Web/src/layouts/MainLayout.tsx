@@ -25,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/products", icon: "bi-box-seam", label: "Product Catalog", requiresAnyOf: [PermissionCodes.ProductsView] },
   { to: "/departments", icon: "bi-diagram-3", label: "Departments", requiresAnyOf: [PermissionCodes.DepartmentsView] },
   { to: "/territories", icon: "bi-map", label: "Territories", requiresAnyOf: [PermissionCodes.TerritoriesView] },
+  { to: "/tags", icon: "bi-tags-fill", label: "Tags", requiresAnyOf: [PermissionCodes.TagsView] },
   { to: "/users", icon: "bi-people-fill", label: "Users", requiresAnyOf: [PermissionCodes.UsersView] },
   { to: "/roles", icon: "bi-shield-lock-fill", label: "Roles", requiresAnyOf: [PermissionCodes.RolesView] },
 ];

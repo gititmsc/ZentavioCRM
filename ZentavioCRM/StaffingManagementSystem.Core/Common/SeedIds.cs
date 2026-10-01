@@ -16,5 +16,8 @@ namespace ZentavioCRM.Core.Common
         public static readonly Guid SalesManagerRoleId = Guid.Parse("20000000-0000-0000-0000-000000000002");
         public static readonly Guid SalesExecutiveRoleId = Guid.Parse("20000000-0000-0000-0000-000000000003");
         public static readonly Guid SupportAgentRoleId = Guid.Parse("20000000-0000-0000-0000-000000000004");
+
+        /// <summary>Fixed Id of the single <see cref="Entities.LeadScoringSettings"/> row every tenant database has (or gets lazily created with defaults on first read).</summary>
+        public static readonly Guid LeadScoringSettingsId = Guid.Parse("60000000-0000-0000-0000-000000000001");
     }
 }

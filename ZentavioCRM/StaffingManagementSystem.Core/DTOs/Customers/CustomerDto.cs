@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ZentavioCRM.Core.DTOs.Tags;
 using ZentavioCRM.Core.Enums;
 
 namespace ZentavioCRM.Core.DTOs.Customers
@@ -22,7 +23,11 @@ namespace ZentavioCRM.Core.DTOs.Customers
 
         public string? AssignedToUserName { get; set; }
 
+        /// <summary>Original freeform comma-separated text field — unchanged, still read/written by CSV import/export.</summary>
         public string? Tags { get; set; }
+
+        /// <summary>Structured tags from the new Tag system (see Tag.cs) — distinct from the freeform <see cref="Tags"/> field above.</summary>
+        public List<TagDto> TagList { get; set; } = [];
 
         public CustomerHealthStatus? HealthStatus { get; set; }
 
@@ -67,6 +72,8 @@ namespace ZentavioCRM.Core.DTOs.Customers
         public string? Rating { get; set; }
 
         public string? Tags { get; set; }
+
+        public List<TagDto> TagList { get; set; } = [];
 
         public LeadSource? AcquisitionSource { get; set; }
 
@@ -120,6 +127,9 @@ namespace ZentavioCRM.Core.DTOs.Customers
         public string? Rating { get; set; }
 
         public string? Tags { get; set; }
+
+        /// <summary>Structured tag Ids from the new Tag system — replaces the full set on save (not an incremental add).</summary>
+        public List<Guid> TagIds { get; set; } = [];
 
         public LeadSource? AcquisitionSource { get; set; }
 

@@ -4,6 +4,8 @@ import { useAuth } from "@/context/AuthContext";
 import { leadService, type LeadListItem, type LeadSearchParams, type LeadStatus } from "@/services/leadService";
 import { PermissionCodes } from "@/services/permissionCodes";
 import { ImportExportBar } from "@/components/import-export/ImportExportBar";
+import { TagChips } from "@/components/tags/TagChips";
+import { MergeModal, type MergeCandidate } from "@/components/merge/MergeModal";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
 import { Pagination } from "@/components/datatable/Pagination";
@@ -37,9 +39,12 @@ export default function LeadsList() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const canCreate = hasPermission(PermissionCodes.LeadsCreate);
+  const canManageScoring = hasPermission(PermissionCodes.LeadsManageScoring);
+  const canDelete = hasPermission(PermissionCodes.LeadsDelete);
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<LeadStatus | "">("");
+  const [showMerge, setShowMerge] = useState(false);
 
   const {
     items: leads,
@@ -74,6 +79,16 @@ export default function LeadsList() {
     resetToFirstPage();
   };
 
+  const searchLeadCandidates = async (term: string): Promise<MergeCandidate[]> => {
+    const result = await leadService.search({ search: term, pageSize: 10 });
+    if (!result.success || !result.data) return [];
+    return result.data.items.map((l) => ({
+      id: l.id,
+      label: `${l.companyName} — ${l.contactName}`,
+      sublabel: l.leadNumber,
+    }));
+  };
+
   const columns: DataTableColumn<LeadListItem>[] = [
     { key: "leadNumber", header: "Number", render: (lead) => lead.leadNumber },
     { key: "companyName", header: "Company", render: (lead) => lead.companyName },
@@ -95,6 +110,10 @@ export default function LeadsList() {
       header: "Status",
       render: (lead) => <span className={`badge ${STATUS_BADGE[lead.status]}`}>{lead.status}</span>,
     },
+    {
+      header: "Tags",
+      render: (lead) => <TagChips tags={lead.tags} />,
+    },
   ];
 
   return (
@@ -103,12 +122,34 @@ export default function LeadsList() {
         title="Leads"
         subtitle="Track and qualify inbound and outbound leads."
         actions={
-          canCreate && (
-            <button type="button" className="btn btn-primary" onClick={() => navigate("/leads/new")}>
-              <i className="bi bi-plus-lg me-1" aria-hidden="true" />
-              New Lead
-            </button>
-          )
+          <>
+            {canDelete && (
+              <button
+                type="button"
+                className="btn btn-outline-secondary me-2"
+                onClick={() => setShowMerge(true)}
+              >
+                <i className="bi bi-signpost-split me-1" aria-hidden="true" />
+                Merge Duplicates
+              </button>
+            )}
+            {canManageScoring && (
+              <button
+                type="button"
+                className="btn btn-outline-secondary me-2"
+                onClick={() => navigate("/leads/scoring-settings")}
+              >
+                <i className="bi bi-sliders me-1" aria-hidden="true" />
+                Scoring Settings
+              </button>
+            )}
+            {canCreate && (
+              <button type="button" className="btn btn-primary" onClick={() => navigate("/leads/new")}>
+                <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+                New Lead
+              </button>
+            )}
+          </>
         }
       />
 
@@ -148,6 +189,8 @@ export default function LeadsList() {
             entityLabel="Leads"
             onExport={leadService.exportCsv}
             onImport={leadService.importCsv}
+            onExportXlsx={leadService.exportXlsx}
+            onImportXlsx={leadService.importXlsx}
             onImportComplete={reload}
             sampleFileUrl="/samples/leads-import-sample.csv"
           />
@@ -177,6 +220,16 @@ export default function LeadsList() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
       />
+
+      {showMerge && (
+        <MergeModal
+          entityLabel="Lead"
+          onClose={() => setShowMerge(false)}
+          onMerged={reload}
+          searchCandidates={searchLeadCandidates}
+          merge={leadService.mergeLeads}
+        />
+      )}
     </div>
   );
 }

@@ -7,6 +7,10 @@ interface ImportExportBarProps {
   entityLabel: string;
   onExport: () => Promise<Blob>;
   onImport: (file: File) => Promise<ApiResponse<ImportResult>>;
+  /** When provided (alongside onImportXlsx), an Export format picker (CSV/Excel) is shown. */
+  onExportXlsx?: () => Promise<Blob>;
+  /** When provided, import auto-detects CSV vs .xlsx from the picked file's extension. */
+  onImportXlsx?: (file: File) => Promise<ApiResponse<ImportResult>>;
   onImportComplete?: () => void;
   /** Outer wrapper className, e.g. "ms-auto" to right-align inside a flex row. Defaults to "mb-3". */
   className?: string;
@@ -19,21 +23,27 @@ export function ImportExportBar({
   entityLabel,
   onExport,
   onImport,
+  onExportXlsx,
+  onImportXlsx,
   onImportComplete,
   className = "mb-3",
   sampleFileUrl,
 }: ImportExportBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [exportFormat, setExportFormat] = useState<"csv" | "xlsx">("csv");
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
+  const supportsXlsx = Boolean(onExportXlsx && onImportXlsx);
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const blob = await onExport();
-      downloadBlob(blob, `${entityLabel.toLowerCase()}.csv`);
+      const useXlsx = supportsXlsx && exportFormat === "xlsx";
+      const blob = useXlsx && onExportXlsx ? await onExportXlsx() : await onExport();
+      downloadBlob(blob, `${entityLabel.toLowerCase()}.${useXlsx ? "xlsx" : "csv"}`);
     } finally {
       setIsExporting(false);
     }
@@ -51,7 +61,9 @@ export function ImportExportBar({
     setIsImporting(true);
     setImportError(null);
     setImportResult(null);
-    const result = await onImport(file);
+    const isXlsx = file.name.toLowerCase().endsWith(".xlsx");
+    const importer = isXlsx && onImportXlsx ? onImportXlsx : onImport;
+    const result = await importer(file);
     setIsImporting(false);
 
     if (!result.success || !result.data) {
@@ -65,18 +77,30 @@ export function ImportExportBar({
   return (
     <div className={className}>
       <div className="d-flex gap-2">
+        {supportsXlsx && (
+          <select
+            className="form-select form-select-sm"
+            style={{ width: 100 }}
+            value={exportFormat}
+            onChange={(e) => setExportFormat(e.target.value as "csv" | "xlsx")}
+            aria-label="Export format"
+          >
+            <option value="csv">CSV</option>
+            <option value="xlsx">Excel</option>
+          </select>
+        )}
         <button type="button" className="btn btn-outline-secondary" onClick={handleExport} disabled={isExporting}>
           <i className="bi bi-download me-1" aria-hidden="true" />
-          {isExporting ? "Exporting..." : "Export CSV"}
+          {isExporting ? "Exporting..." : supportsXlsx ? "Export" : "Export CSV"}
         </button>
         <button type="button" className="btn btn-outline-secondary" onClick={handleImportClick} disabled={isImporting}>
           <i className="bi bi-upload me-1" aria-hidden="true" />
-          {isImporting ? "Importing..." : "Import CSV"}
+          {isImporting ? "Importing..." : supportsXlsx ? "Import" : "Import CSV"}
         </button>
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv"
+          accept={supportsXlsx ? ".csv,.xlsx" : ".csv"}
           className="d-none"
           onChange={handleFileChange}
         />

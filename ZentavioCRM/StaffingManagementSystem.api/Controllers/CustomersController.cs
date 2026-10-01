@@ -16,10 +16,12 @@ namespace ZentavioCRM.Api.Controllers
     public sealed class CustomersController : ControllerBase
     {
         private readonly ICustomerService _customerService;
+        private readonly IMergeService _mergeService;
 
-        public CustomersController(ICustomerService customerService)
+        public CustomersController(ICustomerService customerService, IMergeService mergeService)
         {
             _customerService = customerService;
+            _mergeService = mergeService;
         }
 
         [HttpGet]
@@ -102,6 +104,19 @@ namespace ZentavioCRM.Api.Controllers
 
             var result = await _customerService.ImportCsvAsync(content, User.GetUserId());
             return Ok(ApiResponse<ImportResultDto>.SuccessResponse(result, $"Imported {result.SuccessCount} of {result.TotalRows} rows."));
+        }
+
+        [HttpPost("merge")]
+        [Authorize(Policy = PermissionCodes.CustomersDelete)]
+        public async Task<IActionResult> Merge([FromBody] MergeCustomersRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ApiResponse<MergeResultDto>.FailureResponse("Validation failed.", CollectErrors()));
+            }
+
+            var result = await _mergeService.MergeCustomersAsync(request.SurvivingCustomerId, request.LosingCustomerId, User.GetUserId());
+            return result.Success ? Ok(result) : BadRequest(result);
         }
 
         private List<string> CollectErrors() => ModelState.Values

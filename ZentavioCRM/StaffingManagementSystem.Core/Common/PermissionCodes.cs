@@ -33,6 +33,7 @@ namespace ZentavioCRM.Core.Common
         public const string LeadsDelete = "Leads.Delete";
         public const string LeadsAssign = "Leads.Assign";
         public const string LeadsConvert = "Leads.Convert";
+        public const string LeadsManageScoring = "Leads.ManageScoring";
 
         public const string OpportunitiesView = "Opportunities.View";
         public const string OpportunitiesCreate = "Opportunities.Create";
@@ -60,6 +61,9 @@ namespace ZentavioCRM.Core.Common
         public const string ProductsEdit = "Products.Edit";
         public const string ProductsDelete = "Products.Delete";
 
+        public const string TagsView = "Tags.View";
+        public const string TagsManage = "Tags.Manage";
+
         /// <summary>All codes, keyed by module, used by the seeder and the admin role grant.</summary>
         public static readonly IReadOnlyDictionary<string, string[]> ByModule = new Dictionary<string, string[]>
         {
@@ -68,11 +72,12 @@ namespace ZentavioCRM.Core.Common
             ["Users"] = [UsersView, UsersManage],
             ["Roles"] = [RolesView, RolesManage],
             ["Customers"] = [CustomersView, CustomersCreate, CustomersEdit, CustomersDelete],
-            ["Leads"] = [LeadsView, LeadsCreate, LeadsEdit, LeadsDelete, LeadsAssign, LeadsConvert],
+            ["Leads"] = [LeadsView, LeadsCreate, LeadsEdit, LeadsDelete, LeadsAssign, LeadsConvert, LeadsManageScoring],
             ["Opportunities"] = [OpportunitiesView, OpportunitiesCreate, OpportunitiesEdit, OpportunitiesDelete, OpportunitiesAssign],
             ["Quotations"] = [QuotationsView, QuotationsCreate, QuotationsEdit, QuotationsDelete, QuotationsAssign],
             ["SalesOrders"] = [SalesOrdersView, SalesOrdersCreate, SalesOrdersEdit, SalesOrdersAssign],
             ["Products"] = [ProductsView, ProductsCreate, ProductsEdit, ProductsDelete],
+            ["Tags"] = [TagsView, TagsManage],
         };
 
         public static IEnumerable<string> All => ByModule.Values.SelectMany(codes => codes);

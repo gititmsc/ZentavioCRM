@@ -16,6 +16,7 @@ import { allServerFieldErrorsMatched, applyServerFieldErrors } from "@/utils/ser
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FormSection } from "@/components/form/FormSection";
 import { FormActionBar } from "@/components/form/FormActionBar";
+import { TagPicker } from "@/components/tags/TagPicker";
 
 /** Every SaveLeadRequest key, used to match server-side field errors back onto this form's inputs. */
 const LEAD_FORM_FIELDS = [
@@ -75,6 +76,7 @@ export default function LeadForm() {
   const [duplicateMatches, setDuplicateMatches] = useState<DuplicateMatch[]>([]);
   const [duplicatesDismissed, setDuplicatesDismissed] = useState(false);
   const [customerMatches, setCustomerMatches] = useState<CustomerLookupMatch[]>([]);
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [linkedCustomer, setLinkedCustomer] = useState<{ id: string; displayName: string; contactName?: string } | null>(
     null
   );
@@ -157,6 +159,7 @@ export default function LeadForm() {
           if (l.linkedCustomerId && l.linkedCustomerName) {
             setLinkedCustomer({ id: l.linkedCustomerId, displayName: l.linkedCustomerName });
           }
+          setTagIds(l.tags.map((t) => t.id));
         }
       }
 
@@ -218,7 +221,8 @@ export default function LeadForm() {
   const onSubmit = async (values: SaveLeadRequest) => {
     setServerError(null);
 
-    const result = isEditMode && id ? await leadService.update(id, values) : await leadService.create(values);
+    const request = { ...values, tagIds };
+    const result = isEditMode && id ? await leadService.update(id, request) : await leadService.create(request);
 
     if (!result.success) {
       const matched = applyServerFieldErrors(setError, result.fieldErrors, LEAD_FORM_FIELDS);
@@ -565,6 +569,10 @@ export default function LeadForm() {
               {...register("notes")}
             />
             {errors.notes && <div className="invalid-feedback">{errors.notes.message}</div>}
+          </FormSection>
+
+          <FormSection icon="bi-tags" title="Tags" description="Shared labels for segmenting and filtering leads.">
+            <TagPicker selectedTagIds={tagIds} onChange={setTagIds} />
           </FormSection>
 
           <FormActionBar>

@@ -10,6 +10,8 @@ import {
 import { PermissionCodes } from "@/services/permissionCodes";
 import { ImportExportBar } from "@/components/import-export/ImportExportBar";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { TagChips } from "@/components/tags/TagChips";
+import { MergeModal, type MergeCandidate } from "@/components/merge/MergeModal";
 import { DataTable, type DataTableColumn } from "@/components/datatable/DataTable";
 import { Pagination } from "@/components/datatable/Pagination";
 import { usePagedList } from "@/hooks/usePagedList";
@@ -35,6 +37,7 @@ export default function CustomersList() {
   const canDelete = hasPermission(PermissionCodes.CustomersDelete);
 
   const [search, setSearch] = useState("");
+  const [showMerge, setShowMerge] = useState(false);
 
   const {
     items: customers,
@@ -68,6 +71,16 @@ export default function CustomersList() {
     resetToFirstPage();
   };
 
+  const searchCustomerCandidates = async (term: string): Promise<MergeCandidate[]> => {
+    const result = await customerService.search({ search: term, pageSize: 10, isActive: true });
+    if (!result.success || !result.data) return [];
+    return result.data.items.map((c) => ({
+      id: c.id,
+      label: c.displayName,
+      sublabel: c.customerNumber,
+    }));
+  };
+
   const handleDelete = async (customer: CustomerListItem) => {
     if (!window.confirm(`Delete "${customer.displayName}"? This cannot be undone.`)) {
       return;
@@ -87,16 +100,7 @@ export default function CustomersList() {
     { key: "industry", header: "Industry", render: (c) => c.industry ?? <span className="text-muted">&mdash;</span> },
     {
       header: "Tags",
-      render: (c) =>
-        c.tags ? (
-          c.tags.split(",").map((tag) => (
-            <span key={tag} className="badge text-bg-light border me-1">
-              {tag.trim()}
-            </span>
-          ))
-        ) : (
-          <span className="text-muted">&mdash;</span>
-        ),
+      render: (c) => <TagChips tags={c.tagList} />,
     },
     {
       key: "healthStatus",
@@ -150,12 +154,24 @@ export default function CustomersList() {
         title="Customers"
         subtitle="Your accounts, contacts, and addresses in one place."
         actions={
-          canCreate && (
-            <button type="button" className="btn btn-primary" onClick={() => navigate("/customers/new")}>
-              <i className="bi bi-plus-lg me-1" aria-hidden="true" />
-              New Customer
-            </button>
-          )
+          <>
+            {canDelete && (
+              <button
+                type="button"
+                className="btn btn-outline-secondary me-2"
+                onClick={() => setShowMerge(true)}
+              >
+                <i className="bi bi-signpost-split me-1" aria-hidden="true" />
+                Merge Duplicates
+              </button>
+            )}
+            {canCreate && (
+              <button type="button" className="btn btn-primary" onClick={() => navigate("/customers/new")}>
+                <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+                New Customer
+              </button>
+            )}
+          </>
         }
       />
 
@@ -206,6 +222,16 @@ export default function CustomersList() {
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
       />
+
+      {showMerge && (
+        <MergeModal
+          entityLabel="Customer"
+          onClose={() => setShowMerge(false)}
+          onMerged={reload}
+          searchCandidates={searchCustomerCandidates}
+          merge={customerService.mergeCustomers}
+        />
+      )}
     </div>
   );
 }

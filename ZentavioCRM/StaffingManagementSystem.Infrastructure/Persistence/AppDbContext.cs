@@ -66,6 +66,14 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
+        public DbSet<LeadScoringSettings> LeadScoringSettings => Set<LeadScoringSettings>();
+
+        public DbSet<Tag> Tags => Set<Tag>();
+
+        public DbSet<LeadTag> LeadTags => Set<LeadTag>();
+
+        public DbSet<CustomerTag> CustomerTags => Set<CustomerTag>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

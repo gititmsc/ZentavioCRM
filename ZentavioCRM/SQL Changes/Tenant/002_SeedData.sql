@@ -4,8 +4,9 @@
 
     Seeds the same rows the EF Core model produces via
     StaffingManagementSystem.Infrastructure/Persistence/Seed/PlatformSeedData.cs:
-    the default Company + Department, all 33 Permissions (including the Opportunities and
-    Quotations/SalesOrders modules added after the initial Foundation + Leads milestone), the
+    the default Company + Department, all 39 Permissions (including the Opportunities,
+    Quotations/SalesOrders and Products modules, and Leads.ManageScoring and the Tags
+    module, added after the initial Foundation + Leads milestone), the
     4 built-in Roles, their RolePermission grants, and one Admin user.
 
     All IDs match ZentavioCRM.Core.Common.SeedIds exactly, so if you ever do switch
@@ -147,6 +148,31 @@ WHERE NOT EXISTS (SELECT 1 FROM dbo.Permissions p WHERE p.Id = v.Id);
 GO
 
 -- ============================================================================
+-- Leads.ManageScoring — added alongside the configurable lead-scoring engine (same
+-- top-up pattern used for Opportunities/Quotations/SalesOrders/Products above).
+-- ============================================================================
+INSERT INTO dbo.Permissions (Id, Code, Name, Module)
+SELECT v.Id, v.Code, v.Name, v.Module
+FROM (VALUES
+    ('10000000-0000-0000-0000-000000000026', N'Leads.ManageScoring', N'ManageScoring', N'Leads')
+) AS v(Id, Code, Name, Module)
+WHERE NOT EXISTS (SELECT 1 FROM dbo.Permissions p WHERE p.Id = v.Id);
+GO
+
+-- ============================================================================
+-- Tags.View / Tags.Manage — added alongside the structured Tag system (same top-up
+-- pattern used above).
+-- ============================================================================
+INSERT INTO dbo.Permissions (Id, Code, Name, Module)
+SELECT v.Id, v.Code, v.Name, v.Module
+FROM (VALUES
+    ('10000000-0000-0000-0000-000000000027', N'Tags.View',   N'View',   N'Tags'),
+    ('10000000-0000-0000-0000-000000000028', N'Tags.Manage', N'Manage', N'Tags')
+) AS v(Id, Code, Name, Module)
+WHERE NOT EXISTS (SELECT 1 FROM dbo.Permissions p WHERE p.Id = v.Id);
+GO
+
+-- ============================================================================
 -- Roles
 -- ============================================================================
 DECLARE @AdminRoleId2 UNIQUEIDENTIFIER = '20000000-0000-0000-0000-000000000001';
@@ -186,11 +212,12 @@ SELECT @SalesManagerRoleId3, p.Id FROM dbo.Permissions p
 WHERE p.Code IN (
     N'Departments.View', N'Users.View',
     N'Customers.View', N'Customers.Create', N'Customers.Edit', N'Customers.Delete',
-    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert',
+    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert', N'Leads.ManageScoring',
     N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Delete', N'Opportunities.Assign',
     N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Delete', N'Quotations.Assign',
     N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign',
-    N'Products.View', N'Products.Create', N'Products.Edit', N'Products.Delete'
+    N'Products.View', N'Products.Create', N'Products.Edit', N'Products.Delete',
+    N'Tags.View', N'Tags.Manage'
 )
 AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SalesManagerRoleId3 AND rp.PermissionId = p.Id);
 
@@ -203,14 +230,15 @@ WHERE p.Code IN (
     N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Assign',
     N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Assign',
     N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign',
-    N'Products.View', N'Products.Create', N'Products.Edit'
+    N'Products.View', N'Products.Create', N'Products.Edit',
+    N'Tags.View'
 )
 AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SalesExecutiveRoleId3 AND rp.PermissionId = p.Id);
 
 -- Support Agent: read-only.
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT @SupportAgentRoleId3, p.Id FROM dbo.Permissions p
-WHERE p.Code IN (N'Customers.View', N'Leads.View', N'Opportunities.View', N'Quotations.View', N'SalesOrders.View', N'Products.View')
+WHERE p.Code IN (N'Customers.View', N'Leads.View', N'Opportunities.View', N'Quotations.View', N'SalesOrders.View', N'Products.View', N'Tags.View')
 AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SupportAgentRoleId3 AND rp.PermissionId = p.Id);
 GO
 

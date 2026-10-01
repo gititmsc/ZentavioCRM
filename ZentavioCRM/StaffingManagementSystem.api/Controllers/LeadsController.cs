@@ -17,10 +17,31 @@ namespace ZentavioCRM.Api.Controllers
     public sealed class LeadsController : ControllerBase
     {
         private readonly ILeadService _leadService;
+        private readonly ILeadScoringSettingsService _leadScoringSettingsService;
+        private readonly IMergeService _mergeService;
 
-        public LeadsController(ILeadService leadService)
+        public LeadsController(ILeadService leadService, ILeadScoringSettingsService leadScoringSettingsService, IMergeService mergeService)
         {
             _leadService = leadService;
+            _leadScoringSettingsService = leadScoringSettingsService;
+            _mergeService = mergeService;
+        }
+
+        /// <summary>Current tenant-configurable lead-scoring weights — powers the Lead Scoring Settings screen.</summary>
+        [HttpGet("scoring-settings")]
+        [Authorize(Policy = PermissionCodes.LeadsManageScoring)]
+        public async Task<IActionResult> GetScoringSettings()
+        {
+            var settings = await _leadScoringSettingsService.GetAsync();
+            return Ok(ApiResponse<LeadScoringSettingsDto>.SuccessResponse(settings));
+        }
+
+        [HttpPut("scoring-settings")]
+        [Authorize(Policy = PermissionCodes.LeadsManageScoring)]
+        public async Task<IActionResult> UpdateScoringSettings([FromBody] LeadScoringSettingsDto request)
+        {
+            var result = await _leadScoringSettingsService.UpdateAsync(request, User.GetUserId());
+            return result.Success ? Ok(result) : BadRequest(result);
         }
 
         [HttpGet]
@@ -161,6 +182,42 @@ namespace ZentavioCRM.Api.Controllers
 
             var result = await _leadService.ImportCsvAsync(content, User.GetUserId());
             return Ok(ApiResponse<ImportResultDto>.SuccessResponse(result, $"Imported {result.SuccessCount} of {result.TotalRows} rows."));
+        }
+
+        [HttpGet("export-xlsx")]
+        [Authorize(Policy = PermissionCodes.LeadsView)]
+        public async Task<IActionResult> ExportXlsx()
+        {
+            var bytes = await _leadService.ExportXlsxAsync();
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "leads.xlsx");
+        }
+
+        [HttpPost("import-xlsx")]
+        [Authorize(Policy = PermissionCodes.LeadsCreate)]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        public async Task<IActionResult> ImportXlsx(IFormFile file)
+        {
+            if (file.Length == 0)
+            {
+                return BadRequest(ApiResponse<ImportResultDto>.FailureResponse("No file was uploaded."));
+            }
+
+            using var stream = file.OpenReadStream();
+            var result = await _leadService.ImportXlsxAsync(stream, User.GetUserId());
+            return Ok(ApiResponse<ImportResultDto>.SuccessResponse(result, $"Imported {result.SuccessCount} of {result.TotalRows} rows."));
+        }
+
+        [HttpPost("merge")]
+        [Authorize(Policy = PermissionCodes.LeadsDelete)]
+        public async Task<IActionResult> Merge([FromBody] MergeLeadsRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ApiResponse<MergeResultDto>.FailureResponse("Validation failed.", CollectErrors()));
+            }
+
+            var result = await _mergeService.MergeLeadsAsync(request.SurvivingLeadId, request.LosingLeadId, User.GetUserId());
+            return result.Success ? Ok(result) : BadRequest(result);
         }
 
         private List<string> CollectErrors() => ModelState.Values

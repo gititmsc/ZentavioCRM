@@ -17,6 +17,7 @@ import CustomerForm from "@/pages/customers/CustomerForm";
 import LeadsList from "@/pages/leads/LeadsList";
 import LeadForm from "@/pages/leads/LeadForm";
 import LeadDetail from "@/pages/leads/LeadDetail";
+import LeadScoringSettingsPage from "@/pages/leads/LeadScoringSettings";
 import OpportunitiesList from "@/pages/opportunities/OpportunitiesList";
 import OpportunityForm from "@/pages/opportunities/OpportunityForm";
 import OpportunityDetail from "@/pages/opportunities/OpportunityDetail";
@@ -27,6 +28,7 @@ import SalesOrdersList from "@/pages/salesorders/SalesOrdersList";
 import SalesOrderDetail from "@/pages/salesorders/SalesOrderDetail";
 import ProductsList from "@/pages/products/ProductsList";
 import ProductForm from "@/pages/products/ProductForm";
+import TagManager from "@/pages/tags/TagManager";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { MainLayout } from "@/layouts/MainLayout";
 
@@ -70,6 +72,7 @@ export function AppRoutes() {
 
         <Route path="/leads" element={<LeadsList />} />
         <Route path="/leads/new" element={<LeadForm />} />
+        <Route path="/leads/scoring-settings" element={<LeadScoringSettingsPage />} />
         <Route path="/leads/:id" element={<LeadDetail />} />
         <Route path="/leads/:id/edit" element={<LeadForm />} />
 
@@ -89,6 +92,8 @@ export function AppRoutes() {
         <Route path="/products" element={<ProductsList />} />
         <Route path="/products/new" element={<ProductForm />} />
         <Route path="/products/:id/edit" element={<ProductForm />} />
+
+        <Route path="/tags" element={<TagManager />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

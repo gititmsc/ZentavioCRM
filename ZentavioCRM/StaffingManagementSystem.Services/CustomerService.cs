@@ -1,6 +1,7 @@
 using ZentavioCRM.Core.Common;
 using ZentavioCRM.Core.DTOs.Common;
 using ZentavioCRM.Core.DTOs.Customers;
+using ZentavioCRM.Core.DTOs.Tags;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Interfaces;
@@ -20,6 +21,7 @@ namespace ZentavioCRM.Services
         private readonly IOpportunityRepository _opportunityRepository;
         private readonly IQuotationRepository _quotationRepository;
         private readonly ISalesOrderRepository _salesOrderRepository;
+        private readonly ITagRepository _tagRepository;
         private readonly IAuditLogService _auditLogService;
         private readonly IAccessScopeService _accessScopeService;
         private readonly IUsageLimitService _usageLimitService;
@@ -30,6 +32,7 @@ namespace ZentavioCRM.Services
             IOpportunityRepository opportunityRepository,
             IQuotationRepository quotationRepository,
             ISalesOrderRepository salesOrderRepository,
+            ITagRepository tagRepository,
             IAuditLogService auditLogService,
             IAccessScopeService accessScopeService,
             IUsageLimitService usageLimitService)
@@ -39,6 +42,7 @@ namespace ZentavioCRM.Services
             _opportunityRepository = opportunityRepository;
             _quotationRepository = quotationRepository;
             _salesOrderRepository = salesOrderRepository;
+            _tagRepository = tagRepository;
             _auditLogService = auditLogService;
             _accessScopeService = accessScopeService;
             _usageLimitService = usageLimitService;
@@ -66,9 +70,11 @@ namespace ZentavioCRM.Services
             AccessScope? accessScope = currentUserId is null ? null : await _accessScopeService.GetForUserAsync(currentUserId.Value);
             var (items, totalCount) = await _customerRepository.SearchAsync(search, assignedToUserId, isActive, page, pageSize, accessScope, sortBy, sortDescending);
 
+            var tagsByCustomerId = await _tagRepository.GetForCustomersAsync(items.Select(c => c.Id).ToList());
+
             return new PagedResult<CustomerListItemDto>
             {
-                Items = items.Select(MapListItem).ToList(),
+                Items = items.Select(c => MapListItem(c, tagsByCustomerId.GetValueOrDefault(c.Id, []))).ToList(),
                 TotalCount = totalCount,
                 Page = page,
                 PageSize = pageSize,
@@ -88,7 +94,8 @@ namespace ZentavioCRM.Services
                 return ApiResponse<CustomerDto>.FailureResponse("Customer not found.");
             }
 
-            return ApiResponse<CustomerDto>.SuccessResponse(Map(customer));
+            var tags = await _tagRepository.GetForCustomerAsync(id);
+            return ApiResponse<CustomerDto>.SuccessResponse(Map(customer, tags));
         }
 
         public async Task<ApiResponse<CustomerDto>> CreateAsync(SaveCustomerRequest request, Guid? currentUserId)
@@ -127,10 +134,12 @@ namespace ZentavioCRM.Services
 
             await _customerRepository.AddAsync(customer);
             await SyncChildCollectionsAsync(customer.Id, request);
+            await _tagRepository.ReplaceCustomerTagsAsync(customer.Id, request.TagIds ?? []);
             await _auditLogService.LogAsync(EntityType, customer.Id, "Created", $"Customer {customer.CustomerNumber} created.", currentUserId);
 
             var created = await _customerRepository.GetByIdAsync(customer.Id);
-            return ApiResponse<CustomerDto>.SuccessResponse(Map(created!), "Customer created.");
+            var tags = await _tagRepository.GetForCustomerAsync(customer.Id);
+            return ApiResponse<CustomerDto>.SuccessResponse(Map(created!, tags), "Customer created.");
         }
 
         public async Task<ApiResponse<CustomerDto>> UpdateAsync(Guid id, SaveCustomerRequest request, Guid? currentUserId)
@@ -169,10 +178,12 @@ namespace ZentavioCRM.Services
 
             await _customerRepository.UpdateAsync(customer);
             await SyncChildCollectionsAsync(id, request);
+            await _tagRepository.ReplaceCustomerTagsAsync(id, request.TagIds ?? []);
             await _auditLogService.LogAsync(EntityType, id, "Updated", "Customer details updated.", currentUserId);
 
             var updated = await _customerRepository.GetByIdAsync(id);
-            return ApiResponse<CustomerDto>.SuccessResponse(Map(updated!), "Customer updated.");
+            var tags = await _tagRepository.GetForCustomerAsync(id);
+            return ApiResponse<CustomerDto>.SuccessResponse(Map(updated!, tags), "Customer updated.");
         }
 
         public async Task<ApiResponse<bool>> DeleteAsync(Guid id, Guid? currentUserId)
@@ -452,7 +463,7 @@ namespace ZentavioCRM.Services
             await _customerRepository.ReplaceAddressesAsync(customerId, addresses);
         }
 
-        private static CustomerListItemDto MapListItem(Customer customer) => new()
+        private static CustomerListItemDto MapListItem(Customer customer, IReadOnlyList<Tag> tags) => new()
         {
             Id = customer.Id,
             CustomerNumber = customer.CustomerNumber,
@@ -463,12 +474,21 @@ namespace ZentavioCRM.Services
             Phone = customer.Phone,
             AssignedToUserName = customer.AssignedToUser?.FullName,
             Tags = customer.Tags,
+            TagList = tags.Select(MapTag).ToList(),
             HealthStatus = customer.HealthStatus,
             IsActive = customer.IsActive,
             CreatedAtUtc = customer.CreatedAtUtc,
         };
 
-        private static CustomerDto Map(Customer customer) => new()
+        private static TagDto MapTag(Tag tag) => new()
+        {
+            Id = tag.Id,
+            Name = tag.Name,
+            Color = tag.Color,
+            CreatedAtUtc = tag.CreatedAtUtc,
+        };
+
+        private static CustomerDto Map(Customer customer, IReadOnlyList<Tag> tags) => new()
         {
             Id = customer.Id,
             CustomerNumber = customer.CustomerNumber,
@@ -487,6 +507,7 @@ namespace ZentavioCRM.Services
             CreditLimit = customer.CreditLimit,
             Rating = customer.Rating,
             Tags = customer.Tags,
+            TagList = tags.Select(MapTag).ToList(),
             AcquisitionSource = customer.AcquisitionSource,
             HealthStatus = customer.HealthStatus,
             AssignedToUserId = customer.AssignedToUserId,

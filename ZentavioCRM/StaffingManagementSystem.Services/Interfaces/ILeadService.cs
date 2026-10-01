@@ -36,6 +36,12 @@ namespace ZentavioCRM.Services.Interfaces
 
         Task<ImportResultDto> ImportCsvAsync(string csvContent, Guid? currentUserId);
 
+        /// <summary>Same export data/column order as <see cref="ExportCsvAsync"/>, as an .xlsx workbook.</summary>
+        Task<byte[]> ExportXlsxAsync();
+
+        /// <summary>Same validation/persistence logic as <see cref="ImportCsvAsync"/>, reading rows from an .xlsx workbook instead of CSV text.</summary>
+        Task<ImportResultDto> ImportXlsxAsync(Stream xlsxStream, Guid? currentUserId);
+
         /// <summary>
         /// Converts a lead straight into an Opportunity: creates the Customer (or reuses one from
         /// a prior plain conversion) and a new Opportunity linked back to this lead via SourceLeadId.

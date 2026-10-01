@@ -55,6 +55,9 @@ namespace ZentavioCRM.Core.DTOs.Leads
 
         /// <summary>Optional — set when a specific existing contact was matched/selected for the linked customer. See <see cref="ZentavioCRM.Core.Entities.Lead.LinkedContactId"/>.</summary>
         public Guid? LinkedContactId { get; set; }
+
+        /// <summary>Structured tag Ids from the new Tag system — replaces the full set on save (not an incremental add).</summary>
+        public List<Guid> TagIds { get; set; } = [];
     }
 
     public class UpdateLeadStatusRequest

@@ -52,6 +52,9 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
             [PermissionCodes.ProductsCreate] = Guid.Parse("10000000-0000-0000-0000-000000000023"),
             [PermissionCodes.ProductsEdit] = Guid.Parse("10000000-0000-0000-0000-000000000024"),
             [PermissionCodes.ProductsDelete] = Guid.Parse("10000000-0000-0000-0000-000000000025"),
+            [PermissionCodes.LeadsManageScoring] = Guid.Parse("10000000-0000-0000-0000-000000000026"),
+            [PermissionCodes.TagsView] = Guid.Parse("10000000-0000-0000-0000-000000000027"),
+            [PermissionCodes.TagsManage] = Guid.Parse("10000000-0000-0000-0000-000000000028"),
         };
 
         /// <summary>Fixed point in time used for every seeded "CreatedAtUtc" column so migrations stay deterministic.</summary>
@@ -135,11 +138,12 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
                 PermissionCodes.DepartmentsView,
                 PermissionCodes.UsersView,
                 PermissionCodes.CustomersView, PermissionCodes.CustomersCreate, PermissionCodes.CustomersEdit, PermissionCodes.CustomersDelete,
-                PermissionCodes.LeadsView, PermissionCodes.LeadsCreate, PermissionCodes.LeadsEdit, PermissionCodes.LeadsDelete, PermissionCodes.LeadsAssign, PermissionCodes.LeadsConvert,
+                PermissionCodes.LeadsView, PermissionCodes.LeadsCreate, PermissionCodes.LeadsEdit, PermissionCodes.LeadsDelete, PermissionCodes.LeadsAssign, PermissionCodes.LeadsConvert, PermissionCodes.LeadsManageScoring,
                 PermissionCodes.OpportunitiesView, PermissionCodes.OpportunitiesCreate, PermissionCodes.OpportunitiesEdit, PermissionCodes.OpportunitiesDelete, PermissionCodes.OpportunitiesAssign,
                 PermissionCodes.QuotationsView, PermissionCodes.QuotationsCreate, PermissionCodes.QuotationsEdit, PermissionCodes.QuotationsDelete, PermissionCodes.QuotationsAssign,
                 PermissionCodes.SalesOrdersView, PermissionCodes.SalesOrdersCreate, PermissionCodes.SalesOrdersEdit, PermissionCodes.SalesOrdersAssign,
                 PermissionCodes.ProductsView, PermissionCodes.ProductsCreate, PermissionCodes.ProductsEdit, PermissionCodes.ProductsDelete,
+                PermissionCodes.TagsView, PermissionCodes.TagsManage,
             ];
             grants.AddRange(salesManagerCodes.Select(code => new RolePermission { RoleId = SeedIds.SalesManagerRoleId, PermissionId = PermissionIds[code] }));
 
@@ -152,6 +156,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
                 PermissionCodes.QuotationsView, PermissionCodes.QuotationsCreate, PermissionCodes.QuotationsEdit, PermissionCodes.QuotationsAssign,
                 PermissionCodes.SalesOrdersView, PermissionCodes.SalesOrdersCreate, PermissionCodes.SalesOrdersEdit, PermissionCodes.SalesOrdersAssign,
                 PermissionCodes.ProductsView, PermissionCodes.ProductsCreate, PermissionCodes.ProductsEdit,
+                PermissionCodes.TagsView,
             ];
             grants.AddRange(salesExecutiveCodes.Select(code => new RolePermission { RoleId = SeedIds.SalesExecutiveRoleId, PermissionId = PermissionIds[code] }));
 
@@ -160,6 +165,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
             [
                 PermissionCodes.CustomersView, PermissionCodes.LeadsView, PermissionCodes.OpportunitiesView,
                 PermissionCodes.QuotationsView, PermissionCodes.SalesOrdersView, PermissionCodes.ProductsView,
+                PermissionCodes.TagsView,
             ];
             grants.AddRange(supportAgentCodes.Select(code => new RolePermission { RoleId = SeedIds.SupportAgentRoleId, PermissionId = PermissionIds[code] }));
 

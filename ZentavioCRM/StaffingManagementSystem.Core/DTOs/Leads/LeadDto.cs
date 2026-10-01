@@ -1,3 +1,4 @@
+using ZentavioCRM.Core.DTOs.Tags;
 using ZentavioCRM.Core.Enums;
 
 namespace ZentavioCRM.Core.DTOs.Leads
@@ -22,6 +23,8 @@ namespace ZentavioCRM.Core.DTOs.Leads
         public Guid? AssignedToUserId { get; set; }
 
         public string? AssignedToUserName { get; set; }
+
+        public List<TagDto> Tags { get; set; } = [];
 
         public DateTime CreatedAtUtc { get; set; }
     }
@@ -78,6 +81,8 @@ namespace ZentavioCRM.Core.DTOs.Leads
         public int? LeadScore { get; set; }
 
         public int? AiScore { get; set; }
+
+        public List<TagDto> Tags { get; set; } = [];
 
         public string? Notes { get; set; }
 

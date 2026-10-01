@@ -16,7 +16,7 @@
 */
 
 -- ============================================================================
--- Permissions (36 total, grouped by module — matches Core.Common.PermissionCodes)
+-- Permissions (39 total, grouped by module — matches Core.Common.PermissionCodes)
 -- ============================================================================
 INSERT INTO dbo.Permissions (Id, Code, Name, Module) VALUES
     ('10000000-0000-0000-0000-000000000001', N'Departments.View',    N'View',    N'Departments'),
@@ -37,6 +37,7 @@ INSERT INTO dbo.Permissions (Id, Code, Name, Module) VALUES
     ('10000000-0000-0000-0000-00000000000e', N'Leads.Delete',        N'Delete',  N'Leads'),
     ('10000000-0000-0000-0000-00000000000f', N'Leads.Assign',        N'Assign',  N'Leads'),
     ('10000000-0000-0000-0000-000000000010', N'Leads.Convert',       N'Convert', N'Leads'),
+    ('10000000-0000-0000-0000-000000000026', N'Leads.ManageScoring', N'ManageScoring', N'Leads'),
     ('10000000-0000-0000-0000-000000000011', N'Opportunities.View',    N'View',    N'Opportunities'),
     ('10000000-0000-0000-0000-000000000012', N'Opportunities.Create',  N'Create',  N'Opportunities'),
     ('10000000-0000-0000-0000-000000000013', N'Opportunities.Edit',    N'Edit',    N'Opportunities'),
@@ -54,7 +55,9 @@ INSERT INTO dbo.Permissions (Id, Code, Name, Module) VALUES
     ('10000000-0000-0000-0000-000000000022', N'Products.View',         N'View',    N'Products'),
     ('10000000-0000-0000-0000-000000000023', N'Products.Create',       N'Create',  N'Products'),
     ('10000000-0000-0000-0000-000000000024', N'Products.Edit',         N'Edit',    N'Products'),
-    ('10000000-0000-0000-0000-000000000025', N'Products.Delete',       N'Delete',  N'Products');
+    ('10000000-0000-0000-0000-000000000025', N'Products.Delete',       N'Delete',  N'Products'),
+    ('10000000-0000-0000-0000-000000000027', N'Tags.View',             N'View',    N'Tags'),
+    ('10000000-0000-0000-0000-000000000028', N'Tags.Manage',           N'Manage',  N'Tags');
 -- No SalesOrders.Delete: there is no delete feature for Sales Orders (Cancel is the
 -- "this order is void" action instead) — see Core.Common.PermissionCodes for the rationale.
 GO
@@ -82,11 +85,12 @@ SELECT '20000000-0000-0000-0000-000000000002', Id FROM dbo.Permissions
 WHERE Code IN (
     N'Departments.View', N'Users.View',
     N'Customers.View', N'Customers.Create', N'Customers.Edit', N'Customers.Delete',
-    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert',
+    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert', N'Leads.ManageScoring',
     N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Delete', N'Opportunities.Assign',
     N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Delete', N'Quotations.Assign',
     N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign',
-    N'Products.View', N'Products.Create', N'Products.Edit', N'Products.Delete'
+    N'Products.View', N'Products.Create', N'Products.Edit', N'Products.Delete',
+    N'Tags.View', N'Tags.Manage'
 );
 
 -- Sales Executive: day-to-day CRUD, no deletes.
@@ -98,11 +102,12 @@ WHERE Code IN (
     N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Assign',
     N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Assign',
     N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign',
-    N'Products.View', N'Products.Create', N'Products.Edit'
+    N'Products.View', N'Products.Create', N'Products.Edit',
+    N'Tags.View'
 );
 
 -- Support Agent: read-only.
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT '20000000-0000-0000-0000-000000000004', Id FROM dbo.Permissions
-WHERE Code IN (N'Customers.View', N'Leads.View', N'Opportunities.View', N'Quotations.View', N'SalesOrders.View', N'Products.View');
+WHERE Code IN (N'Customers.View', N'Leads.View', N'Opportunities.View', N'Quotations.View', N'SalesOrders.View', N'Products.View', N'Tags.View');
 GO
