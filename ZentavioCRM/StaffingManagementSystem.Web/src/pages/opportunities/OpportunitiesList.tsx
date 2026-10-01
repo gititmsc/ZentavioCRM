@@ -106,12 +106,22 @@ export default function OpportunitiesList() {
         title="Opportunities"
         subtitle="Deals in progress across your pipeline."
         actions={
-          canCreate && (
-            <button type="button" className="btn btn-primary" onClick={() => navigate("/opportunities/new")}>
-              <i className="bi bi-plus-lg me-1" aria-hidden="true" />
-              New Opportunity
+          <>
+            <button
+              type="button"
+              className="btn btn-outline-secondary me-2"
+              onClick={() => navigate("/opportunities/board")}
+            >
+              <i className="bi bi-kanban me-1" aria-hidden="true" />
+              Board View
             </button>
-          )
+            {canCreate && (
+              <button type="button" className="btn btn-primary" onClick={() => navigate("/opportunities/new")}>
+                <i className="bi bi-plus-lg me-1" aria-hidden="true" />
+                New Opportunity
+              </button>
+            )}
+          </>
         }
       />
 

@@ -740,3 +740,58 @@ CREATE TABLE dbo.CustomerTags
 
 CREATE INDEX IX_CustomerTags_TagId ON dbo.CustomerTags (TagId);
 GO
+
+-- ============================================================================
+-- LeadAssignmentSettings (exactly one row per tenant — tenant-wide auto-assign on/off switch.
+-- See LeadAssignmentSettings.cs. Defaults to off: adding this feature changes nothing until an
+-- admin both enables it here and configures at least one LeadAssignmentRule below.)
+-- ============================================================================
+CREATE TABLE dbo.LeadAssignmentSettings
+(
+    Id               UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_LeadAssignmentSettings_Id DEFAULT NEWID(),
+    AutoAssignEnabled BIT             NOT NULL CONSTRAINT DF_LeadAssignmentSettings_AutoAssignEnabled DEFAULT (0),
+    UpdatedByUserId  UNIQUEIDENTIFIER NULL,
+    UpdatedAtUtc     DATETIME2        NULL,
+    CONSTRAINT PK_LeadAssignmentSettings PRIMARY KEY CLUSTERED (Id)
+);
+GO
+
+-- Exactly one row, fixed Id matching Core.Common.SeedIds.LeadAssignmentSettingsId.
+INSERT INTO dbo.LeadAssignmentSettings (Id)
+VALUES ('60000000-0000-0000-0000-000000000002');
+GO
+
+-- ============================================================================
+-- LeadAssignmentRules / LeadAssignmentRuleUsers (round-robin routing pools — see
+-- LeadAssignmentRule.cs/LeadAssignmentRuleUser.cs. A rule with a NULL TerritoryId is the
+-- tenant-wide fallback used when a lead's territory has no rule of its own.)
+-- ============================================================================
+CREATE TABLE dbo.LeadAssignmentRules
+(
+    Id                 UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_LeadAssignmentRules_Id DEFAULT NEWID(),
+    TerritoryId        UNIQUEIDENTIFIER NULL,
+    IsActive           BIT              NOT NULL CONSTRAINT DF_LeadAssignmentRules_IsActive DEFAULT (1),
+    LastAssignedUserId UNIQUEIDENTIFIER NULL,
+    LastAssignedAtUtc  DATETIME2        NULL,
+    CreatedByUserId    UNIQUEIDENTIFIER NULL,
+    CreatedAtUtc       DATETIME2        NOT NULL,
+    UpdatedAtUtc       DATETIME2        NULL,
+    CONSTRAINT PK_LeadAssignmentRules PRIMARY KEY CLUSTERED (Id),
+    CONSTRAINT FK_LeadAssignmentRules_Territory FOREIGN KEY (TerritoryId) REFERENCES dbo.Territories (Id) ON DELETE SET NULL,
+    CONSTRAINT FK_LeadAssignmentRules_LastAssignedUser FOREIGN KEY (LastAssignedUserId) REFERENCES dbo.Users (Id) ON DELETE SET NULL
+);
+
+CREATE INDEX IX_LeadAssignmentRules_TerritoryId ON dbo.LeadAssignmentRules (TerritoryId);
+GO
+
+CREATE TABLE dbo.LeadAssignmentRuleUsers
+(
+    RuleId UNIQUEIDENTIFIER NOT NULL,
+    UserId UNIQUEIDENTIFIER NOT NULL,
+    CONSTRAINT PK_LeadAssignmentRuleUsers PRIMARY KEY CLUSTERED (RuleId, UserId),
+    CONSTRAINT FK_LeadAssignmentRuleUsers_Rule FOREIGN KEY (RuleId) REFERENCES dbo.LeadAssignmentRules (Id) ON DELETE CASCADE,
+    CONSTRAINT FK_LeadAssignmentRuleUsers_User FOREIGN KEY (UserId) REFERENCES dbo.Users (Id) ON DELETE CASCADE
+);
+
+CREATE INDEX IX_LeadAssignmentRuleUsers_UserId ON dbo.LeadAssignmentRuleUsers (UserId);
+GO

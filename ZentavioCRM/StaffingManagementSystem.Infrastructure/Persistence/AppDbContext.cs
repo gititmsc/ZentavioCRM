@@ -74,6 +74,12 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<CustomerTag> CustomerTags => Set<CustomerTag>();
 
+        public DbSet<LeadAssignmentSettings> LeadAssignmentSettings => Set<LeadAssignmentSettings>();
+
+        public DbSet<LeadAssignmentRule> LeadAssignmentRules => Set<LeadAssignmentRule>();
+
+        public DbSet<LeadAssignmentRuleUser> LeadAssignmentRuleUsers => Set<LeadAssignmentRuleUser>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

@@ -27,6 +27,7 @@ export const PermissionCodes = {
   LeadsAssign: "Leads.Assign",
   LeadsConvert: "Leads.Convert",
   LeadsManageScoring: "Leads.ManageScoring",
+  LeadsManageAssignment: "Leads.ManageAssignment",
 
   OpportunitiesView: "Opportunities.View",
   OpportunitiesCreate: "Opportunities.Create",

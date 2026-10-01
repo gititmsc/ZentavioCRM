@@ -16,7 +16,7 @@
 */
 
 -- ============================================================================
--- Permissions (39 total, grouped by module — matches Core.Common.PermissionCodes)
+-- Permissions (40 total, grouped by module — matches Core.Common.PermissionCodes)
 -- ============================================================================
 INSERT INTO dbo.Permissions (Id, Code, Name, Module) VALUES
     ('10000000-0000-0000-0000-000000000001', N'Departments.View',    N'View',    N'Departments'),
@@ -38,6 +38,7 @@ INSERT INTO dbo.Permissions (Id, Code, Name, Module) VALUES
     ('10000000-0000-0000-0000-00000000000f', N'Leads.Assign',        N'Assign',  N'Leads'),
     ('10000000-0000-0000-0000-000000000010', N'Leads.Convert',       N'Convert', N'Leads'),
     ('10000000-0000-0000-0000-000000000026', N'Leads.ManageScoring', N'ManageScoring', N'Leads'),
+    ('10000000-0000-0000-0000-000000000029', N'Leads.ManageAssignment', N'ManageAssignment', N'Leads'),
     ('10000000-0000-0000-0000-000000000011', N'Opportunities.View',    N'View',    N'Opportunities'),
     ('10000000-0000-0000-0000-000000000012', N'Opportunities.Create',  N'Create',  N'Opportunities'),
     ('10000000-0000-0000-0000-000000000013', N'Opportunities.Edit',    N'Edit',    N'Opportunities'),
@@ -83,9 +84,9 @@ SELECT '20000000-0000-0000-0000-000000000001', Id FROM dbo.Permissions;
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT '20000000-0000-0000-0000-000000000002', Id FROM dbo.Permissions
 WHERE Code IN (
-    N'Departments.View', N'Users.View',
+    N'Departments.View', N'Users.View', N'Territories.View',
     N'Customers.View', N'Customers.Create', N'Customers.Edit', N'Customers.Delete',
-    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert', N'Leads.ManageScoring',
+    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert', N'Leads.ManageScoring', N'Leads.ManageAssignment',
     N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Delete', N'Opportunities.Assign',
     N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Delete', N'Quotations.Assign',
     N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign',

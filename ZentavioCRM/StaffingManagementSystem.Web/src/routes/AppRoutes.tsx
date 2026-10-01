@@ -18,7 +18,9 @@ import LeadsList from "@/pages/leads/LeadsList";
 import LeadForm from "@/pages/leads/LeadForm";
 import LeadDetail from "@/pages/leads/LeadDetail";
 import LeadScoringSettingsPage from "@/pages/leads/LeadScoringSettings";
+import LeadAssignmentSettingsPage from "@/pages/leads/LeadAssignmentSettings";
 import OpportunitiesList from "@/pages/opportunities/OpportunitiesList";
+import OpportunitiesBoard from "@/pages/opportunities/OpportunitiesBoard";
 import OpportunityForm from "@/pages/opportunities/OpportunityForm";
 import OpportunityDetail from "@/pages/opportunities/OpportunityDetail";
 import QuotationsList from "@/pages/quotations/QuotationsList";
@@ -73,10 +75,12 @@ export function AppRoutes() {
         <Route path="/leads" element={<LeadsList />} />
         <Route path="/leads/new" element={<LeadForm />} />
         <Route path="/leads/scoring-settings" element={<LeadScoringSettingsPage />} />
+        <Route path="/leads/assignment-settings" element={<LeadAssignmentSettingsPage />} />
         <Route path="/leads/:id" element={<LeadDetail />} />
         <Route path="/leads/:id/edit" element={<LeadForm />} />
 
         <Route path="/opportunities" element={<OpportunitiesList />} />
+        <Route path="/opportunities/board" element={<OpportunitiesBoard />} />
         <Route path="/opportunities/new" element={<OpportunityForm />} />
         <Route path="/opportunities/:id" element={<OpportunityDetail />} />
         <Route path="/opportunities/:id/edit" element={<OpportunityForm />} />

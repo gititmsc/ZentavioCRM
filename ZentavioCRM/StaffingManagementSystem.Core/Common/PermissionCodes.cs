@@ -34,6 +34,7 @@ namespace ZentavioCRM.Core.Common
         public const string LeadsAssign = "Leads.Assign";
         public const string LeadsConvert = "Leads.Convert";
         public const string LeadsManageScoring = "Leads.ManageScoring";
+        public const string LeadsManageAssignment = "Leads.ManageAssignment";
 
         public const string OpportunitiesView = "Opportunities.View";
         public const string OpportunitiesCreate = "Opportunities.Create";
@@ -72,7 +73,7 @@ namespace ZentavioCRM.Core.Common
             ["Users"] = [UsersView, UsersManage],
             ["Roles"] = [RolesView, RolesManage],
             ["Customers"] = [CustomersView, CustomersCreate, CustomersEdit, CustomersDelete],
-            ["Leads"] = [LeadsView, LeadsCreate, LeadsEdit, LeadsDelete, LeadsAssign, LeadsConvert, LeadsManageScoring],
+            ["Leads"] = [LeadsView, LeadsCreate, LeadsEdit, LeadsDelete, LeadsAssign, LeadsConvert, LeadsManageScoring, LeadsManageAssignment],
             ["Opportunities"] = [OpportunitiesView, OpportunitiesCreate, OpportunitiesEdit, OpportunitiesDelete, OpportunitiesAssign],
             ["Quotations"] = [QuotationsView, QuotationsCreate, QuotationsEdit, QuotationsDelete, QuotationsAssign],
             ["SalesOrders"] = [SalesOrdersView, SalesOrdersCreate, SalesOrdersEdit, SalesOrdersAssign],

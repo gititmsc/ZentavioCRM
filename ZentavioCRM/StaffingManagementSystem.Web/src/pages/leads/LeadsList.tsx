@@ -40,6 +40,7 @@ export default function LeadsList() {
   const { hasPermission } = useAuth();
   const canCreate = hasPermission(PermissionCodes.LeadsCreate);
   const canManageScoring = hasPermission(PermissionCodes.LeadsManageScoring);
+  const canManageAssignment = hasPermission(PermissionCodes.LeadsManageAssignment);
   const canDelete = hasPermission(PermissionCodes.LeadsDelete);
 
   const [search, setSearch] = useState("");
@@ -141,6 +142,16 @@ export default function LeadsList() {
               >
                 <i className="bi bi-sliders me-1" aria-hidden="true" />
                 Scoring Settings
+              </button>
+            )}
+            {canManageAssignment && (
+              <button
+                type="button"
+                className="btn btn-outline-secondary me-2"
+                onClick={() => navigate("/leads/assignment-settings")}
+              >
+                <i className="bi bi-diagram-3 me-1" aria-hidden="true" />
+                Assignment Rules
               </button>
             )}
             {canCreate && (

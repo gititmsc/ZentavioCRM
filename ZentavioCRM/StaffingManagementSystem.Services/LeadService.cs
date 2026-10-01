@@ -25,6 +25,7 @@ namespace ZentavioCRM.Services
         private readonly IActivityRepository _activityRepository;
         private readonly ILeadScoringSettingsRepository _leadScoringSettingsRepository;
         private readonly ITagRepository _tagRepository;
+        private readonly ILeadAssignmentService _leadAssignmentService;
         private readonly IAuditLogService _auditLogService;
         private readonly INotificationService _notificationService;
         private readonly IAccessScopeService _accessScopeService;
@@ -37,6 +38,7 @@ namespace ZentavioCRM.Services
             IActivityRepository activityRepository,
             ILeadScoringSettingsRepository leadScoringSettingsRepository,
             ITagRepository tagRepository,
+            ILeadAssignmentService leadAssignmentService,
             IAuditLogService auditLogService,
             INotificationService notificationService,
             IAccessScopeService accessScopeService,
@@ -48,6 +50,7 @@ namespace ZentavioCRM.Services
             _activityRepository = activityRepository;
             _leadScoringSettingsRepository = leadScoringSettingsRepository;
             _tagRepository = tagRepository;
+            _leadAssignmentService = leadAssignmentService;
             _auditLogService = auditLogService;
             _notificationService = notificationService;
             _accessScopeService = accessScopeService;
@@ -112,6 +115,13 @@ namespace ZentavioCRM.Services
                 return ApiResponse<LeadDto>.FailureResponse(limitMessage, ["Contact your account administrator to upgrade your plan."]);
             }
 
+            // No explicit assignee on the incoming request? Try the auto-assignment routing engine
+            // (round-robin by territory, falling back to the tenant-wide rule) before falling back
+            // to the pre-existing "leave it unassigned" behavior — a no-op unless an admin has both
+            // turned auto-assign on and configured at least one rule.
+            var assignedToUserId = request.AssignedToUserId
+                ?? await _leadAssignmentService.PickAssigneeAsync(request.TerritoryId);
+
             var lead = new Lead
             {
                 LeadNumber = await _leadRepository.GetNextLeadNumberAsync(),
@@ -130,10 +140,10 @@ namespace ZentavioCRM.Services
                 Budget = request.Budget,
                 Timeline = request.Timeline,
                 ExpectedValue = request.ExpectedValue,
-                AssignedToUserId = request.AssignedToUserId,
+                AssignedToUserId = assignedToUserId,
                 Territory = request.Territory,
                 TerritoryId = request.TerritoryId,
-                Status = request.AssignedToUserId is null ? LeadStatus.New : LeadStatus.Assigned,
+                Status = assignedToUserId is null ? LeadStatus.New : LeadStatus.Assigned,
                 Notes = request.Notes,
                 NextFollowUpDate = request.NextFollowUpDate,
                 LinkedCustomerId = request.LinkedCustomerId,
@@ -147,6 +157,17 @@ namespace ZentavioCRM.Services
             await SyncLinkedContactAsync(lead);
             await _tagRepository.ReplaceLeadTagsAsync(lead.Id, request.TagIds ?? []);
             await _auditLogService.LogAsync(EntityType, lead.Id, "Created", $"Lead {lead.LeadNumber} created.", currentUserId);
+
+            var autoAssigned = request.AssignedToUserId is null && assignedToUserId is not null;
+            if (autoAssigned)
+            {
+                await _auditLogService.LogAsync(EntityType, lead.Id, "AutoAssigned", $"Lead {lead.LeadNumber} auto-assigned by the routing rules.", currentUserId);
+                await _notificationService.NotifyAsync(
+                    assignedToUserId!.Value,
+                    $"You were auto-assigned lead {lead.LeadNumber} — {lead.CompanyName}.",
+                    RelatedEntityType.Lead,
+                    lead.Id);
+            }
 
             var created = await _leadRepository.GetByIdAsync(lead.Id);
             var tags = await _tagRepository.GetForLeadAsync(lead.Id);

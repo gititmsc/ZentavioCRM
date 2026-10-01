@@ -173,6 +173,18 @@ WHERE NOT EXISTS (SELECT 1 FROM dbo.Permissions p WHERE p.Id = v.Id);
 GO
 
 -- ============================================================================
+-- Leads.ManageAssignment — added alongside the round-robin/territory lead-routing
+-- engine (same top-up pattern used above).
+-- ============================================================================
+INSERT INTO dbo.Permissions (Id, Code, Name, Module)
+SELECT v.Id, v.Code, v.Name, v.Module
+FROM (VALUES
+    ('10000000-0000-0000-0000-000000000029', N'Leads.ManageAssignment', N'ManageAssignment', N'Leads')
+) AS v(Id, Code, Name, Module)
+WHERE NOT EXISTS (SELECT 1 FROM dbo.Permissions p WHERE p.Id = v.Id);
+GO
+
+-- ============================================================================
 -- Roles
 -- ============================================================================
 DECLARE @AdminRoleId2 UNIQUEIDENTIFIER = '20000000-0000-0000-0000-000000000001';
@@ -210,9 +222,9 @@ WHERE NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @AdminR
 INSERT INTO dbo.RolePermissions (RoleId, PermissionId)
 SELECT @SalesManagerRoleId3, p.Id FROM dbo.Permissions p
 WHERE p.Code IN (
-    N'Departments.View', N'Users.View',
+    N'Departments.View', N'Users.View', N'Territories.View',
     N'Customers.View', N'Customers.Create', N'Customers.Edit', N'Customers.Delete',
-    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert', N'Leads.ManageScoring',
+    N'Leads.View', N'Leads.Create', N'Leads.Edit', N'Leads.Delete', N'Leads.Assign', N'Leads.Convert', N'Leads.ManageScoring', N'Leads.ManageAssignment',
     N'Opportunities.View', N'Opportunities.Create', N'Opportunities.Edit', N'Opportunities.Delete', N'Opportunities.Assign',
     N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Delete', N'Quotations.Assign',
     N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign',

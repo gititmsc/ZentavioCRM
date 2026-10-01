@@ -23,6 +23,7 @@ namespace ZentavioCRM.Repositories.Extensions
             services.AddScoped<ICustomerRepository, CustomerRepository>();
             services.AddScoped<ILeadRepository, LeadRepository>();
             services.AddScoped<ILeadScoringSettingsRepository, LeadScoringSettingsRepository>();
+            services.AddScoped<ILeadAssignmentRepository, LeadAssignmentRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
             services.AddScoped<IMergeRepository, MergeRepository>();
             services.AddScoped<IOpportunityRepository, OpportunityRepository>();

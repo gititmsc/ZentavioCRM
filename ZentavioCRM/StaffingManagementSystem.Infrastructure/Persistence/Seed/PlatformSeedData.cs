@@ -55,6 +55,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
             [PermissionCodes.LeadsManageScoring] = Guid.Parse("10000000-0000-0000-0000-000000000026"),
             [PermissionCodes.TagsView] = Guid.Parse("10000000-0000-0000-0000-000000000027"),
             [PermissionCodes.TagsManage] = Guid.Parse("10000000-0000-0000-0000-000000000028"),
+            [PermissionCodes.LeadsManageAssignment] = Guid.Parse("10000000-0000-0000-0000-000000000029"),
         };
 
         /// <summary>Fixed point in time used for every seeded "CreatedAtUtc" column so migrations stay deterministic.</summary>
@@ -137,8 +138,9 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
             [
                 PermissionCodes.DepartmentsView,
                 PermissionCodes.UsersView,
+                PermissionCodes.TerritoriesView,
                 PermissionCodes.CustomersView, PermissionCodes.CustomersCreate, PermissionCodes.CustomersEdit, PermissionCodes.CustomersDelete,
-                PermissionCodes.LeadsView, PermissionCodes.LeadsCreate, PermissionCodes.LeadsEdit, PermissionCodes.LeadsDelete, PermissionCodes.LeadsAssign, PermissionCodes.LeadsConvert, PermissionCodes.LeadsManageScoring,
+                PermissionCodes.LeadsView, PermissionCodes.LeadsCreate, PermissionCodes.LeadsEdit, PermissionCodes.LeadsDelete, PermissionCodes.LeadsAssign, PermissionCodes.LeadsConvert, PermissionCodes.LeadsManageScoring, PermissionCodes.LeadsManageAssignment,
                 PermissionCodes.OpportunitiesView, PermissionCodes.OpportunitiesCreate, PermissionCodes.OpportunitiesEdit, PermissionCodes.OpportunitiesDelete, PermissionCodes.OpportunitiesAssign,
                 PermissionCodes.QuotationsView, PermissionCodes.QuotationsCreate, PermissionCodes.QuotationsEdit, PermissionCodes.QuotationsDelete, PermissionCodes.QuotationsAssign,
                 PermissionCodes.SalesOrdersView, PermissionCodes.SalesOrdersCreate, PermissionCodes.SalesOrdersEdit, PermissionCodes.SalesOrdersAssign,
