@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZentavioCRM.Core.DTOs.Dashboard;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Security;
@@ -152,6 +153,34 @@ namespace ZentavioCRM.Repositories
                 l.ConvertedAtUtc < toUtcExclusive);
             query = ApplyAccessScope(query, accessScope);
             return query.CountAsync();
+        }
+
+        public async Task<IReadOnlyList<DashboardLeadRow>> GetForDashboardAsync(
+            DateTime fromUtc, DateTime toUtcExclusive, Guid? mineUserId, AccessScope? accessScope = null)
+        {
+            var query = _dbContext.Leads.AsNoTracking()
+                .Where(l => l.CreatedAtUtc >= fromUtc && l.CreatedAtUtc < toUtcExclusive);
+
+            if (mineUserId is not null)
+            {
+                query = query.Where(l => l.AssignedToUserId == mineUserId);
+            }
+
+            // Scope first, projection after — the projection drops CreatedByUserId, which the Own/Team filter needs.
+            query = ApplyAccessScope(query, accessScope);
+
+            return await query
+                .Select(l => new DashboardLeadRow
+                {
+                    Source = l.Source,
+                    Status = l.Status,
+                    AssignedToUserId = l.AssignedToUserId,
+                    AssignedToFirstName = l.AssignedToUser != null ? l.AssignedToUser.FirstName : null,
+                    AssignedToLastName = l.AssignedToUser != null ? l.AssignedToUser.LastName : null,
+                    TerritoryId = l.TerritoryId,
+                    TerritoryName = l.TerritoryRef != null ? l.TerritoryRef.Name : null,
+                })
+                .ToListAsync();
         }
 
         public async Task<IReadOnlyList<Lead>> FindPotentialDuplicatesAsync(string? email, string? mobile, Guid? excludeLeadId)

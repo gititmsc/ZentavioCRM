@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZentavioCRM.Core.DTOs.Dashboard;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Security;
@@ -153,6 +154,35 @@ namespace ZentavioCRM.Repositories
                 .ToListAsync();
 
             return opportunities;
+        }
+
+        public async Task<IReadOnlyList<DashboardOpportunityRow>> GetForDashboardAsync(
+            DateTime fromUtc, DateTime toUtcExclusive, Guid? mineUserId, AccessScope? accessScope = null)
+        {
+            var query = _dbContext.Opportunities.AsNoTracking()
+                .Where(o =>
+                    (o.CreatedAtUtc >= fromUtc && o.CreatedAtUtc < toUtcExclusive) ||
+                    (o.ClosedAtUtc != null && o.ClosedAtUtc >= fromUtc && o.ClosedAtUtc < toUtcExclusive));
+
+            if (mineUserId is not null)
+            {
+                query = query.Where(o => o.AssignedToUserId == mineUserId);
+            }
+
+            query = ApplyAccessScope(query, accessScope);
+
+            return await query
+                .Select(o => new DashboardOpportunityRow
+                {
+                    Stage = o.Stage,
+                    Value = o.Value,
+                    AssignedToUserId = o.AssignedToUserId,
+                    AssignedToFirstName = o.AssignedToUser != null ? o.AssignedToUser.FirstName : null,
+                    AssignedToLastName = o.AssignedToUser != null ? o.AssignedToUser.LastName : null,
+                    CreatedAtUtc = o.CreatedAtUtc,
+                    ClosedAtUtc = o.ClosedAtUtc,
+                })
+                .ToListAsync();
         }
 
         public async Task ReplaceLineItemsAsync(Guid opportunityId, IEnumerable<OpportunityLineItem> lineItems)

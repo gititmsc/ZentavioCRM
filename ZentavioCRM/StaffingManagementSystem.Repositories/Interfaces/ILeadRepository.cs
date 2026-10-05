@@ -1,3 +1,4 @@
+using ZentavioCRM.Core.DTOs.Dashboard;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Security;
@@ -29,6 +30,10 @@ namespace ZentavioCRM.Repositories.Interfaces
         /// <summary>Count of leads converted within [fromUtc, toUtcExclusive) — for the dashboard's "Converted This Month" card.</summary>
         /// <param name="accessScope">When non-null and Scope != All, restricts the count to records the scope's user is allowed to see.</param>
         Task<int> CountConvertedBetweenAsync(DateTime fromUtc, DateTime toUtcExclusive, AccessScope? accessScope = null);
+
+        /// <summary>Lightweight rows for every lead CREATED in [fromUtc, toUtcExclusive) — feeds the dashboard's source/funnel/leaderboard sections.</summary>
+        /// <param name="mineUserId">When set, additionally restricts to leads assigned to this user.</param>
+        Task<IReadOnlyList<DashboardLeadRow>> GetForDashboardAsync(DateTime fromUtc, DateTime toUtcExclusive, Guid? mineUserId, AccessScope? accessScope = null);
 
         /// <summary>Leads (excluding excludeLeadId) whose Email or Mobile matches either given value — used for the non-blocking duplicate warning on lead creation.</summary>
         Task<IReadOnlyList<Lead>> FindPotentialDuplicatesAsync(string? email, string? mobile, Guid? excludeLeadId);

@@ -1,3 +1,4 @@
+using ZentavioCRM.Core.DTOs.Dashboard;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Security;
@@ -25,6 +26,10 @@ namespace ZentavioCRM.Repositories.Interfaces
         /// <summary>Every opportunity (open and closed), for dashboard aggregation (pipeline value, win rate, stage breakdown). No paging — SMB-scale data volumes.</summary>
         /// <param name="accessScope">When non-null and Scope != All, restricts results to records the scope's user is allowed to see.</param>
         Task<IReadOnlyList<Opportunity>> GetAllForDashboardAsync(AccessScope? accessScope = null);
+
+        /// <summary>Lightweight rows for every opportunity CREATED or CLOSED inside [fromUtc, toUtcExclusive) — callers filter the two cohorts apart in memory.</summary>
+        /// <param name="mineUserId">When set, additionally restricts to opportunities assigned to this user.</param>
+        Task<IReadOnlyList<DashboardOpportunityRow>> GetForDashboardAsync(DateTime fromUtc, DateTime toUtcExclusive, Guid? mineUserId, AccessScope? accessScope = null);
 
         /// <summary>Replaces every line item on the opportunity with the given set (simple full-replace, matching ICustomerRepository's contacts/addresses pattern).</summary>
         Task ReplaceLineItemsAsync(Guid opportunityId, IEnumerable<OpportunityLineItem> lineItems);

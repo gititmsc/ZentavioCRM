@@ -36,6 +36,16 @@ namespace ZentavioCRM.Api.Controllers
             return Ok(ApiResponse<SalesDashboardSummaryDto>.SuccessResponse(summary));
         }
 
+        /// <summary>Date-range analytics for the Dashboard charts. Same access model as the summary:
+        /// any authenticated user, results restricted by their Role.VisibilityScope. <c>mineOnly=true</c>
+        /// narrows further to records assigned to the caller (the "My" vs "Team" toggle).</summary>
+        [HttpGet("analytics")]
+        public async Task<IActionResult> GetAnalytics([FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] bool mineOnly = false)
+        {
+            var analytics = await _dashboardService.GetAnalyticsAsync(from, to, mineOnly, User.GetUserId());
+            return Ok(ApiResponse<DashboardAnalyticsDto>.SuccessResponse(analytics));
+        }
+
         /// <summary>Self-service usage vs. plan limits for the CURRENT tenant — powers the in-app
         /// warning banner as a tenant approaches its plan's user/record/storage limits. Any
         /// authenticated user can view their own tenant's usage; there's nothing sensitive here
