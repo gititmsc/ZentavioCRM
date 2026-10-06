@@ -80,6 +80,8 @@ namespace ZentavioCRM.Infrastructure.Persistence
 
         public DbSet<LeadAssignmentRuleUser> LeadAssignmentRuleUsers => Set<LeadAssignmentRuleUser>();
 
+        public DbSet<SavedAnalyticsItem> SavedAnalyticsItems => Set<SavedAnalyticsItem>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

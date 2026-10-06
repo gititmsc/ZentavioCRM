@@ -185,6 +185,18 @@ WHERE NOT EXISTS (SELECT 1 FROM dbo.Permissions p WHERE p.Id = v.Id);
 GO
 
 -- ============================================================================
+-- Analytics.ManageShared — added alongside custom dashboards / the report builder
+-- (publish dashboards & reports to the whole team; same top-up pattern used above).
+-- ============================================================================
+INSERT INTO dbo.Permissions (Id, Code, Name, Module)
+SELECT v.Id, v.Code, v.Name, v.Module
+FROM (VALUES
+    ('10000000-0000-0000-0000-000000000030', N'Analytics.ManageShared', N'ManageShared', N'Analytics')
+) AS v(Id, Code, Name, Module)
+WHERE NOT EXISTS (SELECT 1 FROM dbo.Permissions p WHERE p.Id = v.Id);
+GO
+
+-- ============================================================================
 -- Roles
 -- ============================================================================
 DECLARE @AdminRoleId2 UNIQUEIDENTIFIER = '20000000-0000-0000-0000-000000000001';
@@ -229,7 +241,8 @@ WHERE p.Code IN (
     N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Delete', N'Quotations.Assign',
     N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign',
     N'Products.View', N'Products.Create', N'Products.Edit', N'Products.Delete',
-    N'Tags.View', N'Tags.Manage'
+    N'Tags.View', N'Tags.Manage',
+    N'Analytics.ManageShared'
 )
 AND NOT EXISTS (SELECT 1 FROM dbo.RolePermissions rp WHERE rp.RoleId = @SalesManagerRoleId3 AND rp.PermissionId = p.Id);
 

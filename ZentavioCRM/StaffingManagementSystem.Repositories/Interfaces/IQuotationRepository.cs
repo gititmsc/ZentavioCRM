@@ -1,3 +1,4 @@
+using ZentavioCRM.Core.Analytics;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Security;
@@ -18,6 +19,10 @@ namespace ZentavioCRM.Repositories.Interfaces
         Task<IReadOnlyList<Quotation>> GetVersionsAsync(string quotationNumber);
 
         Task<string> GetNextQuotationNumberAsync();
+
+        /// <summary>Flat rows for the analytics engine / report builder: every quotation the caller's scope allows (date filtering happens in the engine).</summary>
+        /// <param name="mineUserId">When set, additionally restricts to quotations assigned to this user.</param>
+        Task<IReadOnlyList<AnalyticsRecord>> GetAnalyticsRecordsAsync(Guid? mineUserId, AccessScope? accessScope = null);
 
         Task<bool> HasSalesOrderAsync(Guid quotationId);
 

@@ -50,4 +50,6 @@ export const PermissionCodes = {
   ProductsCreate: "Products.Create",
   ProductsEdit: "Products.Edit",
   ProductsDelete: "Products.Delete",
+
+  AnalyticsManageShared: "Analytics.ManageShared",
 } as const;

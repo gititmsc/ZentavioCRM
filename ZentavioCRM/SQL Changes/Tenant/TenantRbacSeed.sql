@@ -16,7 +16,7 @@
 */
 
 -- ============================================================================
--- Permissions (40 total, grouped by module — matches Core.Common.PermissionCodes)
+-- Permissions (41 total, grouped by module — matches Core.Common.PermissionCodes)
 -- ============================================================================
 INSERT INTO dbo.Permissions (Id, Code, Name, Module) VALUES
     ('10000000-0000-0000-0000-000000000001', N'Departments.View',    N'View',    N'Departments'),
@@ -58,7 +58,8 @@ INSERT INTO dbo.Permissions (Id, Code, Name, Module) VALUES
     ('10000000-0000-0000-0000-000000000024', N'Products.Edit',         N'Edit',    N'Products'),
     ('10000000-0000-0000-0000-000000000025', N'Products.Delete',       N'Delete',  N'Products'),
     ('10000000-0000-0000-0000-000000000027', N'Tags.View',             N'View',    N'Tags'),
-    ('10000000-0000-0000-0000-000000000028', N'Tags.Manage',           N'Manage',  N'Tags');
+    ('10000000-0000-0000-0000-000000000028', N'Tags.Manage',           N'Manage',  N'Tags'),
+    ('10000000-0000-0000-0000-000000000030', N'Analytics.ManageShared', N'ManageShared', N'Analytics');
 -- No SalesOrders.Delete: there is no delete feature for Sales Orders (Cancel is the
 -- "this order is void" action instead) — see Core.Common.PermissionCodes for the rationale.
 GO
@@ -91,7 +92,8 @@ WHERE Code IN (
     N'Quotations.View', N'Quotations.Create', N'Quotations.Edit', N'Quotations.Delete', N'Quotations.Assign',
     N'SalesOrders.View', N'SalesOrders.Create', N'SalesOrders.Edit', N'SalesOrders.Assign',
     N'Products.View', N'Products.Create', N'Products.Edit', N'Products.Delete',
-    N'Tags.View', N'Tags.Manage'
+    N'Tags.View', N'Tags.Manage',
+    N'Analytics.ManageShared'
 );
 
 -- Sales Executive: day-to-day CRUD, no deletes.

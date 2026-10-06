@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZentavioCRM.Core.Analytics;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Security;
@@ -108,6 +109,45 @@ namespace ZentavioCRM.Repositories
                     so.AssignedToUserId == currentUserId ||
                     (so.AssignedToUserId == null && so.CreatedByUserId == currentUserId) ||
                     (so.AssignedToUserId != null && delegatedIds.Contains(so.AssignedToUserId.Value)));
+        }
+
+        public async Task<IReadOnlyList<AnalyticsRecord>> GetAnalyticsRecordsAsync(Guid? mineUserId, AccessScope? accessScope = null)
+        {
+            var query = _dbContext.SalesOrders.AsNoTracking().AsQueryable();
+
+            if (mineUserId is not null)
+            {
+                query = query.Where(s => s.AssignedToUserId == mineUserId);
+            }
+
+            query = ApplyAccessScope(query, accessScope);
+
+            var rows = await query
+                .Select(s => new
+                {
+                    s.SalesOrderNumber,
+                    CustomerName = s.Customer != null ? s.Customer.DisplayName : null,
+                    s.Status,
+                    s.AssignedToUserId,
+                    OwnerFirst = s.AssignedToUser != null ? s.AssignedToUser.FirstName : null,
+                    OwnerLast = s.AssignedToUser != null ? s.AssignedToUser.LastName : null,
+                    s.GrandTotal,
+                    s.CreatedAtUtc,
+                    s.OrderDate,
+                })
+                .ToListAsync();
+
+            return rows.Select(r => new AnalyticsRecord
+            {
+                Number = r.SalesOrderNumber,
+                Customer = r.CustomerName,
+                Status = r.Status.ToString(),
+                OwnerId = r.AssignedToUserId,
+                Owner = AnalyticsMapping.Owner(r.OwnerFirst, r.OwnerLast),
+                Value = r.GrandTotal,
+                CreatedAt = r.CreatedAtUtc,
+                Date2 = r.OrderDate,
+            }).ToList();
         }
 
         public async Task<string> GetNextSalesOrderNumberAsync()

@@ -25,6 +25,7 @@ namespace ZentavioCRM.Repositories.Extensions
             services.AddScoped<ILeadScoringSettingsRepository, LeadScoringSettingsRepository>();
             services.AddScoped<ILeadAssignmentRepository, LeadAssignmentRepository>();
             services.AddScoped<ITagRepository, TagRepository>();
+            services.AddScoped<ISavedAnalyticsRepository, SavedAnalyticsRepository>();
             services.AddScoped<IMergeRepository, MergeRepository>();
             services.AddScoped<IOpportunityRepository, OpportunityRepository>();
             services.AddScoped<IQuotationRepository, QuotationRepository>();

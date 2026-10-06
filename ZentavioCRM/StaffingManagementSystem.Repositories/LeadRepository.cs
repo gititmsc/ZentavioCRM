@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZentavioCRM.Core.Analytics;
 using ZentavioCRM.Core.DTOs.Dashboard;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
@@ -109,6 +110,55 @@ namespace ZentavioCRM.Repositories
                     l.AssignedToUserId == currentUserId ||
                     (l.AssignedToUserId == null && l.CreatedByUserId == currentUserId) ||
                     (l.AssignedToUserId != null && delegatedIds.Contains(l.AssignedToUserId.Value)));
+        }
+
+        public async Task<IReadOnlyList<AnalyticsRecord>> GetAnalyticsRecordsAsync(Guid? mineUserId, AccessScope? accessScope = null)
+        {
+            var query = _dbContext.Leads.AsNoTracking().AsQueryable();
+
+            if (mineUserId is not null)
+            {
+                query = query.Where(l => l.AssignedToUserId == mineUserId);
+            }
+
+            // Scope before projection — the projection drops CreatedByUserId, which the Own/Team filter needs.
+            query = ApplyAccessScope(query, accessScope);
+
+            // Enums are projected raw and stringified in memory (Enum.ToString() isn't reliably translatable).
+            var rows = await query
+                .Select(l => new
+                {
+                    l.LeadNumber,
+                    l.CompanyName,
+                    l.Status,
+                    l.Source,
+                    l.Industry,
+                    l.AssignedToUserId,
+                    OwnerFirst = l.AssignedToUser != null ? l.AssignedToUser.FirstName : null,
+                    OwnerLast = l.AssignedToUser != null ? l.AssignedToUser.LastName : null,
+                    TerritoryName = l.TerritoryRef != null ? l.TerritoryRef.Name : null,
+                    l.ExpectedValue,
+                    l.LeadScore,
+                    l.CreatedAtUtc,
+                    l.ConvertedAtUtc,
+                })
+                .ToListAsync();
+
+            return rows.Select(r => new AnalyticsRecord
+            {
+                Number = r.LeadNumber,
+                Name = r.CompanyName,
+                Status = r.Status.ToString(),
+                Source = r.Source.ToString(),
+                Industry = r.Industry,
+                OwnerId = r.AssignedToUserId,
+                Owner = AnalyticsMapping.Owner(r.OwnerFirst, r.OwnerLast),
+                Territory = r.TerritoryName,
+                Value = r.ExpectedValue,
+                Score = r.LeadScore,
+                CreatedAt = r.CreatedAtUtc,
+                Date2 = r.ConvertedAtUtc,
+            }).ToList();
         }
 
         public async Task<string> GetNextLeadNumberAsync()

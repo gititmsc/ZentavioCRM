@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZentavioCRM.Core.Analytics;
 using ZentavioCRM.Core.DTOs.Dashboard;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
@@ -116,6 +117,49 @@ namespace ZentavioCRM.Repositories
                     o.AssignedToUserId == currentUserId ||
                     (o.AssignedToUserId == null && o.CreatedByUserId == currentUserId) ||
                     (o.AssignedToUserId != null && delegatedIds.Contains(o.AssignedToUserId.Value)));
+        }
+
+        public async Task<IReadOnlyList<AnalyticsRecord>> GetAnalyticsRecordsAsync(Guid? mineUserId, AccessScope? accessScope = null)
+        {
+            var query = _dbContext.Opportunities.AsNoTracking().AsQueryable();
+
+            if (mineUserId is not null)
+            {
+                query = query.Where(o => o.AssignedToUserId == mineUserId);
+            }
+
+            query = ApplyAccessScope(query, accessScope);
+
+            var rows = await query
+                .Select(o => new
+                {
+                    o.OpportunityNumber,
+                    o.Name,
+                    CustomerName = o.Customer != null ? o.Customer.DisplayName : null,
+                    o.Stage,
+                    o.AssignedToUserId,
+                    OwnerFirst = o.AssignedToUser != null ? o.AssignedToUser.FirstName : null,
+                    OwnerLast = o.AssignedToUser != null ? o.AssignedToUser.LastName : null,
+                    o.Value,
+                    o.Probability,
+                    o.CreatedAtUtc,
+                    o.ClosedAtUtc,
+                })
+                .ToListAsync();
+
+            return rows.Select(r => new AnalyticsRecord
+            {
+                Number = r.OpportunityNumber,
+                Name = r.Name,
+                Customer = r.CustomerName,
+                Status = r.Stage.ToString(),
+                OwnerId = r.AssignedToUserId,
+                Owner = AnalyticsMapping.Owner(r.OwnerFirst, r.OwnerLast),
+                Value = r.Value,
+                Probability = r.Probability,
+                CreatedAt = r.CreatedAtUtc,
+                Date2 = r.ClosedAtUtc,
+            }).ToList();
         }
 
         public async Task<string> GetNextOpportunityNumberAsync()

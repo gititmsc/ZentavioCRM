@@ -1,3 +1,4 @@
+using ZentavioCRM.Core.Analytics;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Security;
 
@@ -14,6 +15,10 @@ namespace ZentavioCRM.Repositories.Interfaces
             AccessScope? accessScope = null, string? sortBy = null, bool sortDescending = true);
 
         Task<string> GetNextCustomerNumberAsync();
+
+        /// <summary>Flat rows for the analytics engine / report builder: every customer the caller's scope allows (date filtering happens in the engine).</summary>
+        /// <param name="mineUserId">When set, additionally restricts to customers assigned to this user.</param>
+        Task<IReadOnlyList<AnalyticsRecord>> GetAnalyticsRecordsAsync(Guid? mineUserId, AccessScope? accessScope = null);
 
         Task AddAsync(Customer customer);
 

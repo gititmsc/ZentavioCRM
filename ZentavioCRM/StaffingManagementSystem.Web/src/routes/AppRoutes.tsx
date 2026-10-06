@@ -31,6 +31,9 @@ import SalesOrderDetail from "@/pages/salesorders/SalesOrderDetail";
 import ProductsList from "@/pages/products/ProductsList";
 import ProductForm from "@/pages/products/ProductForm";
 import TagManager from "@/pages/tags/TagManager";
+import CustomDashboards from "@/pages/dashboards/CustomDashboards";
+import ReportsList from "@/pages/reports/ReportsList";
+import ReportBuilder from "@/pages/reports/ReportBuilder";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { MainLayout } from "@/layouts/MainLayout";
 
@@ -51,6 +54,12 @@ export function AppRoutes() {
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<MyProfile />} />
+
+        <Route path="/dashboards" element={<CustomDashboards />} />
+        <Route path="/dashboards/:id" element={<CustomDashboards />} />
+        <Route path="/reports" element={<ReportsList />} />
+        <Route path="/reports/new" element={<ReportBuilder />} />
+        <Route path="/reports/:id" element={<ReportBuilder />} />
 
         <Route path="/departments" element={<DepartmentsList />} />
         <Route path="/departments/new" element={<DepartmentForm />} />

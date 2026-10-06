@@ -56,6 +56,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
             [PermissionCodes.TagsView] = Guid.Parse("10000000-0000-0000-0000-000000000027"),
             [PermissionCodes.TagsManage] = Guid.Parse("10000000-0000-0000-0000-000000000028"),
             [PermissionCodes.LeadsManageAssignment] = Guid.Parse("10000000-0000-0000-0000-000000000029"),
+            [PermissionCodes.AnalyticsManageShared] = Guid.Parse("10000000-0000-0000-0000-000000000030"),
         };
 
         /// <summary>Fixed point in time used for every seeded "CreatedAtUtc" column so migrations stay deterministic.</summary>
@@ -146,6 +147,7 @@ namespace ZentavioCRM.Infrastructure.Persistence.Seed
                 PermissionCodes.SalesOrdersView, PermissionCodes.SalesOrdersCreate, PermissionCodes.SalesOrdersEdit, PermissionCodes.SalesOrdersAssign,
                 PermissionCodes.ProductsView, PermissionCodes.ProductsCreate, PermissionCodes.ProductsEdit, PermissionCodes.ProductsDelete,
                 PermissionCodes.TagsView, PermissionCodes.TagsManage,
+                PermissionCodes.AnalyticsManageShared,
             ];
             grants.AddRange(salesManagerCodes.Select(code => new RolePermission { RoleId = SeedIds.SalesManagerRoleId, PermissionId = PermissionIds[code] }));
 

@@ -1,3 +1,4 @@
+using ZentavioCRM.Core.Analytics;
 using ZentavioCRM.Core.DTOs.Dashboard;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
@@ -16,6 +17,10 @@ namespace ZentavioCRM.Repositories.Interfaces
             AccessScope? accessScope = null, string? sortBy = null, bool sortDescending = true);
 
         Task<string> GetNextLeadNumberAsync();
+
+        /// <summary>Flat rows for the analytics engine / report builder: every lead the caller's scope allows (date filtering happens in the engine).</summary>
+        /// <param name="mineUserId">When set, additionally restricts to leads assigned to this user.</param>
+        Task<IReadOnlyList<AnalyticsRecord>> GetAnalyticsRecordsAsync(Guid? mineUserId, AccessScope? accessScope = null);
 
         Task AddAsync(Lead lead);
 

@@ -21,6 +21,8 @@ namespace ZentavioCRM.Services.Extensions
             services.AddScoped<ILeadScoringSettingsService, LeadScoringSettingsService>();
             services.AddScoped<ILeadAssignmentService, LeadAssignmentService>();
             services.AddScoped<ITagService, TagService>();
+            services.AddScoped<IAnalyticsService, AnalyticsService>();
+            services.AddScoped<ISavedAnalyticsService, SavedAnalyticsService>();
             services.AddScoped<IMergeService, MergeService>();
             services.AddScoped<IOpportunityService, OpportunityService>();
             services.AddScoped<IQuotationService, QuotationService>();

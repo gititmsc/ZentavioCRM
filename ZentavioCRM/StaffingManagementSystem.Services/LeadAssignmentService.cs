@@ -132,7 +132,7 @@ namespace ZentavioCRM.Services
                 return null;
             }
 
-            var eligibleUserIds = await _repository.GetEligibleUserIdsAsync(rule.Id);
+            var eligibleUserIds = (await _repository.GetEligibleUserIdsAsync(rule.Id)).ToList();
             if (eligibleUserIds.Count == 0)
             {
                 return null;

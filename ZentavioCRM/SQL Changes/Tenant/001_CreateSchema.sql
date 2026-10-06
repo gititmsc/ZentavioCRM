@@ -1164,6 +1164,33 @@ END
 GO
 
 -- ============================================================================
+-- SavedAnalyticsItems (user-built custom Dashboards and saved Reports — Kind 1 = Dashboard,
+-- 2 = Report. ConfigJson is the opaque widget layout / report definition owned by the UI;
+-- every query it describes is re-validated and access-scoped when it runs.)
+-- ============================================================================
+IF OBJECT_ID(N'dbo.SavedAnalyticsItems', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.SavedAnalyticsItems
+    (
+        Id           UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_SavedAnalyticsItems_Id DEFAULT NEWID(),
+        Kind         INT              NOT NULL,
+        Name         NVARCHAR(150)    NOT NULL,
+        Description  NVARCHAR(500)    NULL,
+        OwnerUserId  UNIQUEIDENTIFIER NOT NULL,
+        IsShared     BIT              NOT NULL CONSTRAINT DF_SavedAnalyticsItems_IsShared DEFAULT (0),
+        ConfigJson   NVARCHAR(MAX)    NOT NULL,
+        CreatedAtUtc DATETIME2        NOT NULL,
+        UpdatedAtUtc DATETIME2        NULL,
+        CONSTRAINT PK_SavedAnalyticsItems PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT FK_SavedAnalyticsItems_OwnerUser FOREIGN KEY (OwnerUserId) REFERENCES dbo.Users (Id)
+    );
+
+    CREATE INDEX IX_SavedAnalyticsItems_Kind_OwnerUserId ON dbo.SavedAnalyticsItems (Kind, OwnerUserId);
+    CREATE INDEX IX_SavedAnalyticsItems_Kind_IsShared ON dbo.SavedAnalyticsItems (Kind, IsShared);
+END
+GO
+
+-- ============================================================================
 -- Products (Product & Service Catalog — SRS Phase 5. A sellable catalog entry, either a
 -- physical/orderable Product or a billable Service (see ProductType.cs); used as a convenience
 -- picker when building Opportunity/Quotation line items instead of free-text entry.)

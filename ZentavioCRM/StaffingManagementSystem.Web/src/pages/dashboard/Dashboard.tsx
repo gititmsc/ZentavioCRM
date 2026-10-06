@@ -1,49 +1,14 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { addDays, PRESET_LABELS, resolveRange, toDateInput, type BasePreset } from "@/utils/dateRange";
 import { dashboardService, type DashboardAnalytics, type SalesDashboardSummary } from "@/services/dashboardService";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { FormSection } from "@/components/form/FormSection";
 import { BarList, ColumnChart, LineChart } from "@/components/charts/SimpleCharts";
 import "./Dashboard.css";
 
-type Preset = "last7" | "last30" | "last90" | "thisMonth" | "thisYear" | "custom";
-
-const PRESET_LABELS: Record<Preset, string> = {
-  last7: "Last 7 days",
-  last30: "Last 30 days",
-  last90: "Last 90 days",
-  thisMonth: "This month",
-  thisYear: "This year",
-  custom: "Custom range",
-};
-
-const addDays = (d: Date, n: number) => {
-  const copy = new Date(d);
-  copy.setDate(copy.getDate() + n);
-  return copy;
-};
-
-/** yyyy-MM-dd in the viewer's local calendar (what a date input produces/expects). */
-const toDateInput = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-
-function resolveRange(preset: Preset, customFrom: string, customTo: string): { from: string; to: string } {
-  const today = new Date();
-  switch (preset) {
-    case "last7":
-      return { from: toDateInput(addDays(today, -6)), to: toDateInput(today) };
-    case "last30":
-      return { from: toDateInput(addDays(today, -29)), to: toDateInput(today) };
-    case "last90":
-      return { from: toDateInput(addDays(today, -89)), to: toDateInput(today) };
-    case "thisMonth":
-      return { from: toDateInput(new Date(today.getFullYear(), today.getMonth(), 1)), to: toDateInput(today) };
-    case "thisYear":
-      return { from: toDateInput(new Date(today.getFullYear(), 0, 1)), to: toDateInput(today) };
-    default:
-      return { from: customFrom, to: customTo };
-  }
-}
+type Preset = BasePreset;
 
 /** "EmailCampaign" -> "Email Campaign". */
 const humanize = (value: string) => value.replace(/([a-z])([A-Z])/g, "$1 $2");
@@ -92,6 +57,7 @@ function StatCard({ icon, label, value, variant = "accent" }: StatCardProps) {
 /** Landing page reached after a successful login. */
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [summary, setSummary] = useState<SalesDashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -153,6 +119,18 @@ export default function Dashboard() {
       <PageHeader
         title={`Welcome${user ? `, ${user.fullName}` : ""}`}
         subtitle="Here's what's happening across your CRM today."
+        actions={
+          <>
+            <button type="button" className="btn btn-outline-secondary me-2" onClick={() => navigate("/reports")}>
+              <i className="bi bi-file-earmark-bar-graph me-1" aria-hidden="true" />
+              Reports
+            </button>
+            <button type="button" className="btn btn-primary" onClick={() => navigate("/dashboards")}>
+              <i className="bi bi-grid-1x2 me-1" aria-hidden="true" />
+              Custom Dashboards
+            </button>
+          </>
+        }
       />
 
       {error && <div className="alert alert-danger">{error}</div>}

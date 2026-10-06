@@ -167,3 +167,59 @@ export function ColumnChart({ points, height = 180, color = "var(--itm-accent)",
     </svg>
   );
 }
+
+const DONUT_COLORS = ["#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
+
+/** Donut with a legend. Slices beyond the palette wrap colors, so keep the item count modest (the engine caps groups anyway). */
+export function DonutChart({ items, formatValue }: { items: SeriesPoint[]; formatValue?: (n: number) => string }) {
+  const positive = items.filter((i) => i.value > 0);
+  const total = positive.reduce((sum, i) => sum + i.value, 0);
+  if (total === 0) {
+    return <div className="text-muted small py-2">No data in this range.</div>;
+  }
+  const fmt = formatValue ?? ((n: number) => n.toLocaleString());
+
+  // Circle with circumference 100 so each slice's dash length is simply its percentage.
+  const radius = 100 / (2 * Math.PI);
+  let offset = 25; // start at 12 o'clock
+  return (
+    <div className="d-flex flex-wrap align-items-center gap-3">
+      <svg viewBox="0 0 42 42" width={150} height={150} role="img" aria-label="Distribution chart">
+        <circle cx={21} cy={21} r={radius} fill="none" stroke="#f1f5f9" strokeWidth={6} />
+        {positive.map((item, i) => {
+          const pct = (item.value / total) * 100;
+          const slice = (
+            <circle
+              key={item.label}
+              cx={21}
+              cy={21}
+              r={radius}
+              fill="none"
+              stroke={DONUT_COLORS[i % DONUT_COLORS.length]}
+              strokeWidth={6}
+              strokeDasharray={`${pct} ${100 - pct}`}
+              strokeDashoffset={offset}
+            >
+              <title>{`${item.label}: ${fmt(item.value)} (${pct.toFixed(1)}%)`}</title>
+            </circle>
+          );
+          offset -= pct;
+          return slice;
+        })}
+      </svg>
+      <ul className="list-unstyled small mb-0 flex-grow-1">
+        {positive.map((item, i) => (
+          <li key={item.label} className="d-flex align-items-center gap-2">
+            <span
+              style={{ width: 10, height: 10, borderRadius: 2, background: DONUT_COLORS[i % DONUT_COLORS.length], display: "inline-block" }}
+            />
+            <span className="text-truncate">{item.label}</span>
+            <span className="ms-auto fw-semibold text-nowrap">
+              {fmt(item.value)} <span className="text-muted fw-normal">({((item.value / total) * 100).toFixed(0)}%)</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

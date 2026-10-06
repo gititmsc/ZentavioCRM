@@ -65,6 +65,9 @@ namespace ZentavioCRM.Core.Common
         public const string TagsView = "Tags.View";
         public const string TagsManage = "Tags.Manage";
 
+        /// <summary>Publish a custom dashboard/report to the whole tenant, and edit/delete shared ones owned by others. Personal dashboards/reports need no permission.</summary>
+        public const string AnalyticsManageShared = "Analytics.ManageShared";
+
         /// <summary>All codes, keyed by module, used by the seeder and the admin role grant.</summary>
         public static readonly IReadOnlyDictionary<string, string[]> ByModule = new Dictionary<string, string[]>
         {
@@ -79,6 +82,7 @@ namespace ZentavioCRM.Core.Common
             ["SalesOrders"] = [SalesOrdersView, SalesOrdersCreate, SalesOrdersEdit, SalesOrdersAssign],
             ["Products"] = [ProductsView, ProductsCreate, ProductsEdit, ProductsDelete],
             ["Tags"] = [TagsView, TagsManage],
+            ["Analytics"] = [AnalyticsManageShared],
         };
 
         public static IEnumerable<string> All => ByModule.Values.SelectMany(codes => codes);

@@ -1,3 +1,4 @@
+using ZentavioCRM.Core.Analytics;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Security;
@@ -15,6 +16,10 @@ namespace ZentavioCRM.Repositories.Interfaces
             AccessScope? accessScope = null, string? sortBy = null, bool sortDescending = true);
 
         Task<string> GetNextSalesOrderNumberAsync();
+
+        /// <summary>Flat rows for the analytics engine / report builder: every sales order the caller's scope allows (date filtering happens in the engine).</summary>
+        /// <param name="mineUserId">When set, additionally restricts to orders assigned to this user.</param>
+        Task<IReadOnlyList<AnalyticsRecord>> GetAnalyticsRecordsAsync(Guid? mineUserId, AccessScope? accessScope = null);
 
         Task AddAsync(SalesOrder salesOrder);
 

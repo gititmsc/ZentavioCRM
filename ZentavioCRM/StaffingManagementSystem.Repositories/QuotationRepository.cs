@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZentavioCRM.Core.Analytics;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Security;
@@ -123,6 +124,47 @@ namespace ZentavioCRM.Repositories
                 .Where(q => q.QuotationNumber == quotationNumber)
                 .OrderByDescending(q => q.Version)
                 .ToListAsync();
+
+        public async Task<IReadOnlyList<AnalyticsRecord>> GetAnalyticsRecordsAsync(Guid? mineUserId, AccessScope? accessScope = null)
+        {
+            var query = _dbContext.Quotations.AsNoTracking().AsQueryable();
+
+            if (mineUserId is not null)
+            {
+                query = query.Where(q => q.AssignedToUserId == mineUserId);
+            }
+
+            query = ApplyAccessScope(query, accessScope);
+
+            var rows = await query
+                .Select(q => new
+                {
+                    q.QuotationNumber,
+                    OpportunityName = q.Opportunity != null ? q.Opportunity.Name : null,
+                    CustomerName = q.Customer != null ? q.Customer.DisplayName : null,
+                    q.Status,
+                    q.AssignedToUserId,
+                    OwnerFirst = q.AssignedToUser != null ? q.AssignedToUser.FirstName : null,
+                    OwnerLast = q.AssignedToUser != null ? q.AssignedToUser.LastName : null,
+                    q.GrandTotal,
+                    q.CreatedAtUtc,
+                    q.ValidUntil,
+                })
+                .ToListAsync();
+
+            return rows.Select(r => new AnalyticsRecord
+            {
+                Number = r.QuotationNumber,
+                Name = r.OpportunityName,
+                Customer = r.CustomerName,
+                Status = r.Status.ToString(),
+                OwnerId = r.AssignedToUserId,
+                Owner = AnalyticsMapping.Owner(r.OwnerFirst, r.OwnerLast),
+                Value = r.GrandTotal,
+                CreatedAt = r.CreatedAtUtc,
+                Date2 = r.ValidUntil,
+            }).ToList();
+        }
 
         public async Task<string> GetNextQuotationNumberAsync()
         {

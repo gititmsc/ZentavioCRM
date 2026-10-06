@@ -17,6 +17,18 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: "/dashboard", icon: "bi-speedometer2", label: "Dashboard" },
+  {
+    to: "/reports",
+    icon: "bi-file-earmark-bar-graph",
+    label: "Reports",
+    requiresAnyOf: [
+      PermissionCodes.LeadsView,
+      PermissionCodes.OpportunitiesView,
+      PermissionCodes.CustomersView,
+      PermissionCodes.QuotationsView,
+      PermissionCodes.SalesOrdersView,
+    ],
+  },
   { to: "/leads", icon: "bi-funnel-fill", label: "Leads", requiresAnyOf: [PermissionCodes.LeadsView] },
   { to: "/opportunities", icon: "bi-graph-up-arrow", label: "Opportunities", requiresAnyOf: [PermissionCodes.OpportunitiesView] },
   { to: "/quotations", icon: "bi-file-earmark-text", label: "Quotations", requiresAnyOf: [PermissionCodes.QuotationsView] },

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZentavioCRM.Core.Analytics;
 using ZentavioCRM.Core.Entities;
 using ZentavioCRM.Core.Enums;
 using ZentavioCRM.Core.Security;
@@ -108,6 +109,47 @@ namespace ZentavioCRM.Repositories
                     c.AssignedToUserId == currentUserId ||
                     (c.AssignedToUserId == null && c.CreatedByUserId == currentUserId) ||
                     (c.AssignedToUserId != null && delegatedIds.Contains(c.AssignedToUserId.Value)));
+        }
+
+        public async Task<IReadOnlyList<AnalyticsRecord>> GetAnalyticsRecordsAsync(Guid? mineUserId, AccessScope? accessScope = null)
+        {
+            var query = _dbContext.Customers.AsNoTracking().AsQueryable();
+
+            if (mineUserId is not null)
+            {
+                query = query.Where(c => c.AssignedToUserId == mineUserId);
+            }
+
+            query = ApplyAccessScope(query, accessScope);
+
+            var rows = await query
+                .Select(c => new
+                {
+                    c.CustomerNumber,
+                    c.DisplayName,
+                    c.Type,
+                    c.AcquisitionSource,
+                    c.Industry,
+                    c.AssignedToUserId,
+                    OwnerFirst = c.AssignedToUser != null ? c.AssignedToUser.FirstName : null,
+                    OwnerLast = c.AssignedToUser != null ? c.AssignedToUser.LastName : null,
+                    c.AnnualRevenue,
+                    c.CreatedAtUtc,
+                })
+                .ToListAsync();
+
+            return rows.Select(r => new AnalyticsRecord
+            {
+                Number = r.CustomerNumber,
+                Name = r.DisplayName,
+                Status = r.Type.ToString(),
+                Source = r.AcquisitionSource?.ToString(),
+                Industry = r.Industry,
+                OwnerId = r.AssignedToUserId,
+                Owner = AnalyticsMapping.Owner(r.OwnerFirst, r.OwnerLast),
+                Value = r.AnnualRevenue,
+                CreatedAt = r.CreatedAtUtc,
+            }).ToList();
         }
 
         public async Task<string> GetNextCustomerNumberAsync()
