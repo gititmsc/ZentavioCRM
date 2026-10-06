@@ -10,14 +10,26 @@ import {
 import { PageHeader } from "@/components/layout/PageHeader";
 import { WidgetView } from "@/components/analytics/WidgetView";
 import { WidgetEditor } from "@/components/analytics/WidgetEditor";
+import { SortableWidgetCard } from "@/components/analytics/SortableWidgetCard";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import {
   blankWidget,
   parseDashboardConfig,
   templateWidgets,
-  WIDGET_WIDTHS,
+  type DashboardColumns,
   type DashboardConfig,
   type Widget,
 } from "@/components/analytics/widgets";
+import "./CustomDashboards.css";
 import { addDays, PRESET_LABELS, resolveRange, toDateInput, type BasePreset } from "@/utils/dateRange";
 
 /** Saved-dashboard viewer and builder: pick a dashboard, change its date range / scope, or edit its widgets. */
@@ -35,6 +47,7 @@ export default function CustomDashboards() {
   // The dashboard being viewed (null while creating a brand-new, unsaved one).
   const [current, setCurrent] = useState<SavedAnalyticsItem | null>(null);
   const [widgets, setWidgets] = useState<Widget[]>([]);
+  const [columns, setColumns] = useState<DashboardColumns>(2);
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState("");
   const [draftDescription, setDraftDescription] = useState("");
@@ -50,7 +63,9 @@ export default function CustomDashboards() {
 
   const select = (item: SavedAnalyticsItem | null) => {
     setCurrent(item);
-    setWidgets(item ? parseDashboardConfig(item.configJson).widgets : []);
+    const config = item ? parseDashboardConfig(item.configJson) : null;
+    setWidgets(config?.widgets ?? []);
+    setColumns(config?.columns ?? 2);
     setIsEditing(false);
     setEditingWidget(null);
   };
@@ -87,6 +102,7 @@ export default function CustomDashboards() {
   const startNew = (useTemplate: boolean) => {
     setCurrent(null);
     setWidgets(useTemplate ? templateWidgets() : []);
+    setColumns(useTemplate ? 3 : 2);
     setDraftName("My dashboard");
     setDraftDescription("");
     setDraftShared(false);
@@ -110,7 +126,7 @@ export default function CustomDashboards() {
     }
   };
 
-  const buildConfigJson = () => JSON.stringify({ version: 1, widgets } satisfies DashboardConfig);
+  const buildConfigJson = () => JSON.stringify({ version: 1, columns, widgets } satisfies DashboardConfig);
 
   const save = async () => {
     if (!draftName.trim()) {
@@ -176,6 +192,21 @@ export default function CustomDashboards() {
       [copy[index], copy[target]] = [copy[target], copy[index]];
       return copy;
     });
+
+  // A small drag distance keeps plain clicks on the handle/buttons from starting a drag.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    setWidgets((list) => {
+      const from = list.findIndex((w) => w.id === active.id);
+      const to = list.findIndex((w) => w.id === over.id);
+      return from < 0 || to < 0 ? list : arrayMove(list, from, to);
+    });
+  };
 
   if (isLoading) {
     return <div className="text-muted">Loading...</div>;
@@ -334,7 +365,15 @@ export default function CustomDashboards() {
           </div>
 
           {isEditing && !editingWidget && (
-            <div className="mb-3">
+            <div className="mb-3 d-flex flex-wrap align-items-center gap-3">
+              <div className="btn-group btn-group-sm" role="group" aria-label="Dashboard layout">
+                {([2, 3] as DashboardColumns[]).map((n) => (
+                  <button key={n} type="button" className={`btn ${columns === n ? "btn-primary" : "btn-outline-secondary"}`} onClick={() => setColumns(n)}>
+                    <i className={`bi ${n === 2 ? "bi-layout-split" : "bi-columns-gap"} me-1`} aria-hidden="true" />
+                    {n} columns
+                  </button>
+                ))}
+              </div>
               <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => setEditingWidget(blankWidget(catalog[0]?.entity ?? "Leads"))} disabled={catalog.length === 0}>
                 <i className="bi bi-plus-lg me-1" aria-hidden="true" />
                 Add widget
@@ -349,41 +388,42 @@ export default function CustomDashboards() {
             <div className="text-muted small">{isEditing ? "No widgets yet — add one above." : "This dashboard has no widgets."}</div>
           )}
 
-          <div className="row g-3">
-            {widgets.map((widget, index) => (
-              <div key={widget.id} className={WIDGET_WIDTHS.find((w) => w.value === widget.width)?.col ?? "col-lg-6"}>
-                <div className="card shadow-sm border-0 h-100">
-                  <div className="card-body">
-                    <div className="d-flex align-items-start mb-2">
-                      <h6 className="mb-0 me-auto">{widget.title}</h6>
-                      {isEditing && (
-                        <div className="btn-group btn-group-sm">
-                          <button type="button" className="btn btn-outline-secondary" onClick={() => move(index, -1)} disabled={index === 0} aria-label="Move up">
-                            <i className="bi bi-arrow-up" aria-hidden="true" />
-                          </button>
-                          <button type="button" className="btn btn-outline-secondary" onClick={() => move(index, 1)} disabled={index === widgets.length - 1} aria-label="Move down">
-                            <i className="bi bi-arrow-down" aria-hidden="true" />
-                          </button>
-                          <button type="button" className="btn btn-outline-secondary" onClick={() => setEditingWidget(widget)} aria-label="Edit widget">
-                            <i className="bi bi-pencil" aria-hidden="true" />
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-outline-danger"
-                            onClick={() => setWidgets((list) => list.filter((w) => w.id !== widget.id))}
-                            aria-label="Remove widget"
-                          >
-                            <i className="bi bi-x-lg" aria-hidden="true" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={widgets.map((w) => w.id)} strategy={rectSortingStrategy} disabled={!isEditing}>
+              <div className="itm-dash-grid" style={{ "--dash-cols": columns } as React.CSSProperties}>
+                {widgets.map((widget, index) => (
+                  <SortableWidgetCard
+                    key={widget.id}
+                    widget={widget}
+                    isEditing={isEditing}
+                    actions={
+                      <div className="btn-group btn-group-sm">
+                        <button type="button" className="btn btn-outline-secondary" onClick={() => move(index, -1)} disabled={index === 0} aria-label="Move earlier">
+                          <i className="bi bi-arrow-up" aria-hidden="true" />
+                        </button>
+                        <button type="button" className="btn btn-outline-secondary" onClick={() => move(index, 1)} disabled={index === widgets.length - 1} aria-label="Move later">
+                          <i className="bi bi-arrow-down" aria-hidden="true" />
+                        </button>
+                        <button type="button" className="btn btn-outline-secondary" onClick={() => setEditingWidget(widget)} aria-label="Edit widget">
+                          <i className="bi bi-pencil" aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-outline-danger"
+                          onClick={() => setWidgets((list) => list.filter((w) => w.id !== widget.id))}
+                          aria-label="Remove widget"
+                        >
+                          <i className="bi bi-x-lg" aria-hidden="true" />
+                        </button>
+                      </div>
+                    }
+                  >
                     <WidgetView widget={widget} from={range.from} to={range.to} mineOnly={mineOnly} />
-                  </div>
-                </div>
+                  </SortableWidgetCard>
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         </>
       )}
     </div>

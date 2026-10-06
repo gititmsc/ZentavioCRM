@@ -1,0 +1,32 @@
+/* Uniform dashboard grid: every standard widget is exactly one column, so rows always line up. */
+.itm-dash-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--dash-cols, 2), minmax(0, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.itm-dash-cell {
+  min-width: 0;
+}
+
+.itm-dash-cell > .card {
+  height: 100%;
+}
+
+.itm-dash-cell--full {
+  grid-column: 1 / -1;
+}
+
+/* Narrower screens: never more than 2 columns, then a single column. */
+@media (max-width: 1199px) {
+  .itm-dash-grid {
+    grid-template-columns: repeat(min(var(--dash-cols, 2), 2), minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .itm-dash-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
